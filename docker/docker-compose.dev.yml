@@ -1,0 +1,92 @@
+services:
+
+  # Database
+  mongodb:
+    image: mongo:6.0
+    container_name: ban-do-mongodb-dev
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data_dev:/data/db
+    networks:
+      - ban-do-network-dev
+    restart: always
+
+  # Object Storage
+  minio:
+    image: quay.io/minio/minio:latest
+    container_name: ban-do-minio-dev
+    env_file:
+      - ../.env
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+    volumes:
+      - minio_data_dev:/data
+    command: server /data --console-address ":9001"
+    networks:
+      - ban-do-network-dev
+    restart: always
+
+  # API Backend
+  api:
+    build:
+      context: ../backend
+      dockerfile: Dockerfile
+    container_name: ban-do-api-dev
+    env_file:
+      - ../.env
+    ports:
+      - "8000:8000"
+    volumes:
+      - ../backend:/app
+      - ../scripts:/app/scripts
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+    depends_on:
+      - mongodb
+      - minio
+    networks:
+      - ban-do-network-dev
+    restart: always
+
+  # Frontend
+  frontend:
+    build:
+      context: ../frontend
+      dockerfile: Dockerfile
+    container_name: ban-do-frontend-dev
+    ports:
+      - "3000:3000"
+    volumes:
+      - ../frontend:/app
+      - /app/node_modules
+    networks:
+      - ban-do-network-dev
+    restart: always
+
+  # Reverse Proxy
+  nginx:
+    image: nginx:alpine
+    container_name: ban-do-nginx-dev
+    ports:
+      - "8080:80"
+    volumes:
+      - ../nginx/conf.d:/etc/nginx/conf.d:ro
+    depends_on:
+      - api
+      - frontend
+    networks:
+      - ban-do-network-dev
+    restart: always
+
+volumes:
+  mongodb_data_dev:
+  minio_data_dev:
+
+networks:
+  ban-do-network-dev:
+    name: ban-do-network-dev
+    driver: bridge
