@@ -1,0 +1,52 @@
+# =============================================================================
+# Bản đồ sinh viên sư phạm - .gitignore
+# =============================================================================
+
+# Biến môi trường (chứa secret)
+.env
+!.env.example
+
+# Node
+node_modules/
+dist/
+build/
+.vite/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+.mypy_cache/
+.pytest_cache/
+.ruff_cache/
+htmlcov/
+.coverage
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Docker volumes (dữ liệu local)
+docker/data/
+
+# SSL certs (production)
+nginx/conf.d/ssl/*.pem
+nginx/conf.d/ssl/*.key
+nginx/conf.d/ssl/*.crt
+
+# Jenkins workspace
+jenkins/workspace/
+
+# Logs
+*.log
+
+# MinIO data
+minio-data/
