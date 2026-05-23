@@ -1,0 +1,58 @@
+services:
+
+  # Prometheus (Metrics Collector)
+  prometheus:
+    image: prom/prometheus:v2.52.0
+    container_name: ban-do-prometheus
+    volumes:
+      - ./prometheus:/etc/prometheus
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/usr/share/prometheus/console_libraries'
+      - '--web.console.templates=/usr/share/prometheus/consoles'
+    ports:
+      - "9090:9090"
+    networks:
+      - ban-do-network-dev
+    restart: always
+
+  # Loki (Logs Aggregator)
+  loki:
+    image: grafana/loki:3.0.0
+    container_name: ban-do-loki
+    volumes:
+      - ./loki:/etc/loki
+    ports:
+      - "3100:3100"
+    command: -config.file=/etc/loki/local-config.yaml
+    networks:
+      - ban-do-network-dev
+    restart: always
+
+  # Grafana (Dashboard Visualizer)
+  grafana:
+    image: grafana/grafana:10.4.2
+    container_name: ban-do-grafana
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./grafana/provisioning:/etc/grafana/provisioning
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+    ports:
+      - "4000:3000"
+    depends_on:
+      - prometheus
+      - loki
+    networks:
+      - ban-do-network-dev
+    restart: always
+
+volumes:
+  prometheus_data:
+  grafana_data:
+
+networks:
+  ban-do-network-dev:
+    external: true
