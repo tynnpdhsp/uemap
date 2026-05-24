@@ -21,7 +21,7 @@ backend/
 │   ├── schemas/      # Định nghĩa cấu trúc dữ liệu Request/Response (Pydantic)
 │   ├── services/     # Logic nghiệp vụ (Business logic), gửi mail, xử lý ảnh
 │   └── main.py       # Điểm khởi chạy của ứng dụng FastAPI
-├── tests/            # Các file chứa Unit Test (pytest)
+├── tests/            # Unit, integration, E2E (pytest + httpx)
 ├── Dockerfile        # Đóng gói backend thành Docker image
 ├── pyproject.toml    # Thông tin dự án và cấu hình công cụ (ruff, pytest)
 ├── requirements.txt  # Danh sách thư viện phụ thuộc
@@ -61,12 +61,27 @@ Sau khi chạy thành công, bạn có thể truy cập:
 - **ReDoc:** http://localhost:8000/api/redoc
 - **API Health Check:** http://localhost:8000/api/health
 
-## Chạy Unit Test
+## Kiểm thử
 
-Đảm bảo bạn đã cài đặt đủ các thư viện trong `requirements.txt`.
 ```bash
-pytest --cov=app --cov-report=term-missing
+conda activate devops
+cd backend
 ```
+
+Integration và E2E cần MongoDB chạy (từ thư mục `source/`):
+
+```bash
+docker compose -f docker/docker-compose.dev.yml up -d mongodb
+```
+
+| Loại | Thư mục | Lệnh |
+|------|---------|------|
+| Unit | `tests/unit/` | `pytest tests/unit -m unit` |
+| Integration | `tests/test_*.py` | `pytest tests/ -m integration` |
+| E2E (API) | `tests/e2e/` | `pytest tests/e2e -m e2e` |
+| Tất cả | `tests/` | `pytest tests/` |
+
+Frontend (Jest): [frontend/README.md](../frontend/README.md#kiểm-thử). Tổng quan: [README gốc](../README.md#kiểm-thử).
 
 ## Linter và Format Code
 
