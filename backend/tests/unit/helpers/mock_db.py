@@ -42,6 +42,23 @@ def _doc_matches(doc: dict[str, Any], query: dict[str, Any]) -> bool:
     return True
 
 
+class MockCursor:
+    def __init__(self, docs: list[dict[str, Any]]) -> None:
+        self.docs = docs
+
+    def sort(self, *args, **kwargs) -> MockCursor:
+        return self
+
+    def skip(self, *args, **kwargs) -> MockCursor:
+        return self
+
+    def limit(self, *args, **kwargs) -> MockCursor:
+        return self
+
+    async def to_list(self, length: int) -> list[dict[str, Any]]:
+        return deepcopy(self.docs[:length])
+
+
 class MockCollection:
     def __init__(self) -> None:
         self.docs: list[dict[str, Any]] = []
@@ -61,6 +78,43 @@ class MockCollection:
                 reverse=direction == -1,
             )
         return deepcopy(matches[0])
+
+    def find(self, query: dict[str, Any] | None = None) -> MockCursor:
+        if query is None:
+            query = {}
+        matches = [doc for doc in self.docs if _doc_matches(doc, query)]
+        return MockCursor(matches)
+
+    async def find_one_and_update(
+        self,
+        query: dict[str, Any],
+        update: dict[str, Any],
+        upsert: bool = False,
+        return_document: bool = False,
+    ) -> dict[str, Any] | None:
+        found_doc = None
+        for doc in self.docs:
+            if _doc_matches(doc, query):
+                found_doc = doc
+                break
+
+        if not found_doc:
+            if upsert:
+                new_doc = deepcopy(query)
+                if "_id" not in new_doc:
+                    new_doc["_id"] = ObjectId()
+                self.docs.append(new_doc)
+                found_doc = new_doc
+            else:
+                return None
+
+        if "$set" in update:
+            found_doc.update(update["$set"])
+        if "$inc" in update:
+            for field, val in update["$inc"].items():
+                found_doc[field] = found_doc.get(field, 0) + val
+
+        return deepcopy(found_doc)
 
     async def insert_one(self, document: dict[str, Any]) -> InsertOneResult:
         doc = deepcopy(document)
