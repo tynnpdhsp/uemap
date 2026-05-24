@@ -13,7 +13,6 @@ export const StudentLayout: React.FC = () => {
 
   return (
     <div className="flex flex-col min-h-screen bg-gray-50">
-      {/* Header / Navbar */}
       <nav className="bg-white border-b border-gray-100 shadow-sm sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between h-16">
@@ -29,8 +28,26 @@ export const StudentLayout: React.FC = () => {
               {isAuthenticated ? (
                 <>
                   <Link
+                    to="/my/places"
+                    className="text-sm font-bold text-gray-600 hover:text-blue-600 transition"
+                  >
+                    Địa điểm
+                  </Link>
+                  <Link
+                    to="/my/comments"
+                    className="text-sm font-bold text-gray-600 hover:text-blue-600 transition"
+                  >
+                    Bình luận
+                  </Link>
+                  <Link
+                    to="/my/reports"
+                    className="text-sm font-bold text-gray-600 hover:text-blue-600 transition"
+                  >
+                    Báo cáo
+                  </Link>
+                  <Link
                     to="/profile"
-                    className="text-sm font-semibold text-gray-700 hover:text-blue-600 transition"
+                    className="text-sm font-bold text-gray-700 hover:text-blue-600 transition bg-gray-50 border border-gray-200/60 px-3 py-2 rounded-xl"
                   >
                     Chào, {student?.full_name || "Sinh viên"}
                   </Link>
@@ -62,12 +79,10 @@ export const StudentLayout: React.FC = () => {
         </div>
       </nav>
 
-      {/* Main Content */}
       <main className="flex-grow">
         <Outlet />
       </main>
 
-      {/* Footer */}
       <footer className="bg-gray-900 text-white text-center py-6 text-sm border-t border-gray-800">
         <p>
           &copy; {new Date().getFullYear()} Bản đồ Sinh viên Sư phạm (HCMUE).
