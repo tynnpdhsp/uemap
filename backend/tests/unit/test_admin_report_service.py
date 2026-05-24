@@ -36,8 +36,12 @@ async def _seed_report(mock_db, **overrides):
     doc.update(overrides)
     await mock_db["reports"].insert_one(doc)
 
-    await mock_db["students"].insert_one({"_id": doc["reporter_student_id"], "email": "sv@test.vn", "created_at": now})
-    await mock_db["places"].insert_one({"_id": place_id, "public_id": 1, "name": "Quán", "status": "published"})
+    await mock_db["students"].insert_one(
+        {"_id": doc["reporter_student_id"], "email": "sv@test.vn", "created_at": now}
+    )
+    await mock_db["places"].insert_one(
+        {"_id": place_id, "public_id": 1, "name": "Quán", "status": "published"}
+    )
 
     return doc
 
@@ -45,7 +49,9 @@ async def _seed_report(mock_db, **overrides):
 @pytest.mark.asyncio
 async def test_update_report_new_to_in_progress(mock_db):
     report = await _seed_report(mock_db)
-    result = await admin_report_service.update_report(str(report["_id"]), "in_progress", None, ADMIN_ID, IP)
+    result = await admin_report_service.update_report(
+        str(report["_id"]), "in_progress", None, ADMIN_ID, IP
+    )
     assert result["status"] == "in_progress"
 
 
@@ -53,7 +59,11 @@ async def test_update_report_new_to_in_progress(mock_db):
 async def test_update_report_in_progress_to_resolved(mock_db):
     report = await _seed_report(mock_db, status="in_progress")
     result = await admin_report_service.update_report(
-        str(report["_id"]), "resolved", "Đã xử lý vi phạm xong rồi nhé", ADMIN_ID, IP,
+        str(report["_id"]),
+        "resolved",
+        "Đã xử lý vi phạm xong rồi nhé",
+        ADMIN_ID,
+        IP,
     )
     assert result["status"] == "resolved"
     assert result["admin_note"] == "Đã xử lý vi phạm xong rồi nhé"
@@ -73,7 +83,11 @@ async def test_update_report_invalid_transition_new_to_resolved(mock_db):
     report = await _seed_report(mock_db, status="new")
     with pytest.raises(HTTPException) as exc:
         await admin_report_service.update_report(
-            str(report["_id"]), "resolved", "Ghi chú xử lý dài dài cho đủ", ADMIN_ID, IP,
+            str(report["_id"]),
+            "resolved",
+            "Ghi chú xử lý dài dài cho đủ",
+            ADMIN_ID,
+            IP,
         )
     assert exc.value.detail["error"]["code"] == "REPORT_INVALID_STATUS"
 
@@ -82,7 +96,9 @@ async def test_update_report_invalid_transition_new_to_resolved(mock_db):
 async def test_update_report_invalid_transition_resolved_to_any(mock_db):
     report = await _seed_report(mock_db, status="resolved")
     with pytest.raises(HTTPException) as exc:
-        await admin_report_service.update_report(str(report["_id"]), "in_progress", None, ADMIN_ID, IP)
+        await admin_report_service.update_report(
+            str(report["_id"]), "in_progress", None, ADMIN_ID, IP
+        )
     assert exc.value.detail["error"]["code"] == "REPORT_INVALID_STATUS"
 
 
@@ -127,7 +143,9 @@ async def test_list_reports_empty(mock_db):
 @pytest.mark.asyncio
 async def test_list_reports_with_status_filter(mock_db):
     await _seed_report(mock_db, status="new", report_code="RP-001")
-    await _seed_report(mock_db, status="resolved", report_code="RP-002", reporter_student_id=ObjectId())
+    await _seed_report(
+        mock_db, status="resolved", report_code="RP-002", reporter_student_id=ObjectId()
+    )
     result = await admin_report_service.list_reports({"page": 1, "page_size": 20, "status": "new"})
     assert result["meta"]["total"] == 1
     assert result["items"][0]["report_code"] == "RP-001"
@@ -137,14 +155,24 @@ async def test_list_reports_with_status_filter(mock_db):
 async def test_execute_action_soft_delete_comment(mock_db):
     comment_id = ObjectId()
     now = datetime.utcnow()
-    await mock_db["comments"].insert_one({
-        "_id": comment_id, "content": "Xấu quá", "status": "visible",
-        "place_public_id": 1, "created_at": now, "updated_at": now,
-    })
+    await mock_db["comments"].insert_one(
+        {
+            "_id": comment_id,
+            "content": "Xấu quá",
+            "status": "visible",
+            "place_public_id": 1,
+            "created_at": now,
+            "updated_at": now,
+        }
+    )
     report = await _seed_report(mock_db, target_type="comment", target_comment_id=comment_id)
 
     result = await admin_report_service.execute_action(
-        str(report["_id"]), "soft_delete_comment", "Vi phạm nội quy cộng đồng", ADMIN_ID, IP,
+        str(report["_id"]),
+        "soft_delete_comment",
+        "Vi phạm nội quy cộng đồng",
+        ADMIN_ID,
+        IP,
     )
     assert result["success"] is True
 
@@ -160,7 +188,11 @@ async def test_execute_action_hide_place(mock_db):
     mock_hide = AsyncMock()
     with patch("app.services.admin_place_service.hide_place", mock_hide):
         await admin_report_service.execute_action(
-            str(report["_id"]), "hide_place", "Vi phạm nội quy cộng đồng", ADMIN_ID, IP,
+            str(report["_id"]),
+            "hide_place",
+            "Vi phạm nội quy cộng đồng",
+            ADMIN_ID,
+            IP,
         )
     mock_hide.assert_called_once_with(1, "Vi phạm nội quy cộng đồng", ADMIN_ID, IP)
 
@@ -169,7 +201,9 @@ async def test_execute_action_hide_place(mock_db):
 async def test_execute_action_invalid(mock_db):
     report = await _seed_report(mock_db, place_public_id=None)
     with pytest.raises(HTTPException) as exc:
-        await admin_report_service.execute_action(str(report["_id"]), "hide_place", "Lý do rất dài", ADMIN_ID, IP)
+        await admin_report_service.execute_action(
+            str(report["_id"]), "hide_place", "Lý do rất dài", ADMIN_ID, IP
+        )
     assert exc.value.detail["error"]["code"] == "REPORT_INVALID_STATUS"
 
 

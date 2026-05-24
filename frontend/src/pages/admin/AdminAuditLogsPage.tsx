@@ -1,5 +1,8 @@
 import React, { useEffect, useState, useCallback } from "react";
-import { adminAuditLogsApi, type AuditLogItem } from "../../api/admin/auditLogs";
+import {
+  adminAuditLogsApi,
+  type AuditLogItem,
+} from "../../api/admin/auditLogs";
 import { getErrorMessage } from "../../utils/errorMessage";
 import { Loader, ScrollText, Download } from "lucide-react";
 
@@ -11,24 +14,33 @@ export const AdminAuditLogsPage: React.FC = () => {
   const [eventCodeFilter, setEventCodeFilter] = useState("");
   const [exporting, setExporting] = useState(false);
 
-  const load = useCallback(async (p: number) => {
-    setLoading(true);
-    try {
-      const params: Record<string, string> = { page: String(p), page_size: "50" };
-      if (eventCodeFilter) params.event_code = eventCodeFilter;
-      const res = await adminAuditLogsApi.list(params);
-      if (res.success && res.data) {
-        setLogs(res.data.data);
-        setTotal(res.data.meta.total);
-        setPage(res.data.meta.page);
+  const load = useCallback(
+    async (p: number) => {
+      setLoading(true);
+      try {
+        const params: Record<string, string> = {
+          page: String(p),
+          page_size: "50",
+        };
+        if (eventCodeFilter) params.event_code = eventCodeFilter;
+        const res = await adminAuditLogsApi.list(params);
+        if (res.success && res.data) {
+          setLogs(res.data.data);
+          setTotal(res.data.meta.total);
+          setPage(res.data.meta.page);
+        }
+      } catch {
+        void 0;
+      } finally {
+        setLoading(false);
       }
-    } catch {
-    } finally {
-      setLoading(false);
-    }
-  }, [eventCodeFilter]);
+    },
+    [eventCodeFilter],
+  );
 
-  useEffect(() => { load(1); }, [load]);
+  useEffect(() => {
+    load(1);
+  }, [load]);
 
   const handleExport = async () => {
     setExporting(true);
@@ -49,17 +61,29 @@ export const AdminAuditLogsPage: React.FC = () => {
 
   const getResultBadge = (result: string) => {
     if (result === "success") {
-      return <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-green-50 text-green-700 border border-green-100">OK</span>;
+      return (
+        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-green-50 text-green-700 border border-green-100">
+          OK
+        </span>
+      );
     }
-    return <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-red-50 text-red-700 border border-red-100">FAIL</span>;
+    return (
+      <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-red-50 text-red-700 border border-red-100">
+        FAIL
+      </span>
+    );
   };
 
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-black text-gray-800 tracking-tight">Nhật ký hệ thống</h1>
-          <p className="text-sm text-gray-500 mt-1">Theo dõi các sự kiện và hoạt động trên hệ thống</p>
+          <h1 className="text-2xl font-black text-gray-800 tracking-tight">
+            Nhật ký hệ thống
+          </h1>
+          <p className="text-sm text-gray-500 mt-1">
+            Theo dõi các sự kiện và hoạt động trên hệ thống
+          </p>
         </div>
         <button
           onClick={handleExport}
@@ -74,7 +98,9 @@ export const AdminAuditLogsPage: React.FC = () => {
       <div className="bg-white rounded-3xl shadow-xl border border-gray-100 overflow-hidden">
         <div className="p-6 border-b border-gray-100 bg-gray-50/50 flex flex-wrap gap-4 items-center justify-between">
           <div className="flex items-center gap-2">
-            <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">Mã sự kiện:</span>
+            <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">
+              Mã sự kiện:
+            </span>
             <input
               type="text"
               placeholder="e.g. ADMIN_LOGIN"
@@ -83,7 +109,9 @@ export const AdminAuditLogsPage: React.FC = () => {
               onChange={(e) => setEventCodeFilter(e.target.value)}
             />
           </div>
-          <div className="text-xs text-gray-400 font-bold">Tổng số: {total}</div>
+          <div className="text-xs text-gray-400 font-bold">
+            Tổng số: {total}
+          </div>
         </div>
 
         {loading ? (
@@ -105,13 +133,26 @@ export const AdminAuditLogsPage: React.FC = () => {
               </thead>
               <tbody className="divide-y divide-gray-100 text-xs">
                 {logs.map((log) => (
-                  <tr key={log.id} className="hover:bg-gray-50/30 transition-colors">
-                    <td className="py-3 px-4 text-gray-400 whitespace-nowrap">{log.occurred_at_display}</td>
-                    <td className="py-3 px-4 font-bold text-gray-800">{log.event_code}</td>
-                    <td className="py-3 px-4 text-gray-500">{log.actor_role}</td>
+                  <tr
+                    key={log.id}
+                    className="hover:bg-gray-50/30 transition-colors"
+                  >
+                    <td className="py-3 px-4 text-gray-400 whitespace-nowrap">
+                      {log.occurred_at_display}
+                    </td>
+                    <td className="py-3 px-4 font-bold text-gray-800">
+                      {log.event_code}
+                    </td>
+                    <td className="py-3 px-4 text-gray-500">
+                      {log.actor_role}
+                    </td>
                     <td className="py-3 px-4">{getResultBadge(log.result)}</td>
-                    <td className="py-3 px-4 text-gray-600 max-w-xs truncate">{log.description}</td>
-                    <td className="py-3 px-4 text-gray-400 font-mono">{log.ip_address}</td>
+                    <td className="py-3 px-4 text-gray-600 max-w-xs truncate">
+                      {log.description}
+                    </td>
+                    <td className="py-3 px-4 text-gray-400 font-mono">
+                      {log.ip_address}
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -142,7 +183,9 @@ export const AdminAuditLogsPage: React.FC = () => {
         ) : (
           <div className="p-12 text-center">
             <ScrollText className="w-12 h-12 text-gray-300 mx-auto mb-4" />
-            <h3 className="text-base font-bold text-gray-700 mb-1">Chưa có nhật ký nào</h3>
+            <h3 className="text-base font-bold text-gray-700 mb-1">
+              Chưa có nhật ký nào
+            </h3>
           </div>
         )}
       </div>

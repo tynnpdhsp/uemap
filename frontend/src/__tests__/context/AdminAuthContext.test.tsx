@@ -1,6 +1,10 @@
 import { render, screen, waitFor, act } from "@testing-library/react";
-import { AdminAuthProvider, useAdminAuth } from "../../context/AdminAuthContext";
-import { adminAuthApi } from "../../api/admin/auth";
+import {
+  AdminAuthProvider,
+  useAdminAuth,
+} from "../../context/AdminAuthContext";
+import { adminAuthApi, type AdminInfo } from "../../api/admin/auth";
+import type { APIResponse } from "../../api/client";
 
 jest.mock("../../api/admin/auth", () => ({
   adminAuthApi: {
@@ -12,7 +16,7 @@ jest.mock("../../api/admin/auth", () => ({
 
 const mockedApi = adminAuthApi as jest.Mocked<typeof adminAuthApi>;
 
-const adminProfile = {
+const adminProfile: AdminInfo = {
   id: "665000000000000000000001",
   username: "sysadmin",
   display_name: "Admin Test",
@@ -29,7 +33,9 @@ function Probe() {
       <span data-testid="loading">{String(auth.loading)}</span>
       <span data-testid="authenticated">{String(auth.isAuthenticated)}</span>
       <span data-testid="name">{auth.admin?.display_name ?? ""}</span>
-      <span data-testid="system-admin">{String(auth.admin?.is_system_admin ?? "")}</span>
+      <span data-testid="system-admin">
+        {String(auth.admin?.is_system_admin ?? "")}
+      </span>
       <button type="button" onClick={() => auth.login("sysadmin", "pass123")}>
         login
       </button>
@@ -72,7 +78,10 @@ describe("AdminAuthContext", () => {
 
   it("có token thì gọi /me và set admin profile", async () => {
     sessionStorage.setItem("admin_access_token", "admin-tok");
-    mockedApi.me.mockResolvedValue({ success: true, data: adminProfile } as any);
+    mockedApi.me.mockResolvedValue({
+      success: true,
+      data: adminProfile,
+    } satisfies APIResponse<AdminInfo>);
 
     render(
       <AdminAuthProvider>
@@ -108,7 +117,7 @@ describe("AdminAuthContext", () => {
     mockedApi.login.mockResolvedValue({
       success: true,
       data: { access_token: "new-admin-tok", admin: adminProfile },
-    } as any);
+    });
 
     render(
       <AdminAuthProvider>
@@ -125,7 +134,9 @@ describe("AdminAuthContext", () => {
     });
 
     await waitFor(() => {
-      expect(sessionStorage.getItem("admin_access_token")).toBe("new-admin-tok");
+      expect(sessionStorage.getItem("admin_access_token")).toBe(
+        "new-admin-tok",
+      );
       expect(screen.getByTestId("authenticated")).toHaveTextContent("true");
       expect(screen.getByTestId("name")).toHaveTextContent("Admin Test");
     });
@@ -133,7 +144,10 @@ describe("AdminAuthContext", () => {
 
   it("logout xóa token dù API lỗi", async () => {
     sessionStorage.setItem("admin_access_token", "admin-tok");
-    mockedApi.me.mockResolvedValue({ success: true, data: adminProfile } as any);
+    mockedApi.me.mockResolvedValue({
+      success: true,
+      data: adminProfile,
+    } satisfies APIResponse<AdminInfo>);
     mockedApi.logout.mockRejectedValue(new Error("network"));
 
     render(
@@ -160,8 +174,9 @@ describe("AdminAuthContext", () => {
   it("login không lưu token nếu API trả success: false", async () => {
     mockedApi.login.mockResolvedValue({
       success: false,
+      data: { access_token: "", admin: adminProfile },
       error: { code: "AUTH_FAILED", message: "Sai mật khẩu", details: [] },
-    } as any);
+    });
 
     render(
       <AdminAuthProvider>

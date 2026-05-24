@@ -1,7 +1,6 @@
 import pytest
 from httpx import ASGITransport, AsyncClient
 
-from app.core.database import get_db
 from app.main import app
 from tests.integration.admin_helpers import (
     admin_login,
@@ -25,10 +24,14 @@ async def test_map_config_read_and_update():
         res = await client.get("/api/admin/config/map", headers=h)
         assert res.status_code == 200
 
-        res = await client.patch("/api/admin/config/map", headers=h, json={
-            "default_zoom": 16,
-            "default_center": {"lat": 10.77, "lng": 106.69},
-        })
+        res = await client.patch(
+            "/api/admin/config/map",
+            headers=h,
+            json={
+                "default_zoom": 16,
+                "default_center": {"lat": 10.77, "lng": 106.69},
+            },
+        )
         assert res.status_code == 200
         data = res.json()["data"]
         assert data["default_zoom"] == 16
@@ -47,13 +50,17 @@ async def test_email_templates_read_and_update():
         res = await client.get("/api/admin/config/email-templates", headers=h)
         assert res.status_code == 200
 
-        res = await client.patch("/api/admin/config/email-templates", headers=h, json={
-            "activation": {
-                "subject": "Kích hoạt tài khoản",
-                "html_body": "<p>Xin chào {full_name}, mã: {otp_code}</p>",
-                "text_body": "Xin chào {full_name}, mã: {otp_code}",
+        res = await client.patch(
+            "/api/admin/config/email-templates",
+            headers=h,
+            json={
+                "activation": {
+                    "subject": "Kích hoạt tài khoản",
+                    "html_body": "<p>Xin chào {full_name}, mã: {otp_code}</p>",
+                    "text_body": "Xin chào {full_name}, mã: {otp_code}",
+                },
             },
-        })
+        )
         assert res.status_code == 200
         data = res.json()["data"]
         assert data["activation"]["subject"] == "Kích hoạt tài khoản"
@@ -68,13 +75,17 @@ async def test_email_templates_missing_placeholder():
         token = await admin_login(client)
         h = auth(token)
 
-        res = await client.patch("/api/admin/config/email-templates", headers=h, json={
-            "activation": {
-                "subject": "Bad template",
-                "html_body": "<p>Không có placeholder</p>",
-                "text_body": "Không có",
+        res = await client.patch(
+            "/api/admin/config/email-templates",
+            headers=h,
+            json={
+                "activation": {
+                    "subject": "Bad template",
+                    "html_body": "<p>Không có placeholder</p>",
+                    "text_body": "Không có",
+                },
             },
-        })
+        )
         assert res.status_code == 400
         assert res.json()["error"]["code"] == "VALIDATION_ERROR"
 

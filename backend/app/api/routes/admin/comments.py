@@ -29,6 +29,7 @@ async def list_comments(
         query["place_public_id"] = place_public_id
     if student_id:
         from bson import ObjectId
+
         query["student_id"] = ObjectId(student_id)
     if status_filter:
         query["status"] = status_filter
@@ -43,20 +44,27 @@ async def list_comments(
     comments = await cursor.to_list(page_size)
 
     from datetime import timedelta
+
     items = []
     for c in comments:
         vn_time = c["created_at"] + timedelta(hours=7)
-        items.append({
-            "id": str(c["_id"]),
-            "place_public_id": c["place_public_id"],
-            "author_display_name": c["author_display_name"],
-            "content": c["content"],
-            "status": c["status"],
-            "admin_delete_reason": c.get("admin_delete_reason"),
-            "created_at_display": vn_time.strftime("%d/%m/%Y %H:%M"),
-        })
+        items.append(
+            {
+                "id": str(c["_id"]),
+                "place_public_id": c["place_public_id"],
+                "author_display_name": c["author_display_name"],
+                "content": c["content"],
+                "status": c["status"],
+                "admin_delete_reason": c.get("admin_delete_reason"),
+                "created_at_display": vn_time.strftime("%d/%m/%Y %H:%M"),
+            }
+        )
 
-    return {"success": True, "data": items, "meta": {"page": page, "page_size": page_size, "total": total}}
+    return {
+        "success": True,
+        "data": items,
+        "meta": {"page": page, "page_size": page_size, "total": total},
+    }
 
 
 @router.delete("/{comment_id}", status_code=status.HTTP_204_NO_CONTENT)
@@ -67,6 +75,7 @@ async def delete_comment(
     admin_delete_reason: str = Body(..., min_length=10, max_length=500, embed=True),
 ):
     from bson import ObjectId
+
     ip = request.client.host if request.client else "127.0.0.1"
     db = get_db()
 
@@ -74,17 +83,46 @@ async def delete_comment(
         oid = ObjectId(comment_id)
     except Exception:
         from fastapi import HTTPException
-        raise HTTPException(status_code=404, detail={"success": False, "error": {"code": "COMMENT_NOT_FOUND", "message": "Không tìm thấy bình luận.", "details": []}})
+
+        raise HTTPException(
+            status_code=404,
+            detail={
+                "success": False,
+                "error": {
+                    "code": "COMMENT_NOT_FOUND",
+                    "message": "Không tìm thấy bình luận.",
+                    "details": [],
+                },
+            },
+        )
 
     comment = await db["comments"].find_one({"_id": oid, "status": "visible"})
     if not comment:
         from fastapi import HTTPException
-        raise HTTPException(status_code=404, detail={"success": False, "error": {"code": "COMMENT_NOT_FOUND", "message": "Không tìm thấy bình luận hoặc đã bị xóa.", "details": []}})
+
+        raise HTTPException(
+            status_code=404,
+            detail={
+                "success": False,
+                "error": {
+                    "code": "COMMENT_NOT_FOUND",
+                    "message": "Không tìm thấy bình luận hoặc đã bị xóa.",
+                    "details": [],
+                },
+            },
+        )
 
     now = datetime.utcnow()
     await db["comments"].update_one(
         {"_id": oid},
-        {"$set": {"status": "deleted", "admin_delete_reason": admin_delete_reason, "deleted_at": now, "updated_at": now}},
+        {
+            "$set": {
+                "status": "deleted",
+                "admin_delete_reason": admin_delete_reason,
+                "deleted_at": now,
+                "updated_at": now,
+            }
+        },
     )
 
     await audit_service.log_event(

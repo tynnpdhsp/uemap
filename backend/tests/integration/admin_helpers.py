@@ -1,11 +1,10 @@
 from datetime import datetime
 
 from bson import ObjectId
-from httpx import ASGITransport, AsyncClient
+from httpx import AsyncClient
 
 from app.core.database import get_db
 from app.core.security import hash_password
-from app.main import app
 
 ADMIN_USERNAME = "testadmin"
 ADMIN_PASSWORD = "adminpass123"
@@ -28,23 +27,29 @@ async def clean_admin_db() -> None:
 async def seed_system_admin() -> ObjectId:
     db = get_db()
     now = datetime.utcnow()
-    result = await db["admins"].insert_one({
-        "username": ADMIN_USERNAME,
-        "password_hash": hash_password(ADMIN_PASSWORD),
-        "display_name": ADMIN_DISPLAY,
-        "is_system_admin": True,
-        "status": "active",
-        "last_login_at": None,
-        "created_at": now,
-        "updated_at": now,
-    })
+    result = await db["admins"].insert_one(
+        {
+            "username": ADMIN_USERNAME,
+            "password_hash": hash_password(ADMIN_PASSWORD),
+            "display_name": ADMIN_DISPLAY,
+            "is_system_admin": True,
+            "status": "active",
+            "last_login_at": None,
+            "created_at": now,
+            "updated_at": now,
+        }
+    )
     return result.inserted_id
 
 
 async def admin_login(client: AsyncClient) -> str:
-    res = await client.post("/api/admin/auth/login", json={
-        "username": ADMIN_USERNAME, "password": ADMIN_PASSWORD,
-    })
+    res = await client.post(
+        "/api/admin/auth/login",
+        json={
+            "username": ADMIN_USERNAME,
+            "password": ADMIN_PASSWORD,
+        },
+    )
     assert res.status_code == 200, res.text
     return res.json()["data"]["access_token"]
 
@@ -53,17 +58,21 @@ def auth(token: str) -> dict[str, str]:
     return {"Authorization": f"Bearer {token}"}
 
 
-async def seed_student(email: str = "inttest_sv@student.hcmue.edu.vn", status: str = "active") -> ObjectId:
+async def seed_student(
+    email: str = "inttest_sv@student.hcmue.edu.vn", status: str = "active"
+) -> ObjectId:
     db = get_db()
     now = datetime.utcnow()
-    result = await db["students"].insert_one({
-        "email": email,
-        "password_hash": hash_password("password123"),
-        "full_name": "IntTest SV",
-        "status": status,
-        "locked_reason": None,
-        "activated_at": now if status == "active" else None,
-        "created_at": now,
-        "updated_at": now,
-    })
+    result = await db["students"].insert_one(
+        {
+            "email": email,
+            "password_hash": hash_password("password123"),
+            "full_name": "IntTest SV",
+            "status": status,
+            "locked_reason": None,
+            "activated_at": now if status == "active" else None,
+            "created_at": now,
+            "updated_at": now,
+        }
+    )
     return result.inserted_id

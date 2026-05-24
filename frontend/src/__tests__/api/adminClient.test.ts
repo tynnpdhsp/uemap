@@ -39,7 +39,10 @@ describe("adminClient", () => {
       }),
     );
 
-    const res = await adminApi.get<{ data: any[]; meta: any }>("/admin/audit-logs");
+    const res = await adminApi.get<{
+      data: { id: string }[];
+      meta: { page: number; page_size: number; total: number };
+    }>("/admin/audit-logs");
     expect(res.success).toBe(true);
     expect(res.data).toEqual({
       data: [{ id: "1" }],
@@ -62,12 +65,17 @@ describe("adminClient", () => {
       jsonResponse({ success: true, data: { access_token: "t1" } }),
     );
 
-    await adminApi.post("/admin/auth/login", { username: "admin", password: "pass" });
+    await adminApi.post("/admin/auth/login", {
+      username: "admin",
+      password: "pass",
+    });
 
     const [url, init] = mockFetch.mock.calls[0] as [string, RequestInit];
     expect(url).toBe("/api/admin/auth/login");
     expect(init.method).toBe("POST");
-    expect(init.body).toBe(JSON.stringify({ username: "admin", password: "pass" }));
+    expect(init.body).toBe(
+      JSON.stringify({ username: "admin", password: "pass" }),
+    );
   });
 
   it("xóa token và chuyển /admin/login khi 401", async () => {
@@ -75,7 +83,14 @@ describe("adminClient", () => {
     window.location = { pathname: "/admin/dashboard", href: "" } as Location;
     mockFetch.mockResolvedValue(
       jsonResponse(
-        { success: false, error: { code: "UNAUTHORIZED", message: "Token hết hạn", details: [] } },
+        {
+          success: false,
+          error: {
+            code: "UNAUTHORIZED",
+            message: "Token hết hạn",
+            details: [],
+          },
+        },
         401,
       ),
     );
@@ -87,9 +102,15 @@ describe("adminClient", () => {
 
   it("không redirect 401 khi đang ở /admin/login", async () => {
     sessionStorage.setItem("admin_access_token", "expired");
-    window.location = { pathname: "/admin/login", href: "/admin/login" } as Location;
+    window.location = {
+      pathname: "/admin/login",
+      href: "/admin/login",
+    } as Location;
     mockFetch.mockResolvedValue(
-      jsonResponse({ success: false, error: { message: "Unauthorized", details: [] } }, 401),
+      jsonResponse(
+        { success: false, error: { message: "Unauthorized", details: [] } },
+        401,
+      ),
     );
 
     await expect(adminApi.get("/admin/auth/me")).rejects.toThrow();
@@ -99,19 +120,30 @@ describe("adminClient", () => {
   it("ném lỗi với message từ API response", async () => {
     mockFetch.mockResolvedValue(
       jsonResponse(
-        { success: false, error: { code: "RATE_LIMIT", message: "Quá nhiều lần thử", details: [] } },
+        {
+          success: false,
+          error: {
+            code: "RATE_LIMIT",
+            message: "Quá nhiều lần thử",
+            details: [],
+          },
+        },
         429,
       ),
     );
 
-    await expect(adminApi.post("/admin/auth/login", {})).rejects.toThrow("Quá nhiều lần thử");
+    await expect(adminApi.post("/admin/auth/login", {})).rejects.toThrow(
+      "Quá nhiều lần thử",
+    );
   });
 
   it("xử lý JSON parse lỗi", async () => {
     mockFetch.mockResolvedValue({
       ok: false,
       status: 500,
-      json: async () => { throw new Error("invalid json"); },
+      json: async () => {
+        throw new Error("invalid json");
+      },
     });
 
     await expect(adminApi.get("/admin/dashboard/stats")).rejects.toThrow(
@@ -140,7 +172,11 @@ describe("adminClient", () => {
   it("getBlob trả về blob khi thành công", async () => {
     const fakeBlob = new Blob(["csv data"], { type: "text/csv" });
     sessionStorage.setItem("admin_access_token", "tok");
-    mockFetch.mockResolvedValue({ ok: true, status: 200, blob: async () => fakeBlob });
+    mockFetch.mockResolvedValue({
+      ok: true,
+      status: 200,
+      blob: async () => fakeBlob,
+    });
 
     const result = await adminApi.getBlob("/admin/audit-logs/export");
     expect(result).toBe(fakeBlob);

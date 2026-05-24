@@ -15,7 +15,9 @@ async def list_admins() -> list:
     return [_format_admin(a) for a in admins]
 
 
-async def create_admin(username: str, password: str, display_name: str, admin_id: ObjectId, ip_address: str) -> dict:
+async def create_admin(
+    username: str, password: str, display_name: str, admin_id: ObjectId, ip_address: str
+) -> dict:
     db = get_db()
 
     existing = await db["admins"].find_one({"username": username})
@@ -67,14 +69,28 @@ async def update_admin(target_id: str, data: dict, admin_id: ObjectId, ip_addres
     except Exception:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail={"success": False, "error": {"code": "ADMIN_NOT_FOUND", "message": "Không tìm thấy tài khoản quản trị.", "details": []}},
+            detail={
+                "success": False,
+                "error": {
+                    "code": "ADMIN_NOT_FOUND",
+                    "message": "Không tìm thấy tài khoản quản trị.",
+                    "details": [],
+                },
+            },
         )
 
     admin_doc = await db["admins"].find_one({"_id": target_oid})
     if not admin_doc:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail={"success": False, "error": {"code": "ADMIN_NOT_FOUND", "message": "Không tìm thấy tài khoản quản trị.", "details": []}},
+            detail={
+                "success": False,
+                "error": {
+                    "code": "ADMIN_NOT_FOUND",
+                    "message": "Không tìm thấy tài khoản quản trị.",
+                    "details": [],
+                },
+            },
         )
 
     update_fields: dict = {"updated_at": datetime.utcnow()}
@@ -97,6 +113,18 @@ async def update_admin(target_id: str, data: dict, admin_id: ObjectId, ip_addres
     )
 
     updated = await db["admins"].find_one({"_id": target_oid})
+    if not updated:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail={
+                "success": False,
+                "error": {
+                    "code": "ADMIN_NOT_FOUND",
+                    "message": "Không tìm thấy tài khoản quản trị.",
+                    "details": [],
+                },
+            },
+        )
     return _format_admin(updated)
 
 
@@ -107,7 +135,14 @@ async def disable_admin(target_id: str, admin_id: ObjectId, ip_address: str) -> 
     except Exception:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail={"success": False, "error": {"code": "ADMIN_NOT_FOUND", "message": "Không tìm thấy tài khoản quản trị.", "details": []}},
+            detail={
+                "success": False,
+                "error": {
+                    "code": "ADMIN_NOT_FOUND",
+                    "message": "Không tìm thấy tài khoản quản trị.",
+                    "details": [],
+                },
+            },
         )
 
     if target_oid == admin_id:
@@ -127,11 +162,20 @@ async def disable_admin(target_id: str, admin_id: ObjectId, ip_address: str) -> 
     if not admin_doc:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail={"success": False, "error": {"code": "ADMIN_NOT_FOUND", "message": "Không tìm thấy tài khoản quản trị.", "details": []}},
+            detail={
+                "success": False,
+                "error": {
+                    "code": "ADMIN_NOT_FOUND",
+                    "message": "Không tìm thấy tài khoản quản trị.",
+                    "details": [],
+                },
+            },
         )
 
     if admin_doc.get("is_system_admin"):
-        active_sys_count = await db["admins"].count_documents({"is_system_admin": True, "status": "active"})
+        active_sys_count = await db["admins"].count_documents(
+            {"is_system_admin": True, "status": "active"}
+        )
         if active_sys_count <= 1:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,

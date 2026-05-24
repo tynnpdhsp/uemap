@@ -36,13 +36,17 @@ async def lock_student(
     locked_reason: str = Body(..., min_length=10, max_length=500, embed=True),
 ):
     ip = request.client.host if request.client else "127.0.0.1"
-    data = await admin_student_service.lock_student(student_id, locked_reason, current_admin["_id"], ip)
+    data = await admin_student_service.lock_student(
+        student_id, locked_reason, current_admin["_id"], ip
+    )
     return {"success": True, "data": data}
 
 
 @router.patch("/{student_id}/unlock")
 async def unlock_student(
-    student_id: str, request: Request, current_admin: dict = Depends(get_current_admin),
+    student_id: str,
+    request: Request,
+    current_admin: dict = Depends(get_current_admin),
 ):
     ip = request.client.host if request.client else "127.0.0.1"
     data = await admin_student_service.unlock_student(student_id, current_admin["_id"], ip)

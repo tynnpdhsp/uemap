@@ -1,8 +1,59 @@
 import type { APIErrorDetail, APIResponse } from "./client";
 
-type RequestBody = any;
+type RequestBody =
+  | Record<string, unknown>
+  | unknown[]
+  | string
+  | number
+  | boolean
+  | null;
+
+interface PaginatedListMeta {
+  page: number;
+  page_size: number;
+  total: number;
+}
+
+export interface AdminClientError extends Error {
+  code?: string;
+}
 
 const API_BASE_URL = "/api";
+
+function isPaginatedResponse(
+  value: unknown,
+): value is APIResponse<unknown[]> & { meta: PaginatedListMeta } {
+  if (typeof value !== "object" || value === null) return false;
+  const record = value as APIResponse<unknown[]>;
+  return (
+    record.success === true &&
+    Array.isArray(record.data) &&
+    "meta" in value &&
+    typeof (value as { meta: unknown }).meta === "object"
+  );
+}
+
+function extractErrorDetail(
+  payload: APIResponse<unknown> & { detail?: unknown },
+): APIErrorDetail {
+  if (payload.error) return payload.error;
+  const detail = payload.detail;
+  if (
+    typeof detail === "object" &&
+    detail !== null &&
+    "error" in detail &&
+    typeof (detail as { error: unknown }).error === "object" &&
+    (detail as { error: APIErrorDetail }).error !== null
+  ) {
+    return (detail as { error: APIErrorDetail }).error;
+  }
+  return {
+    code: "HTTP_ERROR",
+    message:
+      typeof payload.detail === "string" ? payload.detail : "Đã xảy ra lỗi.",
+    details: [],
+  };
+}
 
 async function request<T = unknown>(
   endpoint: string,
@@ -34,57 +85,39 @@ async function request<T = unknown>(
 
   let result: APIResponse<T> | Record<string, unknown>;
   try {
-    result = (await response.json()) as APIResponse<T> | Record<string, unknown>;
-    console.log("[adminClient] Original parsed json for endpoint", endpoint, result);
+    result = (await response.json()) as
+      | APIResponse<T>
+      | Record<string, unknown>;
   } catch {
     result = {
       success: false,
-      error: { code: "PARSE_ERROR", message: "Lỗi xử lý phản hồi từ hệ thống.", details: [] },
+      error: {
+        code: "PARSE_ERROR",
+        message: "Lỗi xử lý phản hồi từ hệ thống.",
+        details: [],
+      },
     };
   }
 
   if (!response.ok) {
-    const payload = result as APIResponse<T> & { detail?: unknown };
-    let errorDetail: APIErrorDetail;
-    if (payload.error) {
-      errorDetail = payload.error;
-    } else if (payload.detail && typeof payload.detail === "object" && (payload.detail as any).error) {
-      errorDetail = (payload.detail as any).error;
-    } else {
-      errorDetail = {
-        code: "HTTP_ERROR",
-        message: typeof payload.detail === "string" ? payload.detail : "Đã xảy ra lỗi.",
-        details: [],
-      };
-    }
-    const err = new Error(errorDetail.message || "Đã xảy ra lỗi.");
-    (err as any).code = errorDetail.code;
+    const errorDetail = extractErrorDetail(
+      result as APIResponse<unknown> & { detail?: unknown },
+    );
+    const err = new Error(
+      errorDetail.message || "Đã xảy ra lỗi.",
+    ) as AdminClientError;
+    err.code = errorDetail.code;
     throw err;
   }
 
-  console.log("[adminClient] Conditions check:", {
-    hasResult: !!result,
-    isObject: typeof result === "object",
-    success: result && (result as any).success,
-    isArrayData: result && Array.isArray((result as any).data),
-    hasMeta: result && !!(result as any).meta
-  });
-
-  if (
-    result &&
-    typeof result === "object" &&
-    result.success &&
-    Array.isArray(result.data) &&
-    result.meta
-  ) {
-    result = {
+  if (isPaginatedResponse(result)) {
+    return {
       success: true,
       data: {
         data: result.data,
         meta: result.meta,
       },
-    } as unknown as APIResponse<T>;
-    console.log("[adminClient] Wrapped result:", result);
+    } as APIResponse<T>;
   }
 
   return result as APIResponse<T>;
@@ -106,21 +139,33 @@ export const adminApi = {
   get: <T = unknown>(endpoint: string, options?: RequestInit) =>
     request<T>(endpoint, { ...options, method: "GET" }),
 
-  post: <T = unknown>(endpoint: string, body?: RequestBody, options?: RequestInit) =>
+  post: <T = unknown>(
+    endpoint: string,
+    body?: RequestBody,
+    options?: RequestInit,
+  ) =>
     request<T>(endpoint, {
       ...options,
       method: "POST",
       body: body ? JSON.stringify(body) : undefined,
     }),
 
-  patch: <T = unknown>(endpoint: string, body?: RequestBody, options?: RequestInit) =>
+  patch: <T = unknown>(
+    endpoint: string,
+    body?: RequestBody,
+    options?: RequestInit,
+  ) =>
     request<T>(endpoint, {
       ...options,
       method: "PATCH",
       body: body ? JSON.stringify(body) : undefined,
     }),
 
-  delete: <T = unknown>(endpoint: string, body?: RequestBody, options?: RequestInit) =>
+  delete: <T = unknown>(
+    endpoint: string,
+    body?: RequestBody,
+    options?: RequestInit,
+  ) =>
     request<T>(endpoint, {
       ...options,
       method: "DELETE",

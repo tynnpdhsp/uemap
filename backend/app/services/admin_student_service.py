@@ -9,7 +9,7 @@ from app.services import audit_service
 STATUS_LABELS = {
     "pending_activation": "chờ kích hoạt",
     "active": "hoạt động",
-    "locked": "đã khóa",
+    "locked": "bị khóa",
 }
 
 
@@ -37,14 +37,16 @@ async def list_students(params: dict) -> dict:
 
     items = []
     for s in students:
-        items.append({
-            "id": str(s["_id"]),
-            "email": s["email"],
-            "full_name": s["full_name"],
-            "status": s["status"],
-            "status_label": STATUS_LABELS.get(s["status"], s["status"]),
-            "created_at_display": _vn_display(s["created_at"]),
-        })
+        items.append(
+            {
+                "id": str(s["_id"]),
+                "email": s["email"],
+                "full_name": s["full_name"],
+                "status": s["status"],
+                "status_label": STATUS_LABELS.get(s["status"], s["status"]),
+                "created_at_display": _vn_display(s["created_at"]),
+            }
+        )
 
     return {
         "items": items,
@@ -59,14 +61,28 @@ async def get_student_detail(student_id: str) -> dict:
     except Exception:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail={"success": False, "error": {"code": "STUDENT_NOT_FOUND", "message": "Không tìm thấy sinh viên.", "details": []}},
+            detail={
+                "success": False,
+                "error": {
+                    "code": "STUDENT_NOT_FOUND",
+                    "message": "Không tìm thấy sinh viên.",
+                    "details": [],
+                },
+            },
         )
 
     student = await db["students"].find_one({"_id": oid})
     if not student:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail={"success": False, "error": {"code": "STUDENT_NOT_FOUND", "message": "Không tìm thấy sinh viên.", "details": []}},
+            detail={
+                "success": False,
+                "error": {
+                    "code": "STUDENT_NOT_FOUND",
+                    "message": "Không tìm thấy sinh viên.",
+                    "details": [],
+                },
+            },
         )
 
     places_count = await db["places"].count_documents({"creator_student_id": oid})
@@ -89,21 +105,37 @@ async def get_student_detail(student_id: str) -> dict:
     }
 
 
-async def lock_student(student_id: str, locked_reason: str, admin_id: ObjectId, ip_address: str) -> dict:
+async def lock_student(
+    student_id: str, locked_reason: str, admin_id: ObjectId, ip_address: str
+) -> dict:
     db = get_db()
     try:
         oid = ObjectId(student_id)
     except Exception:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail={"success": False, "error": {"code": "STUDENT_NOT_FOUND", "message": "Không tìm thấy sinh viên.", "details": []}},
+            detail={
+                "success": False,
+                "error": {
+                    "code": "STUDENT_NOT_FOUND",
+                    "message": "Không tìm thấy sinh viên.",
+                    "details": [],
+                },
+            },
         )
 
     student = await db["students"].find_one({"_id": oid})
     if not student:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail={"success": False, "error": {"code": "STUDENT_NOT_FOUND", "message": "Không tìm thấy sinh viên.", "details": []}},
+            detail={
+                "success": False,
+                "error": {
+                    "code": "STUDENT_NOT_FOUND",
+                    "message": "Không tìm thấy sinh viên.",
+                    "details": [],
+                },
+            },
         )
 
     now = datetime.utcnow()
@@ -138,14 +170,28 @@ async def unlock_student(student_id: str, admin_id: ObjectId, ip_address: str) -
     except Exception:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail={"success": False, "error": {"code": "STUDENT_NOT_FOUND", "message": "Không tìm thấy sinh viên.", "details": []}},
+            detail={
+                "success": False,
+                "error": {
+                    "code": "STUDENT_NOT_FOUND",
+                    "message": "Không tìm thấy sinh viên.",
+                    "details": [],
+                },
+            },
         )
 
     student = await db["students"].find_one({"_id": oid, "status": "locked"})
     if not student:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail={"success": False, "error": {"code": "STUDENT_NOT_FOUND", "message": "Không tìm thấy sinh viên bị khóa.", "details": []}},
+            detail={
+                "success": False,
+                "error": {
+                    "code": "STUDENT_NOT_FOUND",
+                    "message": "Không tìm thấy sinh viên bị khóa.",
+                    "details": [],
+                },
+            },
         )
 
     now = datetime.utcnow()

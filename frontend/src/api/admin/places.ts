@@ -57,7 +57,9 @@ export const adminPlacesApi = {
     adminApi.delete(`/admin/places/${publicId}`),
 
   transferCreator: (publicId: number, new_student_id: string) =>
-    adminApi.patch(`/admin/places/${publicId}/transfer-creator`, { new_student_id }),
+    adminApi.patch(`/admin/places/${publicId}/transfer-creator`, {
+      new_student_id,
+    }),
 };
 
 export type { AdminPlaceListItem, AdminPlaceDetail, PaginatedList };

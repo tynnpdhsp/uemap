@@ -41,8 +41,24 @@ async def _seed_place(mock_db, **overrides):
     doc.update(overrides)
     await mock_db["places"].insert_one(doc)
 
-    await mock_db["categories"].insert_one({"_id": doc["category_id"], "name": "Ăn uống", "is_hidden": False, "created_at": now, "updated_at": now})
-    await mock_db["students"].insert_one({"_id": doc["creator_student_id"], "email": "sv@test.vn", "full_name": "SV", "status": "active", "created_at": now})
+    await mock_db["categories"].insert_one(
+        {
+            "_id": doc["category_id"],
+            "name": "Ăn uống",
+            "is_hidden": False,
+            "created_at": now,
+            "updated_at": now,
+        }
+    )
+    await mock_db["students"].insert_one(
+        {
+            "_id": doc["creator_student_id"],
+            "email": "sv@test.vn",
+            "full_name": "SV",
+            "status": "active",
+            "created_at": now,
+        }
+    )
 
     return doc
 
@@ -50,7 +66,9 @@ async def _seed_place(mock_db, **overrides):
 @pytest.mark.asyncio
 async def test_hide_place_success(mock_db):
     place = await _seed_place(mock_db)
-    await admin_place_service.hide_place(place["public_id"], "Nội dung vi phạm quy định cộng đồng", ADMIN_ID, IP)
+    await admin_place_service.hide_place(
+        place["public_id"], "Nội dung vi phạm quy định cộng đồng", ADMIN_ID, IP
+    )
 
     updated = await mock_db["places"].find_one({"public_id": place["public_id"]})
     assert updated["status"] == "hidden"
@@ -116,9 +134,19 @@ async def test_transfer_creator_success(mock_db):
     place = await _seed_place(mock_db)
     new_student_id = ObjectId()
     now = datetime.utcnow()
-    await mock_db["students"].insert_one({"_id": new_student_id, "email": "new@test.vn", "full_name": "Mới", "status": "active", "created_at": now})
+    await mock_db["students"].insert_one(
+        {
+            "_id": new_student_id,
+            "email": "new@test.vn",
+            "full_name": "Mới",
+            "status": "active",
+            "created_at": now,
+        }
+    )
 
-    await admin_place_service.transfer_creator(place["public_id"], str(new_student_id), ADMIN_ID, IP)
+    await admin_place_service.transfer_creator(
+        place["public_id"], str(new_student_id), ADMIN_ID, IP
+    )
 
     updated = await mock_db["places"].find_one({"public_id": place["public_id"]})
     assert updated["creator_student_id"] == new_student_id
@@ -128,7 +156,9 @@ async def test_transfer_creator_success(mock_db):
 async def test_transfer_creator_student_not_found(mock_db):
     place = await _seed_place(mock_db)
     with pytest.raises(HTTPException) as exc:
-        await admin_place_service.transfer_creator(place["public_id"], str(ObjectId()), ADMIN_ID, IP)
+        await admin_place_service.transfer_creator(
+            place["public_id"], str(ObjectId()), ADMIN_ID, IP
+        )
     assert exc.value.detail["error"]["code"] == "STUDENT_NOT_FOUND"
 
 
@@ -137,7 +167,15 @@ async def test_transfer_creator_student_not_active(mock_db):
     place = await _seed_place(mock_db)
     locked_id = ObjectId()
     now = datetime.utcnow()
-    await mock_db["students"].insert_one({"_id": locked_id, "email": "locked@test.vn", "full_name": "Khóa", "status": "locked", "created_at": now})
+    await mock_db["students"].insert_one(
+        {
+            "_id": locked_id,
+            "email": "locked@test.vn",
+            "full_name": "Khóa",
+            "status": "locked",
+            "created_at": now,
+        }
+    )
 
     with pytest.raises(HTTPException) as exc:
         await admin_place_service.transfer_creator(place["public_id"], str(locked_id), ADMIN_ID, IP)
@@ -174,7 +212,10 @@ async def test_get_place_detail_not_found(mock_db):
 async def test_update_place_basic_fields(mock_db):
     place = await _seed_place(mock_db)
     result = await admin_place_service.update_place(
-        place["public_id"], {"name": "Tên mới", "address": "Địa chỉ mới"}, ADMIN_ID, IP,
+        place["public_id"],
+        {"name": "Tên mới", "address": "Địa chỉ mới"},
+        ADMIN_ID,
+        IP,
     )
     assert result["name"] == "Tên mới"
     assert result["address"] == "Địa chỉ mới"
@@ -198,7 +239,10 @@ async def test_update_place_with_geofence_validation(mock_db):
         AsyncMock(return_value=True),
     ) as mock_geo:
         await admin_place_service.update_place(
-            place["public_id"], {"latitude": 10.77, "longitude": 106.69}, ADMIN_ID, IP,
+            place["public_id"],
+            {"latitude": 10.77, "longitude": 106.69},
+            ADMIN_ID,
+            IP,
         )
     mock_geo.assert_called_once_with(10.77, 106.69)
 
@@ -206,7 +250,9 @@ async def test_update_place_with_geofence_validation(mock_db):
 @pytest.mark.asyncio
 async def test_list_places_returns_paginated(mock_db):
     for i in range(3):
-        await _seed_place(mock_db, public_id=i + 1, category_id=ObjectId(), creator_student_id=ObjectId())
+        await _seed_place(
+            mock_db, public_id=i + 1, category_id=ObjectId(), creator_student_id=ObjectId()
+        )
     result = await admin_place_service.list_places({"page": 1, "page_size": 2})
     assert len(result["items"]) <= 2
     assert result["meta"]["total"] == 3
@@ -215,7 +261,9 @@ async def test_list_places_returns_paginated(mock_db):
 @pytest.mark.asyncio
 async def test_hide_place_audit_log(mock_db):
     place = await _seed_place(mock_db)
-    await admin_place_service.hide_place(place["public_id"], "Vi phạm nội quy cộng đồng", ADMIN_ID, IP)
+    await admin_place_service.hide_place(
+        place["public_id"], "Vi phạm nội quy cộng đồng", ADMIN_ID, IP
+    )
 
     logs = [d for d in mock_db["audit_logs"].docs if d["event_code"] == "PLACE_HIDE"]
     assert len(logs) == 1

@@ -1,4 +1,10 @@
-import React, { createContext, useContext, useState, useEffect, useCallback } from "react";
+import React, {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  useCallback,
+} from "react";
 import { adminAuthApi, type AdminInfo } from "../api/admin/auth";
 import type { APIResponse } from "../api/client";
 
@@ -6,14 +12,21 @@ interface AdminAuthContextType {
   admin: AdminInfo | null;
   isAuthenticated: boolean;
   loading: boolean;
-  login: (username: string, password: string) => Promise<APIResponse<{ access_token: string; admin: AdminInfo }>>;
+  login: (
+    username: string,
+    password: string,
+  ) => Promise<APIResponse<{ access_token: string; admin: AdminInfo }>>;
   logout: () => Promise<void>;
   fetchProfile: () => Promise<void>;
 }
 
-const AdminAuthContext = createContext<AdminAuthContextType | undefined>(undefined);
+const AdminAuthContext = createContext<AdminAuthContextType | undefined>(
+  undefined,
+);
 
-export const AdminAuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+export const AdminAuthProvider: React.FC<{ children: React.ReactNode }> = ({
+  children,
+}) => {
   const [admin, setAdmin] = useState<AdminInfo | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -59,6 +72,7 @@ export const AdminAuthProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     try {
       await adminAuthApi.logout();
     } catch {
+      void 0;
     } finally {
       sessionStorage.removeItem("admin_access_token");
       setAdmin(null);
@@ -67,7 +81,9 @@ export const AdminAuthProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   };
 
   return (
-    <AdminAuthContext.Provider value={{ admin, isAuthenticated, loading, login, logout, fetchProfile }}>
+    <AdminAuthContext.Provider
+      value={{ admin, isAuthenticated, loading, login, logout, fetchProfile }}
+    >
       {children}
     </AdminAuthContext.Provider>
   );

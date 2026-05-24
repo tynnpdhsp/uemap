@@ -27,24 +27,32 @@ async def test_e2e_config_map_full_flow():
         res = await client.get("/api/admin/config/map", headers=h)
         assert res.status_code == 200
 
-        res = await client.patch("/api/admin/config/map", headers=h, json={
-            "default_center": {"lat": 10.77, "lng": 106.69},
-            "default_zoom": 16,
-        })
+        res = await client.patch(
+            "/api/admin/config/map",
+            headers=h,
+            json={
+                "default_center": {"lat": 10.77, "lng": 106.69},
+                "default_zoom": 16,
+            },
+        )
         assert res.status_code == 200
         data = res.json()["data"]
         assert data["default_center"]["lat"] == 10.77
         assert data["default_zoom"] == 16
 
-        res = await client.patch("/api/admin/config/map", headers=h, json={
-            "geofence": {
-                "type": "rectangle",
-                "bounds": {
-                    "sw": {"lat": 10.0, "lng": 106.0},
-                    "ne": {"lat": 11.0, "lng": 107.0},
+        res = await client.patch(
+            "/api/admin/config/map",
+            headers=h,
+            json={
+                "geofence": {
+                    "type": "rectangle",
+                    "bounds": {
+                        "sw": {"lat": 10.0, "lng": 106.0},
+                        "ne": {"lat": 11.0, "lng": 107.0},
+                    },
                 },
             },
-        })
+        )
         assert res.status_code == 200
         assert res.json()["data"]["geofence"]["type"] == "rectangle"
 
@@ -69,23 +77,31 @@ async def test_e2e_config_email_templates_flow():
         res = await client.get("/api/admin/config/email-templates", headers=h)
         assert res.status_code == 200
 
-        res = await client.patch("/api/admin/config/email-templates", headers=h, json={
-            "activation": {
-                "subject": "Kích hoạt tài khoản E2E",
-                "html_body": "<p>Xin chào {full_name}, mã: {otp_code}</p>",
-                "text_body": "Xin chào {full_name}, mã: {otp_code}",
+        res = await client.patch(
+            "/api/admin/config/email-templates",
+            headers=h,
+            json={
+                "activation": {
+                    "subject": "Kích hoạt tài khoản E2E",
+                    "html_body": "<p>Xin chào {full_name}, mã: {otp_code}</p>",
+                    "text_body": "Xin chào {full_name}, mã: {otp_code}",
+                },
             },
-        })
+        )
         assert res.status_code == 200
         assert res.json()["data"]["activation"]["subject"] == "Kích hoạt tài khoản E2E"
 
-        res = await client.patch("/api/admin/config/email-templates", headers=h, json={
-            "activation": {
-                "subject": "Bad",
-                "html_body": "<p>Không có placeholder</p>",
-                "text_body": "Không có placeholder",
+        res = await client.patch(
+            "/api/admin/config/email-templates",
+            headers=h,
+            json={
+                "activation": {
+                    "subject": "Bad",
+                    "html_body": "<p>Không có placeholder</p>",
+                    "text_body": "Không có placeholder",
+                },
             },
-        })
+        )
         assert_error(res, 400, "VALIDATION_ERROR")
 
         res = await client.get("/api/admin/config/email-templates", headers=h)
@@ -104,13 +120,22 @@ async def test_e2e_audit_log_trail():
         token = await admin_login_token(client)
         h = auth(token)
 
-        await client.post("/api/admin/categories", headers=h, json={
-            "name": "E2E_AuditTest", "color": "#123456",
-        })
+        await client.post(
+            "/api/admin/categories",
+            headers=h,
+            json={
+                "name": "E2E_AuditTest",
+                "color": "#123456",
+            },
+        )
 
-        await client.patch(f"/api/admin/students/{sid}/lock", headers=h, json={
-            "locked_reason": "E2E audit test vi phạm nội quy",
-        })
+        await client.patch(
+            f"/api/admin/students/{sid}/lock",
+            headers=h,
+            json={
+                "locked_reason": "E2E audit test vi phạm nội quy",
+            },
+        )
 
         res = await client.get("/api/admin/audit-logs", headers=h)
         assert res.status_code == 200
@@ -143,21 +168,24 @@ async def test_e2e_dashboard_reflects_data():
 
         db = get_db()
         from datetime import datetime
-        await db["reports"].insert_one({
-            "report_code": "E2E-DASH-001",
-            "reporter_student_id": sid,
-            "target_type": "place",
-            "target_place_id": None,
-            "target_comment_id": None,
-            "place_public_id": None,
-            "report_type": "inappropriate",
-            "reason": "E2E dashboard test",
-            "status": "new",
-            "admin_note": None,
-            "resolved_at": None,
-            "created_at": datetime.utcnow(),
-            "updated_at": datetime.utcnow(),
-        })
+
+        await db["reports"].insert_one(
+            {
+                "report_code": "E2E-DASH-001",
+                "reporter_student_id": sid,
+                "target_type": "place",
+                "target_place_id": None,
+                "target_comment_id": None,
+                "place_public_id": None,
+                "report_type": "inappropriate",
+                "reason": "E2E dashboard test",
+                "status": "new",
+                "admin_note": None,
+                "resolved_at": None,
+                "created_at": datetime.utcnow(),
+                "updated_at": datetime.utcnow(),
+            }
+        )
 
         res = await client.get("/api/admin/dashboard/stats", headers=auth(token))
         assert res.status_code == 200

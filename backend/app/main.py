@@ -4,6 +4,18 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
+from app.api.routes.admin import (
+    admin_admins_router,
+    admin_audit_logs_router,
+    admin_auth_router,
+    admin_categories_router,
+    admin_comments_router,
+    admin_config_router,
+    admin_dashboard_router,
+    admin_places_router,
+    admin_reports_router,
+    admin_students_router,
+)
 from app.api.routes.public import (
     categories_router,
     config_router,
@@ -19,18 +31,6 @@ from app.api.routes.student import (
     my_places_router,
     reports_router,
     uploads_router,
-)
-from app.api.routes.admin import (
-    admin_auth_router,
-    admin_dashboard_router,
-    admin_categories_router,
-    admin_places_router,
-    admin_comments_router,
-    admin_reports_router,
-    admin_students_router,
-    admin_admins_router,
-    admin_audit_logs_router,
-    admin_config_router,
 )
 from app.core.config import settings
 from app.core.database import close_db, connect_db
@@ -101,12 +101,15 @@ app.include_router(reports_router, prefix="/api", tags=["Student Reports"])
 # Admin
 app.include_router(admin_auth_router, prefix="/api/admin/auth", tags=["Admin Auth"])
 app.include_router(admin_dashboard_router, prefix="/api/admin/dashboard", tags=["Admin Dashboard"])
-app.include_router(admin_categories_router, prefix="/api/admin/categories", tags=["Admin Categories"])
+app.include_router(
+    admin_categories_router, prefix="/api/admin/categories", tags=["Admin Categories"]
+)
 app.include_router(admin_places_router, prefix="/api/admin/places", tags=["Admin Places"])
 app.include_router(admin_comments_router, prefix="/api/admin/comments", tags=["Admin Comments"])
 app.include_router(admin_reports_router, prefix="/api/admin/reports", tags=["Admin Reports"])
 app.include_router(admin_students_router, prefix="/api/admin/students", tags=["Admin Students"])
 app.include_router(admin_admins_router, prefix="/api/admin/admins", tags=["Admin Accounts"])
-app.include_router(admin_audit_logs_router, prefix="/api/admin/audit-logs", tags=["Admin Audit Logs"])
+app.include_router(
+    admin_audit_logs_router, prefix="/api/admin/audit-logs", tags=["Admin Audit Logs"]
+)
 app.include_router(admin_config_router, prefix="/api/admin/config", tags=["Admin Config"])
-

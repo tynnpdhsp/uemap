@@ -29,9 +29,15 @@ async def list_places(
     range: Optional[str] = None,
 ):
     params = {
-        "page": page, "page_size": page_size, "q": q, "category_id": category_id,
-        "status": status_filter, "creator_student_id": creator_student_id,
-        "from_date": from_date, "to_date": to_date, "range": range,
+        "page": page,
+        "page_size": page_size,
+        "q": q,
+        "category_id": category_id,
+        "status": status_filter,
+        "creator_student_id": creator_student_id,
+        "from_date": from_date,
+        "to_date": to_date,
+        "range": range,
     }
     data = await admin_place_service.list_places(params)
     return {"success": True, "data": data["items"], "meta": data["meta"]}
@@ -45,34 +51,48 @@ async def get_place(public_id: int, current_admin: dict = Depends(get_current_ad
 
 @router.patch("/{public_id}")
 async def update_place(
-    public_id: int, payload: AdminPlaceUpdateRequest, request: Request, current_admin: dict = Depends(get_current_admin),
+    public_id: int,
+    payload: AdminPlaceUpdateRequest,
+    request: Request,
+    current_admin: dict = Depends(get_current_admin),
 ):
     ip = request.client.host if request.client else "127.0.0.1"
-    data = await admin_place_service.update_place(public_id, payload.model_dump(exclude_unset=True), current_admin["_id"], ip)
+    data = await admin_place_service.update_place(
+        public_id, payload.model_dump(exclude_unset=True), current_admin["_id"], ip
+    )
     return {"success": True, "data": data}
 
 
 @router.patch("/{public_id}/hide")
 async def hide_place(
-    public_id: int, payload: AdminPlaceHideRequest, request: Request, current_admin: dict = Depends(get_current_admin),
+    public_id: int,
+    payload: AdminPlaceHideRequest,
+    request: Request,
+    current_admin: dict = Depends(get_current_admin),
 ):
     ip = request.client.host if request.client else "127.0.0.1"
     await admin_place_service.hide_place(public_id, payload.hidden_note, current_admin["_id"], ip)
-    return {"success": True, "data": None}
+    data = await admin_place_service.get_place_detail(public_id)
+    return {"success": True, "data": data}
 
 
 @router.patch("/{public_id}/unhide")
 async def unhide_place(
-    public_id: int, request: Request, current_admin: dict = Depends(get_current_admin),
+    public_id: int,
+    request: Request,
+    current_admin: dict = Depends(get_current_admin),
 ):
     ip = request.client.host if request.client else "127.0.0.1"
     await admin_place_service.unhide_place(public_id, current_admin["_id"], ip)
-    return {"success": True, "data": None}
+    data = await admin_place_service.get_place_detail(public_id)
+    return {"success": True, "data": data}
 
 
 @router.delete("/{public_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_place(
-    public_id: int, request: Request, current_admin: dict = Depends(get_current_admin),
+    public_id: int,
+    request: Request,
+    current_admin: dict = Depends(get_current_admin),
 ):
     ip = request.client.host if request.client else "127.0.0.1"
     await admin_place_service.soft_delete_place(public_id, current_admin["_id"], ip)
@@ -80,8 +100,13 @@ async def delete_place(
 
 @router.patch("/{public_id}/transfer-creator")
 async def transfer_creator(
-    public_id: int, payload: AdminPlaceTransferCreatorRequest, request: Request, current_admin: dict = Depends(get_current_admin),
+    public_id: int,
+    payload: AdminPlaceTransferCreatorRequest,
+    request: Request,
+    current_admin: dict = Depends(get_current_admin),
 ):
     ip = request.client.host if request.client else "127.0.0.1"
-    await admin_place_service.transfer_creator(public_id, payload.new_creator_student_id, current_admin["_id"], ip)
+    await admin_place_service.transfer_creator(
+        public_id, payload.new_creator_student_id, current_admin["_id"], ip
+    )
     return {"success": True, "data": None}

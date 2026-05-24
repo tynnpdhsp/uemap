@@ -1,7 +1,6 @@
 import pytest
 from httpx import ASGITransport, AsyncClient
 
-from app.core.database import get_db
 from app.main import app
 from tests.integration.admin_helpers import (
     admin_login,
@@ -22,11 +21,15 @@ async def test_admin_account_crud():
         token = await admin_login(client)
         h = auth(token)
 
-        res = await client.post("/api/admin/admins", headers=h, json={
-            "username": "testnewadmin",
-            "password": "newadminpass123",
-            "display_name": "Admin Mới",
-        })
+        res = await client.post(
+            "/api/admin/admins",
+            headers=h,
+            json={
+                "username": "testnewadmin",
+                "password": "newadminpass123",
+                "display_name": "Admin Mới",
+            },
+        )
         assert res.status_code == 201
         new_admin = res.json()["data"]
         new_id = new_admin["id"]
@@ -37,9 +40,13 @@ async def test_admin_account_crud():
         assert res.status_code == 200
         assert len(res.json()["data"]) >= 2
 
-        res = await client.patch(f"/api/admin/admins/{new_id}", headers=h, json={
-            "display_name": "Admin Cập Nhật",
-        })
+        res = await client.patch(
+            f"/api/admin/admins/{new_id}",
+            headers=h,
+            json={
+                "display_name": "Admin Cập Nhật",
+            },
+        )
         assert res.status_code == 200
         assert res.json()["data"]["display_name"] == "Admin Cập Nhật"
 
@@ -70,12 +77,24 @@ async def test_admin_duplicate_username():
         token = await admin_login(client)
         h = auth(token)
 
-        await client.post("/api/admin/admins", headers=h, json={
-            "username": "testdup", "password": "password12345", "display_name": "Dup",
-        })
-        res = await client.post("/api/admin/admins", headers=h, json={
-            "username": "testdup", "password": "password12345", "display_name": "Dup 2",
-        })
+        await client.post(
+            "/api/admin/admins",
+            headers=h,
+            json={
+                "username": "testdup",
+                "password": "password12345",
+                "display_name": "Dup",
+            },
+        )
+        res = await client.post(
+            "/api/admin/admins",
+            headers=h,
+            json={
+                "username": "testdup",
+                "password": "password12345",
+                "display_name": "Dup 2",
+            },
+        )
         assert res.status_code == 400
         assert res.json()["error"]["code"] == "ADMIN_USERNAME_EXISTS"
 
@@ -89,14 +108,24 @@ async def test_admin_accounts_require_system_admin():
         token = await admin_login(client)
         h = auth(token)
 
-        res = await client.post("/api/admin/admins", headers=h, json={
-            "username": "testregular", "password": "password12345", "display_name": "Regular",
-        })
+        res = await client.post(
+            "/api/admin/admins",
+            headers=h,
+            json={
+                "username": "testregular",
+                "password": "password12345",
+                "display_name": "Regular",
+            },
+        )
         assert res.status_code == 201
 
-        res = await client.post("/api/admin/auth/login", json={
-            "username": "testregular", "password": "password12345",
-        })
+        res = await client.post(
+            "/api/admin/auth/login",
+            json={
+                "username": "testregular",
+                "password": "password12345",
+            },
+        )
         regular_token = res.json()["data"]["access_token"]
         rh = auth(regular_token)
 

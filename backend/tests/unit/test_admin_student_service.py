@@ -49,7 +49,9 @@ async def test_list_students_pagination(mock_db):
 async def test_list_students_filter_by_email(mock_db):
     await _seed_student(mock_db, email="alice@test.vn")
     await _seed_student(mock_db, email="bob@test.vn")
-    result = await admin_student_service.list_students({"page": 1, "page_size": 20, "email": "alice"})
+    result = await admin_student_service.list_students(
+        {"page": 1, "page_size": 20, "email": "alice"}
+    )
     assert result["meta"]["total"] == 1
     assert result["items"][0]["email"] == "alice@test.vn"
 
@@ -58,7 +60,9 @@ async def test_list_students_filter_by_email(mock_db):
 async def test_list_students_filter_by_status(mock_db):
     await _seed_student(mock_db, email="a@test.vn", status="active")
     await _seed_student(mock_db, email="b@test.vn", status="locked")
-    result = await admin_student_service.list_students({"page": 1, "page_size": 20, "status": "locked"})
+    result = await admin_student_service.list_students(
+        {"page": 1, "page_size": 20, "status": "locked"}
+    )
     assert result["meta"]["total"] == 1
 
 
@@ -94,15 +98,28 @@ async def test_lock_student_success(mock_db):
     student = await _seed_student(mock_db, status="active")
 
     expires = datetime.utcnow() + timedelta(days=7)
-    await mock_db["student_sessions"].insert_one({
-        "student_id": student["_id"], "jti": "s1", "revoked_at": None, "expires_at": expires,
-    })
-    await mock_db["student_sessions"].insert_one({
-        "student_id": student["_id"], "jti": "s2", "revoked_at": None, "expires_at": expires,
-    })
+    await mock_db["student_sessions"].insert_one(
+        {
+            "student_id": student["_id"],
+            "jti": "s1",
+            "revoked_at": None,
+            "expires_at": expires,
+        }
+    )
+    await mock_db["student_sessions"].insert_one(
+        {
+            "student_id": student["_id"],
+            "jti": "s2",
+            "revoked_at": None,
+            "expires_at": expires,
+        }
+    )
 
     result = await admin_student_service.lock_student(
-        str(student["_id"]), "Vi phạm quy định sử dụng", ADMIN_ID, IP,
+        str(student["_id"]),
+        "Vi phạm quy định sử dụng",
+        ADMIN_ID,
+        IP,
     )
 
     assert result["status"] == "locked"
@@ -117,14 +134,18 @@ async def test_lock_student_success(mock_db):
 @pytest.mark.asyncio
 async def test_lock_student_not_found(mock_db):
     with pytest.raises(HTTPException) as exc:
-        await admin_student_service.lock_student(str(ObjectId()), "Lý do khóa dài cho đủ ký tự", ADMIN_ID, IP)
+        await admin_student_service.lock_student(
+            str(ObjectId()), "Lý do khóa dài cho đủ ký tự", ADMIN_ID, IP
+        )
     assert exc.value.detail["error"]["code"] == "STUDENT_NOT_FOUND"
 
 
 @pytest.mark.asyncio
 async def test_lock_student_audit_log(mock_db):
     student = await _seed_student(mock_db)
-    await admin_student_service.lock_student(str(student["_id"]), "Vi phạm nội quy nhiều lần", ADMIN_ID, IP)
+    await admin_student_service.lock_student(
+        str(student["_id"]), "Vi phạm nội quy nhiều lần", ADMIN_ID, IP
+    )
     logs = [d for d in mock_db["audit_logs"].docs if d["event_code"] == "STUDENT_LOCK"]
     assert len(logs) == 1
     assert str(ADMIN_ID) == logs[0]["actor_id"]

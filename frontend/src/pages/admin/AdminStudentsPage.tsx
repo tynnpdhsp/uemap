@@ -1,6 +1,10 @@
 import React, { useEffect, useState, useCallback } from "react";
 import { useSearchParams } from "react-router-dom";
-import { adminStudentsApi, type AdminStudentListItem, type AdminStudentDetail } from "../../api/admin/students";
+import {
+  adminStudentsApi,
+  type AdminStudentListItem,
+  type AdminStudentDetail,
+} from "../../api/admin/students";
 import { getErrorMessage } from "../../utils/errorMessage";
 import { Loader, Users, Lock, Unlock, Eye, X } from "lucide-react";
 
@@ -10,7 +14,9 @@ export const AdminStudentsPage: React.FC = () => {
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
-  const [statusFilter, setStatusFilter] = useState(searchParams.get("status") || "");
+  const [statusFilter, setStatusFilter] = useState(
+    searchParams.get("status") || "",
+  );
   const [emailSearch, setEmailSearch] = useState("");
   const [detail, setDetail] = useState<AdminStudentDetail | null>(null);
   const [detailLoading, setDetailLoading] = useState(false);
@@ -19,25 +25,31 @@ export const AdminStudentsPage: React.FC = () => {
   const [actionLoading, setActionLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
-  const load = useCallback(async (p: number) => {
-    setLoading(true);
-    try {
-      const params: Record<string, string> = { page: String(p) };
-      if (statusFilter) params.status = statusFilter;
-      if (emailSearch) params.email = emailSearch;
-      const res = await adminStudentsApi.list(params);
-      if (res.success && res.data) {
-        setStudents(res.data.data);
-        setTotal(res.data.meta.total);
-        setPage(res.data.meta.page);
+  const load = useCallback(
+    async (p: number) => {
+      setLoading(true);
+      try {
+        const params: Record<string, string> = { page: String(p) };
+        if (statusFilter) params.status = statusFilter;
+        if (emailSearch) params.email = emailSearch;
+        const res = await adminStudentsApi.list(params);
+        if (res.success && res.data) {
+          setStudents(res.data.data);
+          setTotal(res.data.meta.total);
+          setPage(res.data.meta.page);
+        }
+      } catch {
+        void 0;
+      } finally {
+        setLoading(false);
       }
-    } catch {
-    } finally {
-      setLoading(false);
-    }
-  }, [statusFilter, emailSearch]);
+    },
+    [statusFilter, emailSearch],
+  );
 
-  useEffect(() => { load(1); }, [load]);
+  useEffect(() => {
+    load(1);
+  }, [load]);
 
   const openDetail = async (id: string) => {
     setDetailLoading(true);
@@ -46,6 +58,7 @@ export const AdminStudentsPage: React.FC = () => {
       const res = await adminStudentsApi.detail(id);
       if (res.success) setDetail(res.data);
     } catch {
+      void 0;
     } finally {
       setDetailLoading(false);
     }
@@ -91,7 +104,9 @@ export const AdminStudentsPage: React.FC = () => {
       pending_activation: "bg-amber-50 text-amber-700 border-amber-100",
     };
     return (
-      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold border ${map[status] || "bg-gray-50 text-gray-700 border-gray-100"}`}>
+      <span
+        className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold border ${map[status] || "bg-gray-50 text-gray-700 border-gray-100"}`}
+      >
         {label}
       </span>
     );
@@ -100,15 +115,21 @@ export const AdminStudentsPage: React.FC = () => {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-black text-gray-800 tracking-tight">Sinh viên</h1>
-        <p className="text-sm text-gray-500 mt-1">Quản lý tài khoản sinh viên trên hệ thống</p>
+        <h1 className="text-2xl font-black text-gray-800 tracking-tight">
+          Sinh viên
+        </h1>
+        <p className="text-sm text-gray-500 mt-1">
+          Quản lý tài khoản sinh viên trên hệ thống
+        </p>
       </div>
 
       <div className="bg-white rounded-3xl shadow-xl border border-gray-100 overflow-hidden">
         <div className="p-6 border-b border-gray-100 bg-gray-50/50 flex flex-wrap gap-4 items-center justify-between">
           <div className="flex items-center gap-4 flex-wrap">
             <div className="flex items-center gap-2">
-              <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">Trạng thái:</span>
+              <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">
+                Trạng thái:
+              </span>
               <select
                 value={statusFilter}
                 onChange={(e) => setStatusFilter(e.target.value)}
@@ -128,7 +149,9 @@ export const AdminStudentsPage: React.FC = () => {
               onChange={(e) => setEmailSearch(e.target.value)}
             />
           </div>
-          <div className="text-xs text-gray-400 font-bold">Tổng số: {total}</div>
+          <div className="text-xs text-gray-400 font-bold">
+            Tổng số: {total}
+          </div>
         </div>
 
         {loading ? (
@@ -149,11 +172,20 @@ export const AdminStudentsPage: React.FC = () => {
               </thead>
               <tbody className="divide-y divide-gray-100 text-sm">
                 {students.map((s) => (
-                  <tr key={s.id} className="hover:bg-gray-50/30 transition-colors">
-                    <td className="py-4 px-6 font-semibold text-gray-800">{s.email}</td>
+                  <tr
+                    key={s.id}
+                    className="hover:bg-gray-50/30 transition-colors"
+                  >
+                    <td className="py-4 px-6 font-semibold text-gray-800">
+                      {s.email}
+                    </td>
                     <td className="py-4 px-6 text-gray-600">{s.full_name}</td>
-                    <td className="py-4 px-6">{getStatusBadge(s.status, s.status_label)}</td>
-                    <td className="py-4 px-6 text-gray-400 text-xs">{s.created_at_display}</td>
+                    <td className="py-4 px-6">
+                      {getStatusBadge(s.status, s.status_label)}
+                    </td>
+                    <td className="py-4 px-6 text-gray-400 text-xs">
+                      {s.created_at_display}
+                    </td>
                     <td className="py-4 px-6 text-right">
                       <div className="inline-flex gap-2">
                         <button
@@ -214,7 +246,9 @@ export const AdminStudentsPage: React.FC = () => {
         ) : (
           <div className="p-12 text-center">
             <Users className="w-12 h-12 text-gray-300 mx-auto mb-4" />
-            <h3 className="text-base font-bold text-gray-700 mb-1">Không có sinh viên nào</h3>
+            <h3 className="text-base font-bold text-gray-700 mb-1">
+              Không có sinh viên nào
+            </h3>
           </div>
         )}
       </div>
@@ -234,39 +268,67 @@ export const AdminStudentsPage: React.FC = () => {
               </div>
             ) : (
               <>
-                <h3 className="text-lg font-bold text-gray-800 mb-4">{detail.full_name}</h3>
+                <h3 className="text-lg font-bold text-gray-800 mb-4">
+                  {detail.full_name}
+                </h3>
                 <div className="space-y-3 text-sm">
                   <div>
-                    <span className="block text-xs font-semibold text-gray-400 uppercase">Email</span>
-                    <span className="text-gray-900 font-medium">{detail.email}</span>
+                    <span className="block text-xs font-semibold text-gray-400 uppercase">
+                      Email
+                    </span>
+                    <span className="text-gray-900 font-medium">
+                      {detail.email}
+                    </span>
                   </div>
                   <div>
-                    <span className="block text-xs font-semibold text-gray-400 uppercase">Trạng thái</span>
+                    <span className="block text-xs font-semibold text-gray-400 uppercase">
+                      Trạng thái
+                    </span>
                     {getStatusBadge(detail.status, detail.status_label)}
                   </div>
                   {detail.locked_reason && (
                     <div>
-                      <span className="block text-xs font-semibold text-gray-400 uppercase">Lý do khóa</span>
-                      <span className="text-red-600 font-medium">{detail.locked_reason}</span>
+                      <span className="block text-xs font-semibold text-gray-400 uppercase">
+                        Lý do khóa
+                      </span>
+                      <span className="text-red-600 font-medium">
+                        {detail.locked_reason}
+                      </span>
                     </div>
                   )}
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <span className="block text-xs font-semibold text-gray-400 uppercase">Số địa điểm</span>
-                      <span className="text-blue-600 font-bold">{detail.places_count}</span>
+                      <span className="block text-xs font-semibold text-gray-400 uppercase">
+                        Số địa điểm
+                      </span>
+                      <span className="text-blue-600 font-bold">
+                        {detail.places_count}
+                      </span>
                     </div>
                     <div>
-                      <span className="block text-xs font-semibold text-gray-400 uppercase">Số bình luận</span>
-                      <span className="text-blue-600 font-bold">{detail.comments_count}</span>
+                      <span className="block text-xs font-semibold text-gray-400 uppercase">
+                        Số bình luận
+                      </span>
+                      <span className="text-blue-600 font-bold">
+                        {detail.comments_count}
+                      </span>
                     </div>
                   </div>
                   <div>
-                    <span className="block text-xs font-semibold text-gray-400 uppercase">Ngày kích hoạt</span>
-                    <span className="text-gray-900 font-medium">{detail.activated_at_display || "—"}</span>
+                    <span className="block text-xs font-semibold text-gray-400 uppercase">
+                      Ngày kích hoạt
+                    </span>
+                    <span className="text-gray-900 font-medium">
+                      {detail.activated_at_display || "—"}
+                    </span>
                   </div>
                   <div>
-                    <span className="block text-xs font-semibold text-gray-400 uppercase">Ngày tạo</span>
-                    <span className="text-gray-900 font-medium">{detail.created_at_display}</span>
+                    <span className="block text-xs font-semibold text-gray-400 uppercase">
+                      Ngày tạo
+                    </span>
+                    <span className="text-gray-900 font-medium">
+                      {detail.created_at_display}
+                    </span>
                   </div>
                 </div>
               </>
@@ -278,11 +340,17 @@ export const AdminStudentsPage: React.FC = () => {
       {lockId && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
           <div className="bg-white rounded-2xl shadow-2xl border border-gray-100 p-6 w-full max-w-md mx-4">
-            <h3 className="text-lg font-bold text-gray-800 mb-4">Khóa tài khoản sinh viên</h3>
+            <h3 className="text-lg font-bold text-gray-800 mb-4">
+              Khóa tài khoản sinh viên
+            </h3>
             {errorMsg && (
-              <div className="mb-4 p-3 rounded-lg bg-red-50 text-red-700 text-sm border border-red-100">{errorMsg}</div>
+              <div className="mb-4 p-3 rounded-lg bg-red-50 text-red-700 text-sm border border-red-100">
+                {errorMsg}
+              </div>
             )}
-            <label className="block text-sm font-semibold text-gray-700 mb-2">Lý do khóa (tối thiểu 10 ký tự)</label>
+            <label className="block text-sm font-semibold text-gray-700 mb-2">
+              Lý do khóa (tối thiểu 10 ký tự)
+            </label>
             <textarea
               className="w-full rounded-lg border border-gray-300 px-4 py-2 text-gray-900 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition text-sm"
               rows={3}
@@ -298,7 +366,11 @@ export const AdminStudentsPage: React.FC = () => {
                 {actionLoading ? "Đang khóa..." : "Xác nhận khóa"}
               </button>
               <button
-                onClick={() => { setLockId(null); setLockReason(""); setErrorMsg(null); }}
+                onClick={() => {
+                  setLockId(null);
+                  setLockReason("");
+                  setErrorMsg(null);
+                }}
                 className="rounded-lg border border-gray-300 px-4 py-2.5 text-gray-700 font-bold hover:bg-gray-50 transition text-sm"
               >
                 Hủy

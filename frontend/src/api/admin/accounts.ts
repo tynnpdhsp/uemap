@@ -14,8 +14,11 @@ interface AdminAccountItem {
 export const adminAccountsApi = {
   list: () => adminApi.get<AdminAccountItem[]>("/admin/admins"),
 
-  create: (data: { username: string; password: string; display_name: string }) =>
-    adminApi.post<AdminAccountItem>("/admin/admins", data),
+  create: (data: {
+    username: string;
+    password: string;
+    display_name: string;
+  }) => adminApi.post<AdminAccountItem>("/admin/admins", data),
 
   update: (id: string, data: { display_name?: string; password?: string }) =>
     adminApi.patch<AdminAccountItem>(`/admin/admins/${id}`, data),

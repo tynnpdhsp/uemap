@@ -1,5 +1,8 @@
 import React, { useEffect, useState, useCallback } from "react";
-import { adminAccountsApi, type AdminAccountItem } from "../../api/admin/accounts";
+import {
+  adminAccountsApi,
+  type AdminAccountItem,
+} from "../../api/admin/accounts";
 import { getErrorMessage } from "../../utils/errorMessage";
 import { Plus, Edit3, Loader, Shield, UserX } from "lucide-react";
 
@@ -21,12 +24,15 @@ export const AdminAccountsPage: React.FC = () => {
       const res = await adminAccountsApi.list();
       if (res.success) setAccounts(res.data);
     } catch {
+      void 0;
     } finally {
       setLoading(false);
     }
   }, []);
 
-  useEffect(() => { load(); }, [load]);
+  useEffect(() => {
+    load();
+  }, [load]);
 
   const resetForm = () => {
     setFormOpen(false);
@@ -64,7 +70,11 @@ export const AdminAccountsPage: React.FC = () => {
         await adminAccountsApi.update(editId, data);
         setSuccessMsg("Cập nhật tài khoản thành công.");
       } else {
-        await adminAccountsApi.create({ username, password, display_name: displayName });
+        await adminAccountsApi.create({
+          username,
+          password,
+          display_name: displayName,
+        });
         setSuccessMsg("Tạo tài khoản admin thành công.");
       }
       resetForm();
@@ -91,8 +101,12 @@ export const AdminAccountsPage: React.FC = () => {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-black text-gray-800 tracking-tight">Quản trị viên</h1>
-          <p className="text-sm text-gray-500 mt-1">Quản lý tài khoản quản trị viên (chỉ System Admin)</p>
+          <h1 className="text-2xl font-black text-gray-800 tracking-tight">
+            Quản trị viên
+          </h1>
+          <p className="text-sm text-gray-500 mt-1">
+            Quản lý tài khoản quản trị viên (chỉ System Admin)
+          </p>
         </div>
         <button
           onClick={openCreate}
@@ -104,7 +118,9 @@ export const AdminAccountsPage: React.FC = () => {
       </div>
 
       {successMsg && (
-        <div className="p-3 rounded-lg bg-green-50 text-green-700 text-sm border border-green-100">{successMsg}</div>
+        <div className="p-3 rounded-lg bg-green-50 text-green-700 text-sm border border-green-100">
+          {successMsg}
+        </div>
       )}
 
       {formOpen && (
@@ -113,12 +129,16 @@ export const AdminAccountsPage: React.FC = () => {
             {editId ? "Sửa tài khoản" : "Tạo tài khoản admin"}
           </h2>
           {errorMsg && (
-            <div className="mb-4 p-3 rounded-lg bg-red-50 text-red-700 text-sm border border-red-100">{errorMsg}</div>
+            <div className="mb-4 p-3 rounded-lg bg-red-50 text-red-700 text-sm border border-red-100">
+              {errorMsg}
+            </div>
           )}
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div>
-                <label className="block text-sm font-semibold text-gray-700">Tên đăng nhập</label>
+                <label className="block text-sm font-semibold text-gray-700">
+                  Tên đăng nhập
+                </label>
                 <input
                   type="text"
                   required={!editId}
@@ -130,7 +150,9 @@ export const AdminAccountsPage: React.FC = () => {
               </div>
               <div>
                 <label className="block text-sm font-semibold text-gray-700">
-                  {editId ? "Mật khẩu mới (để trống nếu không đổi)" : "Mật khẩu"}
+                  {editId
+                    ? "Mật khẩu mới (để trống nếu không đổi)"
+                    : "Mật khẩu"}
                 </label>
                 <input
                   type="password"
@@ -142,7 +164,9 @@ export const AdminAccountsPage: React.FC = () => {
                 />
               </div>
               <div>
-                <label className="block text-sm font-semibold text-gray-700">Tên hiển thị</label>
+                <label className="block text-sm font-semibold text-gray-700">
+                  Tên hiển thị
+                </label>
                 <input
                   type="text"
                   required
@@ -192,9 +216,16 @@ export const AdminAccountsPage: React.FC = () => {
               </thead>
               <tbody className="divide-y divide-gray-100 text-sm">
                 {accounts.map((a) => (
-                  <tr key={a.id} className="hover:bg-gray-50/30 transition-colors">
-                    <td className="py-4 px-6 font-semibold text-gray-800">@{a.username}</td>
-                    <td className="py-4 px-6 text-gray-600">{a.display_name}</td>
+                  <tr
+                    key={a.id}
+                    className="hover:bg-gray-50/30 transition-colors"
+                  >
+                    <td className="py-4 px-6 font-semibold text-gray-800">
+                      @{a.username}
+                    </td>
+                    <td className="py-4 px-6 text-gray-600">
+                      {a.display_name}
+                    </td>
                     <td className="py-4 px-6">
                       {a.is_system_admin ? (
                         <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-blue-50 text-blue-700 border border-blue-100">
@@ -217,7 +248,9 @@ export const AdminAccountsPage: React.FC = () => {
                         </span>
                       )}
                     </td>
-                    <td className="py-4 px-6 text-gray-400 text-xs">{a.last_login_at_display || "—"}</td>
+                    <td className="py-4 px-6 text-gray-400 text-xs">
+                      {a.last_login_at_display || "—"}
+                    </td>
                     <td className="py-4 px-6 text-right">
                       <div className="inline-flex gap-2">
                         <button
@@ -246,7 +279,9 @@ export const AdminAccountsPage: React.FC = () => {
         ) : (
           <div className="p-12 text-center">
             <Shield className="w-12 h-12 text-gray-300 mx-auto mb-4" />
-            <h3 className="text-base font-bold text-gray-700 mb-1">Chưa có tài khoản admin</h3>
+            <h3 className="text-base font-bold text-gray-700 mb-1">
+              Chưa có tài khoản admin
+            </h3>
           </div>
         )}
       </div>

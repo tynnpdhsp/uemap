@@ -30,7 +30,8 @@ export const adminReportsApi = {
     return adminApi.get<PaginatedReports>(`/admin/reports${qs}`);
   },
 
-  detail: (id: string) => adminApi.get<AdminReportDetail>(`/admin/reports/${id}`),
+  detail: (id: string) =>
+    adminApi.get<AdminReportDetail>(`/admin/reports/${id}`),
 
   updateStatus: (id: string, data: { status: string; admin_note?: string }) =>
     adminApi.patch<AdminReportDetail>(`/admin/reports/${id}`, data),

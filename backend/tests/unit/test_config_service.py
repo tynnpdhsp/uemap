@@ -1,4 +1,3 @@
-from datetime import datetime
 from unittest.mock import AsyncMock, patch
 
 import pytest
@@ -21,11 +20,13 @@ async def test_get_map_config_empty(mock_db):
 
 @pytest.mark.asyncio
 async def test_get_map_config_existing(mock_db):
-    await mock_db["app_config"].insert_one({
-        "_id": "map",
-        "default_center": {"lat": 10.76, "lng": 106.68},
-        "default_zoom": 15,
-    })
+    await mock_db["app_config"].insert_one(
+        {
+            "_id": "map",
+            "default_center": {"lat": 10.76, "lng": 106.68},
+            "default_zoom": 15,
+        }
+    )
     result = await config_service.get_map_config()
     assert result["default_center"]["lat"] == 10.76
     assert result["default_zoom"] == 15
@@ -36,7 +37,9 @@ async def test_get_map_config_existing(mock_db):
 async def test_update_map_config_center(mock_db):
     await mock_db["app_config"].insert_one({"_id": "map", "default_zoom": 15})
     result = await config_service.update_map_config(
-        {"default_center": {"lat": 10.77, "lng": 106.69}}, ADMIN_ID, IP,
+        {"default_center": {"lat": 10.77, "lng": 106.69}},
+        ADMIN_ID,
+        IP,
     )
     assert result["default_center"]["lat"] == 10.77
 
@@ -67,7 +70,9 @@ async def test_update_map_config_geofence_radius_missing_center(mock_db):
     await mock_db["app_config"].insert_one({"_id": "map"})
     with pytest.raises(HTTPException) as exc:
         await config_service.update_map_config(
-            {"geofence": {"type": "radius"}}, ADMIN_ID, IP,
+            {"geofence": {"type": "radius"}},
+            ADMIN_ID,
+            IP,
         )
     assert exc.value.detail["error"]["code"] == "VALIDATION_ERROR"
 
@@ -93,10 +98,16 @@ async def test_get_email_templates_empty(mock_db):
 
 @pytest.mark.asyncio
 async def test_get_email_templates_existing(mock_db):
-    await mock_db["app_config"].insert_one({
-        "_id": "email_templates",
-        "activation": {"subject": "Test", "html_body": "<p>{full_name} {otp_code}</p>", "text_body": "{full_name} {otp_code}"},
-    })
+    await mock_db["app_config"].insert_one(
+        {
+            "_id": "email_templates",
+            "activation": {
+                "subject": "Test",
+                "html_body": "<p>{full_name} {otp_code}</p>",
+                "text_body": "{full_name} {otp_code}",
+            },
+        }
+    )
     result = await config_service.get_email_templates()
     assert result["activation"]["subject"] == "Test"
     assert "_id" not in result
@@ -136,10 +147,16 @@ async def test_update_email_templates_missing_placeholder(mock_db):
 
 @pytest.mark.asyncio
 async def test_update_email_templates_partial_update(mock_db):
-    await mock_db["app_config"].insert_one({
-        "_id": "email_templates",
-        "activation": {"subject": "Old", "html_body": "{full_name} {otp_code}", "text_body": "old"},
-    })
+    await mock_db["app_config"].insert_one(
+        {
+            "_id": "email_templates",
+            "activation": {
+                "subject": "Old",
+                "html_body": "{full_name} {otp_code}",
+                "text_body": "old",
+            },
+        }
+    )
     tpl = {
         "password_reset": {
             "subject": "Reset",
@@ -154,13 +171,21 @@ async def test_update_email_templates_partial_update(mock_db):
 
 @pytest.mark.asyncio
 async def test_test_email_dev_mode(mock_db):
-    await mock_db["app_config"].insert_one({
-        "_id": "email_templates",
-        "activation": {"subject": "Test", "html_body": "{full_name} {otp_code}", "text_body": "{full_name} {otp_code}"},
-    })
-    with patch.object(config_service.settings, "ENV", "dev"), \
-         patch.object(config_service.settings, "SMTP_USER", ""), \
-         patch.object(config_service.settings, "SMTP_PASSWORD", ""):
+    await mock_db["app_config"].insert_one(
+        {
+            "_id": "email_templates",
+            "activation": {
+                "subject": "Test",
+                "html_body": "{full_name} {otp_code}",
+                "text_body": "{full_name} {otp_code}",
+            },
+        }
+    )
+    with (
+        patch.object(config_service.settings, "ENV", "dev"),
+        patch.object(config_service.settings, "SMTP_USER", ""),
+        patch.object(config_service.settings, "SMTP_PASSWORD", ""),
+    ):
         result = await config_service.test_email("test@test.vn", "activation", ADMIN_ID, IP)
     assert result["smtp_success"] is True
     assert "DEV MODE" in result["message"]
@@ -171,12 +196,23 @@ async def test_test_email_dev_mode(mock_db):
 
 @pytest.mark.asyncio
 async def test_test_email_smtp_failure(mock_db):
-    await mock_db["app_config"].insert_one({
-        "_id": "email_templates",
-        "activation": {"subject": "Test", "html_body": "{full_name} {otp_code}", "text_body": "{full_name} {otp_code}"},
-    })
-    with patch.object(config_service.settings, "ENV", "production"), \
-         patch("app.services.config_service.aiosmtplib.send", AsyncMock(side_effect=Exception("Connection refused"))):
+    await mock_db["app_config"].insert_one(
+        {
+            "_id": "email_templates",
+            "activation": {
+                "subject": "Test",
+                "html_body": "{full_name} {otp_code}",
+                "text_body": "{full_name} {otp_code}",
+            },
+        }
+    )
+    with (
+        patch.object(config_service.settings, "ENV", "production"),
+        patch(
+            "app.services.config_service.aiosmtplib.send",
+            AsyncMock(side_effect=Exception("Connection refused")),
+        ),
+    ):
         result = await config_service.test_email("test@test.vn", "activation", ADMIN_ID, IP)
     assert result["smtp_success"] is False
     assert "Connection refused" in result["message"]

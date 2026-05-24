@@ -1,11 +1,9 @@
 from datetime import datetime, timedelta
 
 import pytest
-from bson import ObjectId
 
 from app.core.database import get_db
 from tests.e2e.admin_e2e_helpers import (
-    ADMIN_USER,
     REGULAR_ADMIN_PASS,
     REGULAR_ADMIN_USER,
     admin_login_token,
@@ -30,27 +28,45 @@ async def test_e2e_admin_manages_categories():
         token = await admin_login_token(client)
         h = auth(token)
 
-        res = await client.post("/api/admin/categories", headers=h, json={
-            "name": "E2E_Thể thao", "color": "#00FF00", "order": 1,
-        })
+        res = await client.post(
+            "/api/admin/categories",
+            headers=h,
+            json={
+                "name": "E2E_Thể thao",
+                "color": "#00FF00",
+                "order": 1,
+            },
+        )
         assert res.status_code == 201
         cat_id = res.json()["data"]["id"]
 
-        res = await client.patch(f"/api/admin/categories/{cat_id}", headers=h, json={
-            "name": "E2E_Giải trí",
-        })
+        res = await client.patch(
+            f"/api/admin/categories/{cat_id}",
+            headers=h,
+            json={
+                "name": "E2E_Giải trí",
+            },
+        )
         assert res.status_code == 200
         assert res.json()["data"]["name"] == "E2E_Giải trí"
 
-        res = await client.patch(f"/api/admin/categories/{cat_id}/hide", headers=h, json={
-            "is_hidden": True,
-        })
+        res = await client.patch(
+            f"/api/admin/categories/{cat_id}/hide",
+            headers=h,
+            json={
+                "is_hidden": True,
+            },
+        )
         assert res.status_code == 200
         assert res.json()["data"]["is_hidden"] is True
 
-        res = await client.patch(f"/api/admin/categories/{cat_id}/hide", headers=h, json={
-            "is_hidden": False,
-        })
+        res = await client.patch(
+            f"/api/admin/categories/{cat_id}/hide",
+            headers=h,
+            json={
+                "is_hidden": False,
+            },
+        )
         assert res.status_code == 200
         assert res.json()["data"]["is_hidden"] is False
 
@@ -76,15 +92,22 @@ async def test_e2e_admin_lock_unlock_student():
         h = auth(token)
 
         db = get_db()
-        await db["student_sessions"].insert_one({
-            "student_id": sid, "jti": "e2e-sv-jti",
-            "revoked_at": None,
-            "expires_at": datetime.utcnow() + timedelta(days=7),
-        })
+        await db["student_sessions"].insert_one(
+            {
+                "student_id": sid,
+                "jti": "e2e-sv-jti",
+                "revoked_at": None,
+                "expires_at": datetime.utcnow() + timedelta(days=7),
+            }
+        )
 
-        res = await client.patch(f"/api/admin/students/{sid}/lock", headers=h, json={
-            "locked_reason": "Vi phạm quy định sử dụng hệ thống",
-        })
+        res = await client.patch(
+            f"/api/admin/students/{sid}/lock",
+            headers=h,
+            json={
+                "locked_reason": "Vi phạm quy định sử dụng hệ thống",
+            },
+        )
         assert res.status_code == 200
         assert res.json()["data"]["status"] == "locked"
 
@@ -115,11 +138,15 @@ async def test_e2e_admin_account_lifecycle():
         sys_token = await admin_login_token(client)
         sh = auth(sys_token)
 
-        res = await client.post("/api/admin/admins", headers=sh, json={
-            "username": REGULAR_ADMIN_USER,
-            "password": REGULAR_ADMIN_PASS,
-            "display_name": "Admin Thường",
-        })
+        res = await client.post(
+            "/api/admin/admins",
+            headers=sh,
+            json={
+                "username": REGULAR_ADMIN_USER,
+                "password": REGULAR_ADMIN_PASS,
+                "display_name": "Admin Thường",
+            },
+        )
         assert res.status_code == 201
         regular_id = res.json()["data"]["id"]
         assert res.json()["data"]["is_system_admin"] is False
@@ -160,9 +187,13 @@ async def test_e2e_admin_place_hide_and_delete():
         assert res.status_code == 200
         assert res.json()["data"]["status"] == "published"
 
-        res = await client.patch(f"/api/admin/places/{public_id}/hide", headers=h, json={
-            "hidden_note": "Vi phạm nội quy cộng đồng sử dụng hệ thống",
-        })
+        res = await client.patch(
+            f"/api/admin/places/{public_id}/hide",
+            headers=h,
+            json={
+                "hidden_note": "Vi phạm nội quy cộng đồng sử dụng hệ thống",
+            },
+        )
         assert res.status_code == 200
         assert res.json()["data"]["status"] == "hidden"
 
@@ -193,24 +224,31 @@ async def test_e2e_admin_comment_soft_delete():
 
         db = get_db()
         now = datetime.utcnow()
-        comment_res = await db["comments"].insert_one({
-            "place_public_id": public_id,
-            "student_id": sid,
-            "author_display_name": "E2E Student",
-            "content": "E2E_Bình luận vi phạm nội quy cộng đồng",
-            "status": "visible",
-            "created_at": now,
-            "updated_at": now,
-        })
+        comment_res = await db["comments"].insert_one(
+            {
+                "place_public_id": public_id,
+                "student_id": sid,
+                "author_display_name": "E2E Student",
+                "content": "E2E_Bình luận vi phạm nội quy cộng đồng",
+                "status": "visible",
+                "created_at": now,
+                "updated_at": now,
+            }
+        )
         comment_id = str(comment_res.inserted_id)
 
         res = await client.get(f"/api/admin/comments?place_public_id={public_id}", headers=h)
         assert res.status_code == 200
         assert res.json()["meta"]["total"] >= 1
 
-        res = await client.delete(f"/api/admin/comments/{comment_id}", headers=h, json={
-            "admin_delete_reason": "Vi phạm nội quy cộng đồng sử dụng hệ thống",
-        })
+        res = await client.request(
+            "DELETE",
+            f"/api/admin/comments/{comment_id}",
+            headers=h,
+            json={
+                "admin_delete_reason": "Vi phạm nội quy cộng đồng sử dụng hệ thống",
+            },
+        )
         assert res.status_code == 204
 
         comment = await db["comments"].find_one({"_id": comment_res.inserted_id})

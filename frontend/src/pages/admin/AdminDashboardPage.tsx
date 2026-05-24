@@ -1,6 +1,9 @@
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { adminDashboardApi, type DashboardStats } from "../../api/admin/dashboard";
+import {
+  adminDashboardApi,
+  type DashboardStats,
+} from "../../api/admin/dashboard";
 import { AlertTriangle, Users, MapPin, Loader } from "lucide-react";
 
 export const AdminDashboardPage: React.FC = () => {
@@ -13,6 +16,7 @@ export const AdminDashboardPage: React.FC = () => {
         const res = await adminDashboardApi.getStats();
         if (res.success) setStats(res.data);
       } catch {
+        void 0;
       } finally {
         setLoading(false);
       }
@@ -58,7 +62,9 @@ export const AdminDashboardPage: React.FC = () => {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-black text-gray-800 tracking-tight">Dashboard</h1>
+        <h1 className="text-2xl font-black text-gray-800 tracking-tight">
+          Dashboard
+        </h1>
         <p className="text-sm text-gray-500 mt-1">Tổng quan hệ thống</p>
       </div>
 
@@ -71,10 +77,16 @@ export const AdminDashboardPage: React.FC = () => {
           >
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">{card.label}</p>
-                <p className="text-3xl font-black text-gray-900 mt-2">{card.value}</p>
+                <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">
+                  {card.label}
+                </p>
+                <p className="text-3xl font-black text-gray-900 mt-2">
+                  {card.value}
+                </p>
               </div>
-              <div className={`p-3 rounded-xl border ${card.color} group-hover:scale-110 transition-transform`}>
+              <div
+                className={`p-3 rounded-xl border ${card.color} group-hover:scale-110 transition-transform`}
+              >
                 <card.icon className={`w-6 h-6 ${card.iconColor}`} />
               </div>
             </div>

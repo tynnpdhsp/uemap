@@ -12,17 +12,19 @@ pytestmark = pytest.mark.unit
 async def _seed_logs(mock_db, count=5):
     now = datetime.utcnow()
     for i in range(count):
-        await mock_db["audit_logs"].insert_one({
-            "event_code": f"EVENT_{i}",
-            "occurred_at": now - timedelta(minutes=i),
-            "actor_role": "admin",
-            "actor_id": ObjectId(),
-            "object_type": "test",
-            "object_id": str(i),
-            "result": "success",
-            "description": f"Sự kiện {i}",
-            "ip_address": "127.0.0.1",
-        })
+        await mock_db["audit_logs"].insert_one(
+            {
+                "event_code": f"EVENT_{i}",
+                "occurred_at": now - timedelta(minutes=i),
+                "actor_role": "admin",
+                "actor_id": ObjectId(),
+                "object_type": "test",
+                "object_id": str(i),
+                "result": "success",
+                "description": f"Sự kiện {i}",
+                "ip_address": "127.0.0.1",
+            }
+        )
 
 
 @pytest.mark.asyncio
@@ -44,22 +46,44 @@ async def test_list_audit_logs_pagination(mock_db):
 @pytest.mark.asyncio
 async def test_list_audit_logs_with_event_code_filter(mock_db):
     await _seed_logs(mock_db, 5)
-    result = await audit_export_service.list_audit_logs({"page": 1, "page_size": 50, "event_code": "EVENT_0"})
+    result = await audit_export_service.list_audit_logs(
+        {"page": 1, "page_size": 50, "event_code": "EVENT_0"}
+    )
     assert result["meta"]["total"] == 1
 
 
 @pytest.mark.asyncio
 async def test_list_audit_logs_with_result_filter(mock_db):
     now = datetime.utcnow()
-    await mock_db["audit_logs"].insert_one({
-        "event_code": "E1", "occurred_at": now, "actor_role": "admin", "actor_id": None,
-        "object_type": "t", "object_id": None, "result": "failure", "description": "Lỗi", "ip_address": "1.2.3.4",
-    })
-    await mock_db["audit_logs"].insert_one({
-        "event_code": "E2", "occurred_at": now, "actor_role": "admin", "actor_id": None,
-        "object_type": "t", "object_id": None, "result": "success", "description": "OK", "ip_address": "1.2.3.4",
-    })
-    result = await audit_export_service.list_audit_logs({"page": 1, "page_size": 50, "result": "failure"})
+    await mock_db["audit_logs"].insert_one(
+        {
+            "event_code": "E1",
+            "occurred_at": now,
+            "actor_role": "admin",
+            "actor_id": None,
+            "object_type": "t",
+            "object_id": None,
+            "result": "failure",
+            "description": "Lỗi",
+            "ip_address": "1.2.3.4",
+        }
+    )
+    await mock_db["audit_logs"].insert_one(
+        {
+            "event_code": "E2",
+            "occurred_at": now,
+            "actor_role": "admin",
+            "actor_id": None,
+            "object_type": "t",
+            "object_id": None,
+            "result": "success",
+            "description": "OK",
+            "ip_address": "1.2.3.4",
+        }
+    )
+    result = await audit_export_service.list_audit_logs(
+        {"page": 1, "page_size": 50, "result": "failure"}
+    )
     assert result["meta"]["total"] == 1
 
 
@@ -67,18 +91,40 @@ async def test_list_audit_logs_with_result_filter(mock_db):
 async def test_list_audit_logs_date_range_filter(mock_db):
     now = datetime.utcnow()
     old = now - timedelta(days=10)
-    await mock_db["audit_logs"].insert_one({
-        "event_code": "OLD", "occurred_at": old, "actor_role": "admin", "actor_id": None,
-        "object_type": "t", "object_id": None, "result": "success", "description": "Cũ", "ip_address": "1.2.3.4",
-    })
-    await mock_db["audit_logs"].insert_one({
-        "event_code": "NEW", "occurred_at": now, "actor_role": "admin", "actor_id": None,
-        "object_type": "t", "object_id": None, "result": "success", "description": "Mới", "ip_address": "1.2.3.4",
-    })
-    result = await audit_export_service.list_audit_logs({
-        "page": 1, "page_size": 50,
-        "from_date": now - timedelta(days=1), "to_date": now + timedelta(days=1),
-    })
+    await mock_db["audit_logs"].insert_one(
+        {
+            "event_code": "OLD",
+            "occurred_at": old,
+            "actor_role": "admin",
+            "actor_id": None,
+            "object_type": "t",
+            "object_id": None,
+            "result": "success",
+            "description": "Cũ",
+            "ip_address": "1.2.3.4",
+        }
+    )
+    await mock_db["audit_logs"].insert_one(
+        {
+            "event_code": "NEW",
+            "occurred_at": now,
+            "actor_role": "admin",
+            "actor_id": None,
+            "object_type": "t",
+            "object_id": None,
+            "result": "success",
+            "description": "Mới",
+            "ip_address": "1.2.3.4",
+        }
+    )
+    result = await audit_export_service.list_audit_logs(
+        {
+            "page": 1,
+            "page_size": 50,
+            "from_date": now - timedelta(days=1),
+            "to_date": now + timedelta(days=1),
+        }
+    )
     assert result["meta"]["total"] == 1
 
 
@@ -104,12 +150,19 @@ async def test_export_csv_success(mock_db):
 @pytest.mark.asyncio
 async def test_export_csv_limit_exceeded(mock_db):
     for i in range(10001):
-        await mock_db["audit_logs"].insert_one({
-            "event_code": f"E{i}", "occurred_at": datetime.utcnow(),
-            "actor_role": "admin", "actor_id": None,
-            "object_type": "t", "object_id": None,
-            "result": "success", "description": f"D{i}", "ip_address": "1.2.3.4",
-        })
+        await mock_db["audit_logs"].insert_one(
+            {
+                "event_code": f"E{i}",
+                "occurred_at": datetime.utcnow(),
+                "actor_role": "admin",
+                "actor_id": None,
+                "object_type": "t",
+                "object_id": None,
+                "result": "success",
+                "description": f"D{i}",
+                "ip_address": "1.2.3.4",
+            }
+        )
     with pytest.raises(HTTPException) as exc:
         await audit_export_service.export_csv({})
     assert exc.value.detail["error"]["code"] == "AUDIT_EXPORT_LIMIT_EXCEEDED"

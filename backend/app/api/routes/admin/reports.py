@@ -22,8 +22,12 @@ async def list_reports(
     to_date: Optional[datetime] = None,
 ):
     params = {
-        "page": page, "page_size": page_size, "status": status_filter,
-        "report_type": report_type, "from_date": from_date, "to_date": to_date,
+        "page": page,
+        "page_size": page_size,
+        "status": status_filter,
+        "report_type": report_type,
+        "from_date": from_date,
+        "to_date": to_date,
     }
     data = await admin_report_service.list_reports(params)
     return {"success": True, "data": data["items"], "meta": data["meta"]}
@@ -37,21 +41,36 @@ async def get_report(report_id: str, current_admin: dict = Depends(get_current_a
 
 @router.patch("/{report_id}")
 async def update_report(
-    report_id: str, payload: AdminReportUpdateRequest, request: Request, current_admin: dict = Depends(get_current_admin),
+    report_id: str,
+    payload: AdminReportUpdateRequest,
+    request: Request,
+    current_admin: dict = Depends(get_current_admin),
 ):
     ip = request.client.host if request.client else "127.0.0.1"
     data = await admin_report_service.update_report(
-        report_id, payload.status, payload.admin_note, current_admin["_id"], ip,
+        report_id,
+        payload.status,
+        payload.admin_note,
+        current_admin["_id"],
+        ip,
     )
     return {"success": True, "data": data}
 
 
+@router.post("/{report_id}/action")
 @router.post("/{report_id}/actions")
 async def report_action(
-    report_id: str, payload: AdminReportActionRequest, request: Request, current_admin: dict = Depends(get_current_admin),
+    report_id: str,
+    payload: AdminReportActionRequest,
+    request: Request,
+    current_admin: dict = Depends(get_current_admin),
 ):
     ip = request.client.host if request.client else "127.0.0.1"
     data = await admin_report_service.execute_action(
-        report_id, payload.action, payload.reason, current_admin["_id"], ip,
+        report_id,
+        payload.action,
+        payload.reason,
+        current_admin["_id"],
+        ip,
     )
     return {"success": True, "data": data}

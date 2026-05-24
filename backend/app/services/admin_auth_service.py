@@ -9,7 +9,6 @@ from app.core.database import get_db
 from app.core.security import create_access_token, verify_password
 from app.services import audit_service
 
-
 ADMIN_STATUS_LABELS = {
     "active": "hoạt động",
     "disabled": "vô hiệu hóa",
@@ -19,10 +18,12 @@ ADMIN_STATUS_LABELS = {
 async def check_rate_limit(username: str, ip_address: str) -> None:
     db = get_db()
     fifteen_minutes_ago = datetime.utcnow() - timedelta(minutes=15)
-    count = await db["admin_login_attempts"].count_documents({
-        "$or": [{"username": username}, {"ip_address": ip_address}],
-        "failed_at": {"$gte": fifteen_minutes_ago},
-    })
+    count = await db["admin_login_attempts"].count_documents(
+        {
+            "$or": [{"username": username}, {"ip_address": ip_address}],
+            "failed_at": {"$gte": fifteen_minutes_ago},
+        }
+    )
     if count >= 10:
         raise HTTPException(
             status_code=status.HTTP_429_TOO_MANY_REQUESTS,
@@ -39,11 +40,13 @@ async def check_rate_limit(username: str, ip_address: str) -> None:
 
 async def record_failed_attempt(username: str, ip_address: str) -> None:
     db = get_db()
-    await db["admin_login_attempts"].insert_one({
-        "username": username,
-        "ip_address": ip_address,
-        "failed_at": datetime.utcnow(),
-    })
+    await db["admin_login_attempts"].insert_one(
+        {
+            "username": username,
+            "ip_address": ip_address,
+            "failed_at": datetime.utcnow(),
+        }
+    )
 
 
 async def login(username: str, password: str, ip_address: str, user_agent: str) -> dict:
@@ -106,15 +109,17 @@ async def login(username: str, password: str, ip_address: str, user_agent: str) 
     jti = str(uuid.uuid4())
     expires_at = now + timedelta(minutes=settings.JWT_ADMIN_ACCESS_TOKEN_EXPIRE_MINUTES)
 
-    await db["admin_sessions"].insert_one({
-        "admin_id": admin["_id"],
-        "jti": jti,
-        "expires_at": expires_at,
-        "revoked_at": None,
-        "ip_address": ip_address,
-        "user_agent": user_agent,
-        "created_at": now,
-    })
+    await db["admin_sessions"].insert_one(
+        {
+            "admin_id": admin["_id"],
+            "jti": jti,
+            "expires_at": expires_at,
+            "revoked_at": None,
+            "ip_address": ip_address,
+            "user_agent": user_agent,
+            "created_at": now,
+        }
+    )
 
     token = create_access_token(
         {"sub": str(admin["_id"]), "jti": jti, "is_system_admin": admin["is_system_admin"]},

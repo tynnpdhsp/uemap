@@ -56,19 +56,21 @@ async def list_audit_logs(params: dict) -> dict:
 
     items = []
     for log in logs:
-        items.append({
-            "id": str(log["_id"]),
-            "event_code": log["event_code"],
-            "occurred_at": log["occurred_at"],
-            "occurred_at_display": _vn_display(log["occurred_at"]),
-            "actor_role": log["actor_role"],
-            "actor_id": str(log["actor_id"]) if log.get("actor_id") else None,
-            "object_type": log["object_type"],
-            "object_id": log.get("object_id"),
-            "result": log["result"],
-            "description": log["description"],
-            "ip_address": log["ip_address"],
-        })
+        items.append(
+            {
+                "id": str(log["_id"]),
+                "event_code": log["event_code"],
+                "occurred_at": log["occurred_at"],
+                "occurred_at_display": _vn_display(log["occurred_at"]),
+                "actor_role": log["actor_role"],
+                "actor_id": str(log["actor_id"]) if log.get("actor_id") else None,
+                "object_type": log["object_type"],
+                "object_id": log.get("object_id"),
+                "result": log["result"],
+                "description": log["description"],
+                "ip_address": log["ip_address"],
+            }
+        )
 
     return {
         "items": items,
@@ -102,17 +104,19 @@ async def export_csv(params: dict) -> StreamingResponse:
     writer.writerow(CSV_HEADERS)
 
     async for log in cursor:
-        writer.writerow([
-            log["event_code"],
-            _vn_display(log["occurred_at"]),
-            log["actor_role"],
-            str(log["actor_id"]) if log.get("actor_id") else "",
-            log["object_type"],
-            log.get("object_id", ""),
-            log["result"],
-            log["description"],
-            log["ip_address"],
-        ])
+        writer.writerow(
+            [
+                log["event_code"],
+                _vn_display(log["occurred_at"]),
+                log["actor_role"],
+                str(log["actor_id"]) if log.get("actor_id") else "",
+                log["object_type"],
+                log.get("object_id", ""),
+                log["result"],
+                log["description"],
+                log["ip_address"],
+            ]
+        )
 
     output.seek(0)
     return StreamingResponse(

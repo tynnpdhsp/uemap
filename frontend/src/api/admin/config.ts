@@ -24,7 +24,8 @@ export const adminConfigApi = {
   updateMapConfig: (data: Partial<MapConfig>) =>
     adminApi.patch<MapConfig>("/admin/config/map", data),
 
-  getEmailTemplates: () => adminApi.get<EmailTemplates>("/admin/config/email-templates"),
+  getEmailTemplates: () =>
+    adminApi.get<EmailTemplates>("/admin/config/email-templates"),
 
   updateEmailTemplates: (data: Partial<EmailTemplates>) =>
     adminApi.patch<EmailTemplates>("/admin/config/email-templates", data),
