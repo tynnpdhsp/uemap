@@ -83,9 +83,12 @@ pipeline {
                 anyOf { branch 'main'; branch 'staging' }
             }
             steps {
+                echo "Initiating SonarQube Scanning..."
                 script {
-                    withSonarQubeEnv('SonarQubeServer') {
-                        sh 'sonar-scanner'
+                    withSonarQubeEnv('SonarQube') {
+                        docker.image('sonarsource/sonar-scanner-cli:latest').inside('--network=devops-net') {
+                            sh 'sonar-scanner'
+                        }
                     }
                 }
             }
