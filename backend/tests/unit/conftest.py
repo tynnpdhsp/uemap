@@ -25,6 +25,8 @@ GET_DB_TARGETS = [
     "app.api.routes.student.my_places.get_db",
     "app.api.routes.student.comments.get_db",
     "app.api.routes.student.reports.get_db",
+    "app.services.media_service.get_db",
+    "app.api.routes.public.media.get_db",
 ]
 
 TEST_EMAIL = "4901104172@student.hcmue.edu.vn"

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 from copy import deepcopy
 from datetime import datetime
 from typing import Any
@@ -29,6 +30,17 @@ def _field_matches(doc_value: Any, condition: Any) -> bool:
             return doc_value > condition["$gt"]
         if "$ne" in condition:
             return doc_value != condition["$ne"]
+        if "$in" in condition:
+            return doc_value in condition["$in"]
+        if "$regex" in condition:
+            if doc_value is None:
+                return False
+            pattern = condition["$regex"]
+            flags = 0
+            if "$options" in condition:
+                if "i" in condition["$options"]:
+                    flags |= re.IGNORECASE
+            return bool(re.search(pattern, str(doc_value), flags))
         return False
     if condition is None:
         return doc_value is None
@@ -37,8 +49,14 @@ def _field_matches(doc_value: Any, condition: Any) -> bool:
 
 def _doc_matches(doc: dict[str, Any], query: dict[str, Any]) -> bool:
     for key, expected in query.items():
-        if not _field_matches(doc.get(key), expected):
-            return False
+        if key == "$or":
+            if not isinstance(expected, list):
+                return False
+            if not any(_doc_matches(doc, sub_query) for sub_query in expected):
+                return False
+        else:
+            if not _field_matches(doc.get(key), expected):
+                return False
     return True
 
 

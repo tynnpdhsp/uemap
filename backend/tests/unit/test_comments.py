@@ -122,3 +122,29 @@ async def test_delete_comment_success(mock_db):
     db_comment = await mock_db["comments"].find_one({"_id": comment_id})
     assert db_comment["status"] == "deleted"
     assert db_comment["deleted_at"] is not None
+
+@pytest.mark.asyncio
+async def test_update_comment_not_found(mock_db):
+    student_id = ObjectId()
+    with pytest.raises(HTTPException) as exc:
+        await comment_service.update_comment(
+            comment_id=str(ObjectId()),
+            student_id=student_id,
+            content="Nội dung mới",
+            ip_address="127.0.0.1"
+        )
+    assert exc.value.status_code == 404
+    assert exc.value.detail["error"]["code"] == "COMMENT_NOT_FOUND"
+
+@pytest.mark.asyncio
+async def test_delete_comment_not_found(mock_db):
+    student_id = ObjectId()
+    with pytest.raises(HTTPException) as exc:
+        await comment_service.delete_comment(
+            comment_id=str(ObjectId()),
+            student_id=student_id,
+            ip_address="127.0.0.1"
+        )
+    assert exc.value.status_code == 404
+    assert exc.value.detail["error"]["code"] == "COMMENT_NOT_FOUND"
+
