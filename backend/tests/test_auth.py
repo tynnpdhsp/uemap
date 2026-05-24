@@ -7,21 +7,14 @@ from httpx import ASGITransport, AsyncClient
 from app.core.database import get_db
 from app.core.security import hash_password
 from app.main import app
+from tests.auth_integration_helpers import (
+    TEST_EMAIL,
+    TEST_NAME,
+    TEST_PASSWORD,
+    clean_auth_integration_db,
+)
 
 pytestmark = pytest.mark.integration
-
-TEST_EMAIL = "4901104172@student.hcmue.edu.vn"
-TEST_PASSWORD = "testpassword123"
-TEST_NAME = "Nguyễn Văn A"
-
-
-async def clean_db():
-    db = get_db()
-    await db["students"].delete_many({"email": TEST_EMAIL})
-    await db["otp_tokens"].delete_many({"email": TEST_EMAIL})
-    await db["student_sessions"].delete_many({})
-    await db["login_attempts"].delete_many({"email": TEST_EMAIL})
-    await db["audit_logs"].delete_many({})
 
 
 @pytest.mark.asyncio
@@ -29,7 +22,7 @@ async def clean_db():
 async def test_registration_validation(mock_send_email):
     transport = ASGITransport(app=app)
     async with AsyncClient(transport=transport, base_url="http://test") as client:
-        await clean_db()
+        await clean_auth_integration_db()
 
         payload = {
             "email": "4901104172@gmail.com",
@@ -72,7 +65,7 @@ async def test_registration_validation(mock_send_email):
 async def test_duplicate_email_registration(mock_send_email):
     transport = ASGITransport(app=app)
     async with AsyncClient(transport=transport, base_url="http://test") as client:
-        await clean_db()
+        await clean_auth_integration_db()
 
         db = get_db()
         await db["students"].insert_one(
@@ -102,7 +95,7 @@ async def test_duplicate_email_registration(mock_send_email):
 async def test_otp_cooldown_and_rate_limit(mock_send_email):
     transport = ASGITransport(app=app)
     async with AsyncClient(transport=transport, base_url="http://test") as client:
-        await clean_db()
+        await clean_auth_integration_db()
 
         payload = {
             "email": TEST_EMAIL,
@@ -150,7 +143,7 @@ async def test_otp_cooldown_and_rate_limit(mock_send_email):
 async def test_otp_max_failures_locking(mock_send_email):
     transport = ASGITransport(app=app)
     async with AsyncClient(transport=transport, base_url="http://test") as client:
-        await clean_db()
+        await clean_auth_integration_db()
 
         payload = {
             "email": TEST_EMAIL,
@@ -180,7 +173,7 @@ async def test_otp_max_failures_locking(mock_send_email):
 async def test_login_scenarios():
     transport = ASGITransport(app=app)
     async with AsyncClient(transport=transport, base_url="http://test") as client:
-        await clean_db()
+        await clean_auth_integration_db()
 
         db = get_db()
         await db["students"].insert_one(
@@ -221,7 +214,7 @@ async def test_login_scenarios():
 async def test_login_rate_limit():
     transport = ASGITransport(app=app)
     async with AsyncClient(transport=transport, base_url="http://test") as client:
-        await clean_db()
+        await clean_auth_integration_db()
 
         db = get_db()
         await db["students"].insert_one(
@@ -252,7 +245,7 @@ async def test_login_rate_limit():
 async def test_forgot_password_security(mock_send_email):
     transport = ASGITransport(app=app)
     async with AsyncClient(transport=transport, base_url="http://test") as client:
-        await clean_db()
+        await clean_auth_integration_db()
 
         res = await client.post("/api/auth/forgot-password", json={"email": TEST_EMAIL})
         assert res.status_code == 200

@@ -67,7 +67,7 @@ Sau khi chạy thành công, bạn có thể truy cập:
 
 | Loại | Vị trí | Mô tả |
 |------|--------|--------|
-| **Unit test** | `tests/unit/` | Test logic Sprint 2 (services, schemas, security, deps) với **MongoDB mock** — không cần DB thật. |
+| **Unit test** | `tests/unit/` | Test logic module auth (services, schemas, security, deps) với **MongoDB mock** — không cần DB thật. |
 | **Integration test (API)** | `tests/test_*.py` | Gọi endpoint FastAPI qua `httpx`, dùng **MongoDB thật**; email OTP được mock. |
 
 Không có E2E browser trong thư mục `backend/`. E2E full-stack (React + API) xem mục [Kiểm thử E2E](../README.md#kiểm-thử-e2e) tại README gốc `source/`.
@@ -82,7 +82,7 @@ pip install -r requirements.txt
 
 ### Unit test — không cần MongoDB
 
-Bao phủ Sprint 2: `security`, `schemas`, `otp_service`, `session_service`, `auth_service`, `audit_service`, `email_service`, `deps`, routes (`auth`, `me`, `health`), `format_student_profile`, exception handler (~96 test).
+Bao phủ module auth: `security`, `schemas`, `otp_service`, `session_service`, `auth_service`, `audit_service`, `email_service`, `deps`, routes (`auth`, `me`, `health`), `format_student_profile`, exception handler (~96 test).
 
 ```bash
 pytest tests/unit -m unit -v
@@ -107,14 +107,17 @@ pytest tests/ -m integration -v
 ### Integration test — chạy toàn bộ file API
 
 ```bash
-pytest tests/test_auth.py tests/test_me.py tests/test_health.py -v
+pytest tests/ -m integration -v
 ```
 
-Chỉ module xác thực / hồ sơ:
+| File | Nội dung |
+|------|----------|
+| `test_integration_auth_flows.py` | Luồng E2E: đăng ký → OTP → login → logout; quên MK; đổi MK; audit |
+| `test_auth.py` | Validation, rate limit, login scenarios |
+| `test_me.py` | Hồ sơ, đổi MK, tài khoản khóa |
+| `test_health.py` | Health check |
 
-```bash
-pytest tests/test_auth.py tests/test_me.py -v
-```
+Tiện ích dùng chung: `tests/auth_integration_helpers.py` (mock SMTP, OTP cố định cho test).
 
 Một test cụ thể:
 

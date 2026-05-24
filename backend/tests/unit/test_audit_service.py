@@ -5,7 +5,7 @@ from app.services import audit_service
 
 pytestmark = pytest.mark.unit
 
-SPRINT2_AUDIT_EVENTS = [
+AUTH_AUDIT_EVENT_CODES = [
     ("AUTH_REGISTER", "guest", "student"),
     ("AUTH_OTP_SEND", "system", "otp"),
     ("AUTH_OTP_VERIFY", "guest", "student"),
@@ -19,9 +19,9 @@ SPRINT2_AUDIT_EVENTS = [
 @pytest.mark.asyncio
 @pytest.mark.parametrize(
     "event_code,actor_role,object_type",
-    SPRINT2_AUDIT_EVENTS,
+    AUTH_AUDIT_EVENT_CODES,
 )
-async def test_log_event_sprint2_event_codes(mock_db, event_code, actor_role, object_type):
+async def test_log_event_auth_module_codes(mock_db, event_code, actor_role, object_type):
     actor_id = ObjectId() if actor_role == "student" else None
     await audit_service.log_event(
         event_code=event_code,
