@@ -80,7 +80,7 @@ pipeline {
 
         stage('SonarQube Code Analysis') {
             when {
-                anyOf { branch 'main'; branch 'staging' }
+                anyOf { branch 'main'; branch 'staging'; branch 'feature/sonarqube' }
             }
             steps {
                 echo "Initiating SonarQube Scanning..."
