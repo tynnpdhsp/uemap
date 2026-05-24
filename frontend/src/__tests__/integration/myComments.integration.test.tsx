@@ -8,6 +8,8 @@ const myCommentsList = {
   data: [
     {
       id: "cmt-001",
+      content:
+        "Quán ăn này rất ngon, giá cả hợp lý cho sinh viên nên ghé thường xuyên.",
       content_preview: "Quán ăn này rất ngon, giá cả hợp lý cho sinh viên...",
       place_name: "Quán Cơm Sinh Viên",
       place_public_id: 1,
@@ -16,6 +18,8 @@ const myCommentsList = {
     },
     {
       id: "cmt-002",
+      content:
+        "Phòng tự học tầng 3 rộng rãi, yên tĩnh, phù hợp ôn thi cuối kỳ.",
       content_preview: "Phòng tự học tầng 3 rộng rãi, yên tĩnh...",
       place_name: "Thư viện Trường",
       place_public_id: 2,
@@ -24,6 +28,8 @@ const myCommentsList = {
     },
     {
       id: "cmt-003",
+      content:
+        "ATM ở đây hay bị lỗi, nên cẩn thận khi rút tiền gần giờ đóng cửa.",
       content_preview: "ATM ở đây hay bị lỗi, nên cẩn thận...",
       place_name: "ATM VCB",
       place_public_id: 3,
@@ -59,7 +65,9 @@ describe("integration: quản lý bình luận của tôi", () => {
 
     expect(await screen.findByText(/Quán ăn này rất ngon/)).toBeInTheDocument();
     expect(screen.getByText("Bình luận của tôi")).toBeInTheDocument();
-    expect(screen.getByText(/Phòng tự học tầng 3 rộng rãi/)).toBeInTheDocument();
+    expect(
+      screen.getByText(/Phòng tự học tầng 3 rộng rãi/),
+    ).toBeInTheDocument();
     expect(screen.getByText(/ATM ở đây hay bị lỗi/)).toBeInTheDocument();
     expect(screen.getByText("Quán Cơm Sinh Viên")).toBeInTheDocument();
     expect(screen.getByText("Thư viện Trường")).toBeInTheDocument();
@@ -79,8 +87,12 @@ describe("integration: quản lý bình luận của tôi", () => {
 
     renderApp(["/my/comments"]);
 
-    expect(await screen.findByText("Chưa có bình luận nào")).toBeInTheDocument();
-    expect(screen.getByText("Bạn chưa gửi bình luận nào trên hệ thống.")).toBeInTheDocument();
+    expect(
+      await screen.findByText("Chưa có bình luận nào"),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText("Bạn chưa gửi bình luận nào trên hệ thống."),
+    ).toBeInTheDocument();
   });
 
   it("xóa bình luận sau xác nhận cập nhật danh sách", async () => {
@@ -90,10 +102,7 @@ describe("integration: quản lý bình luận của tôi", () => {
     const confirmSpy = jest.spyOn(window, "confirm").mockReturnValue(true);
 
     const updatedList = {
-      data: [
-        myCommentsList.data[0],
-        myCommentsList.data[2],
-      ],
+      data: [myCommentsList.data[0], myCommentsList.data[2]],
       meta: { page: 1, page_size: 20, total: 2 },
     };
 
@@ -113,13 +122,17 @@ describe("integration: quản lý bình luận của tôi", () => {
 
     renderApp(["/my/comments"]);
 
-    expect(await screen.findByText(/Phòng tự học tầng 3 rộng rãi/)).toBeInTheDocument();
+    expect(
+      await screen.findByText(/Phòng tự học tầng 3 rộng rãi/),
+    ).toBeInTheDocument();
 
     const deleteButtons = screen.getAllByTitle("Xóa bình luận");
     await user.click(deleteButtons[1]);
 
     await waitFor(() => {
-      expect(screen.queryByText(/Phòng tự học tầng 3 rộng rãi/)).not.toBeInTheDocument();
+      expect(
+        screen.queryByText(/Phòng tự học tầng 3 rộng rãi/),
+      ).not.toBeInTheDocument();
     });
 
     confirmSpy.mockRestore();
@@ -157,7 +170,11 @@ describe("integration: quản lý bình luận của tôi", () => {
 
     installFetchMock((url, method) => {
       if (method === "GET" && url.includes("/api/config/map")) {
-        return jsonOk({ default_center: { lat: 10.7628, lng: 106.6824 }, default_zoom: 16, geofence: null });
+        return jsonOk({
+          default_center: { lat: 10.7628, lng: 106.6824 },
+          default_zoom: 16,
+          geofence: null,
+        });
       }
       if (method === "GET" && url.includes("/api/categories")) {
         return jsonOk([]);
@@ -170,7 +187,9 @@ describe("integration: quản lý bình luận của tôi", () => {
 
     renderApp(["/my/comments"]);
 
-    expect(await screen.findByRole("heading", { name: "Đăng Nhập" })).toBeInTheDocument();
+    expect(
+      await screen.findByRole("heading", { name: "Đăng Nhập" }),
+    ).toBeInTheDocument();
   });
 
   it("hiển thị ngày tạo và trạng thái bình luận", async () => {

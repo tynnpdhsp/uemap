@@ -48,7 +48,9 @@ describe("integration: đăng nhập và đăng xuất", () => {
     );
 
     await waitFor(() => {
-      expect(sessionStorage.getItem("sv_access_token")).toBe("integration-token");
+      expect(sessionStorage.getItem("sv_access_token")).toBe(
+        "integration-token",
+      );
     });
     expect(await screen.findByText(TEST_NAME)).toBeInTheDocument();
     expect(await screen.findByText(/Sinh viên:/i)).toBeInTheDocument();

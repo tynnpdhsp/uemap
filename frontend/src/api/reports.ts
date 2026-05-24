@@ -1,4 +1,5 @@
 import { api } from "./client";
+import type { PaginatedAPIResponse } from "./types";
 
 export interface ReportCreatePayload {
   target_type: "place" | "comment";
@@ -28,8 +29,7 @@ export const reportsApi = {
     api.post<ReportCreateResponse>("/reports", payload),
 
   getMyReports: (page = 1) =>
-    api.get<{
-      data: MyReportItem[];
-      meta: { page: number; page_size: number; total: number };
-    }>(`/my/reports?page=${page}`),
+    api.get<MyReportItem[]>(`/my/reports?page=${page}`) as Promise<
+      PaginatedAPIResponse<MyReportItem[]>
+    >,
 };

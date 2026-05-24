@@ -53,9 +53,7 @@ const mockPlace = {
   },
   hours: "07:00 - 22:00",
   contact: "0901234567",
-  images: [
-    { object_key: "img-1", sort_order: 0, mime: "image/jpeg" },
-  ],
+  images: [{ object_key: "img-1", sort_order: 0, mime: "image/jpeg" }],
   video: null,
   updated_at_display: "01/01/2026",
 };
@@ -80,7 +78,10 @@ describe("PlaceDetailPage", () => {
   beforeEach(() => {
     jest.clearAllMocks();
     mockGetDetail.mockResolvedValue({ success: true, data: mockPlace });
-    mockGetPlaceComments.mockResolvedValue({ success: true, data: mockComments });
+    mockGetPlaceComments.mockResolvedValue({
+      success: true,
+      data: mockComments,
+    });
     mockUseAuth.mockReturnValue({
       isAuthenticated: true,
       student: { full_name: "Nguyễn Văn A", status: "active" },
@@ -90,9 +91,7 @@ describe("PlaceDetailPage", () => {
   it("hiển thị chi tiết địa điểm và danh sách bình luận", async () => {
     renderWithRouter(<PlaceDetailPage />, {
       route: "/places/123",
-      routes: [
-        { path: "/places/:publicId", element: <PlaceDetailPage /> }
-      ]
+      routes: [{ path: "/places/:publicId", element: <PlaceDetailPage /> }],
     });
 
     expect(await screen.findByText("Cơm tấm Cali")).toBeInTheDocument();
@@ -102,7 +101,9 @@ describe("PlaceDetailPage", () => {
     expect(screen.getByText("07:00 - 22:00")).toBeInTheDocument();
     expect(screen.getByText("0901234567")).toBeInTheDocument();
     expect(screen.getByText("Lê Văn B")).toBeInTheDocument();
-    expect(screen.getByText("Chất lượng tốt, phục vụ nhanh chóng.")).toBeInTheDocument();
+    expect(
+      screen.getByText("Chất lượng tốt, phục vụ nhanh chóng."),
+    ).toBeInTheDocument();
   });
 
   it("cho phép gửi bình luận mới khi sinh viên là active", async () => {
@@ -119,9 +120,7 @@ describe("PlaceDetailPage", () => {
 
     renderWithRouter(<PlaceDetailPage />, {
       route: "/places/123",
-      routes: [
-        { path: "/places/:publicId", element: <PlaceDetailPage /> }
-      ]
+      routes: [{ path: "/places/:publicId", element: <PlaceDetailPage /> }],
     });
 
     await screen.findByText("Cơm tấm Cali");
@@ -133,7 +132,10 @@ describe("PlaceDetailPage", () => {
     await user.click(submitBtn);
 
     await waitFor(() => {
-      expect(mockCreateComment).toHaveBeenCalledWith(123, "Phù hợp với túi tiền sinh viên.");
+      expect(mockCreateComment).toHaveBeenCalledWith(
+        123,
+        "Phù hợp với túi tiền sinh viên.",
+      );
     });
   });
 
@@ -151,9 +153,7 @@ describe("PlaceDetailPage", () => {
 
     renderWithRouter(<PlaceDetailPage />, {
       route: "/places/123",
-      routes: [
-        { path: "/places/:publicId", element: <PlaceDetailPage /> }
-      ]
+      routes: [{ path: "/places/:publicId", element: <PlaceDetailPage /> }],
     });
 
     await screen.findByText("Cơm tấm Cali");
@@ -161,12 +161,16 @@ describe("PlaceDetailPage", () => {
     const reportBtn = screen.getByRole("button", { name: /Báo cáo Vi phạm/i });
     await user.click(reportBtn);
 
-    expect(await screen.findByRole("heading", { name: "Báo cáo Vi phạm" })).toBeInTheDocument();
+    expect(
+      await screen.findByRole("heading", { name: "Báo cáo Vi phạm" }),
+    ).toBeInTheDocument();
 
     const select = screen.getByRole("combobox");
     await user.selectOptions(select, "wrong_info");
 
-    const reasonTextarea = screen.getByPlaceholderText(/Mô tả chi tiết vi phạm/i);
+    const reasonTextarea = screen.getByPlaceholderText(
+      /Mô tả chi tiết vi phạm/i,
+    );
     await user.type(reasonTextarea, "Địa điểm này đã đóng cửa từ rất lâu rồi.");
 
     const submitReportBtn = screen.getByRole("button", { name: "Gửi Báo cáo" });

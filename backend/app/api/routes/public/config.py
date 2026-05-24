@@ -1,8 +1,9 @@
 from fastapi import APIRouter
+
 from app.core.database import get_db
-from app.schemas.map_config import AppConfigResponse
 
 router = APIRouter()
+
 
 @router.get("/map", response_model=dict)
 async def get_map_config():
@@ -16,9 +17,9 @@ async def get_map_config():
                 "type": "rectangle",
                 "bounds": {
                     "sw": {"lat": 10.75, "lng": 106.66},
-                    "ne": {"lat": 10.78, "lng": 106.71}
-                }
+                    "ne": {"lat": 10.78, "lng": 106.71},
+                },
             },
-            "cluster_zoom_threshold": 14
+            "cluster_zoom_threshold": 14,
         }
     return {"success": True, "data": config}

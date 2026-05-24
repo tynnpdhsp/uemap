@@ -60,7 +60,9 @@ export const ProfilePage: React.FC = () => {
 
     setUpdateLoading(true);
     try {
-      const res = await api.patch<StudentProfile>("/me", { full_name: fullName.trim() });
+      const res = await api.patch<StudentProfile>("/me", {
+        full_name: fullName.trim(),
+      });
       if (res.success && res.data) {
         setProfile(res.data);
         setProfileSuccess("Cập nhật thông tin cá nhân thành công.");

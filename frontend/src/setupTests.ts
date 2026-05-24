@@ -1,4 +1,5 @@
 import "@testing-library/jest-dom";
+import type { ReactNode } from "react";
 
 if (typeof globalThis.Request === "undefined") {
   class RequestPolyfill {
@@ -23,7 +24,7 @@ afterEach(() => {
 });
 
 jest.mock("react-leaflet", () => ({
-  MapContainer: ({ children }: any) => children,
+  MapContainer: ({ children }: { children?: ReactNode }) => children,
   TileLayer: () => null,
   Circle: () => null,
   Rectangle: () => null,
@@ -65,4 +66,3 @@ jest.mock("leaflet", () => {
 });
 
 jest.mock("leaflet.markercluster", () => ({}));
-

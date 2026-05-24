@@ -1,7 +1,9 @@
 import uuid
 from io import BytesIO
 from typing import List, Optional, Tuple
+
 from app.core.minio_client import minio_client
+
 
 async def upload_image(file_data: bytes, filename: str, content_type: str, student_id: str) -> str:
     ext = filename.split(".")[-1] if "." in filename else "jpg"
@@ -10,6 +12,7 @@ async def upload_image(file_data: bytes, filename: str, content_type: str, stude
     await minio_client.put_object(object_key, data, len(file_data), content_type)
     return object_key
 
+
 async def upload_video(file_data: bytes, filename: str, content_type: str, student_id: str) -> str:
     ext = filename.split(".")[-1] if "." in filename else "mp4"
     object_key = f"uploads/{student_id}/vid-{uuid.uuid4()}.{ext}"
@@ -17,10 +20,9 @@ async def upload_video(file_data: bytes, filename: str, content_type: str, stude
     await minio_client.put_object(object_key, data, len(file_data), content_type)
     return object_key
 
+
 async def confirm_media_keys(
-    image_keys: List[str],
-    video_key: Optional[str],
-    public_id: int
+    image_keys: List[str], video_key: Optional[str], public_id: int
 ) -> Tuple[List[str], Optional[str]]:
     new_image_keys = []
     for key in image_keys:

@@ -1,15 +1,14 @@
 from datetime import datetime, timedelta
-from fastapi import HTTPException, status
+
 from bson import ObjectId
+from fastapi import HTTPException, status
+
 from app.core.database import get_db
 from app.services import audit_service
 
+
 async def create_comment(
-    place_public_id: int,
-    student_id: ObjectId,
-    student_name: str,
-    content: str,
-    ip_address: str
+    place_public_id: int, student_id: ObjectId, student_name: str, content: str, ip_address: str
 ) -> dict:
     db = get_db()
     place = await db["places"].find_one({"public_id": place_public_id, "status": "published"})
@@ -21,9 +20,9 @@ async def create_comment(
                 "error": {
                     "code": "COMMENT_FORBIDDEN",
                     "message": "Không thể bình luận trên địa điểm không tồn tại hoặc chưa công khai.",
-                    "details": []
-                }
-            }
+                    "details": [],
+                },
+            },
         )
 
     now = datetime.utcnow()
@@ -36,7 +35,7 @@ async def create_comment(
         "status": "visible",
         "deleted_at": None,
         "created_at": now,
-        "updated_at": now
+        "updated_at": now,
     }
 
     result = await db["comments"].insert_one(comment_doc)
@@ -50,7 +49,7 @@ async def create_comment(
         object_id=str(comment_id),
         result="success",
         description="Gửi bình luận mới thành công.",
-        ip_address=ip_address
+        ip_address=ip_address,
     )
 
     vn_time = now + timedelta(hours=7)
@@ -60,10 +59,13 @@ async def create_comment(
         "id": str(comment_id),
         "author_display_name": student_name,
         "content": content,
-        "created_at_display": created_at_display
+        "created_at_display": created_at_display,
     }
 
-async def update_comment(comment_id: str, student_id: ObjectId, content: str, ip_address: str) -> None:
+
+async def update_comment(
+    comment_id: str, student_id: ObjectId, content: str, ip_address: str
+) -> None:
     db = get_db()
     try:
         oid = ObjectId(comment_id)
@@ -75,9 +77,9 @@ async def update_comment(comment_id: str, student_id: ObjectId, content: str, ip
                 "error": {
                     "code": "COMMENT_NOT_FOUND",
                     "message": "Không tìm thấy bình luận.",
-                    "details": []
-                }
-            }
+                    "details": [],
+                },
+            },
         )
 
     comment = await db["comments"].find_one({"_id": oid, "status": "visible"})
@@ -89,9 +91,9 @@ async def update_comment(comment_id: str, student_id: ObjectId, content: str, ip
                 "error": {
                     "code": "COMMENT_NOT_FOUND",
                     "message": "Không tìm thấy bình luận hoặc bình luận đã bị xóa.",
-                    "details": []
-                }
-            }
+                    "details": [],
+                },
+            },
         )
 
     if comment["student_id"] != student_id:
@@ -102,16 +104,13 @@ async def update_comment(comment_id: str, student_id: ObjectId, content: str, ip
                 "error": {
                     "code": "COMMENT_FORBIDDEN",
                     "message": "Bạn không có quyền chỉnh sửa bình luận này.",
-                    "details": []
-                }
-            }
+                    "details": [],
+                },
+            },
         )
 
     now = datetime.utcnow()
-    await db["comments"].update_one(
-        {"_id": oid},
-        {"$set": {"content": content, "updated_at": now}}
-    )
+    await db["comments"].update_one({"_id": oid}, {"$set": {"content": content, "updated_at": now}})
 
     await audit_service.log_event(
         event_code="COMMENT_UPDATE",
@@ -121,8 +120,9 @@ async def update_comment(comment_id: str, student_id: ObjectId, content: str, ip
         object_id=comment_id,
         result="success",
         description="Chỉnh sửa bình luận thành công.",
-        ip_address=ip_address
+        ip_address=ip_address,
     )
+
 
 async def delete_comment(comment_id: str, student_id: ObjectId, ip_address: str) -> None:
     db = get_db()
@@ -136,9 +136,9 @@ async def delete_comment(comment_id: str, student_id: ObjectId, ip_address: str)
                 "error": {
                     "code": "COMMENT_NOT_FOUND",
                     "message": "Không tìm thấy bình luận.",
-                    "details": []
-                }
-            }
+                    "details": [],
+                },
+            },
         )
 
     comment = await db["comments"].find_one({"_id": oid, "status": "visible"})
@@ -150,9 +150,9 @@ async def delete_comment(comment_id: str, student_id: ObjectId, ip_address: str)
                 "error": {
                     "code": "COMMENT_NOT_FOUND",
                     "message": "Không tìm thấy bình luận hoặc bình luận đã bị xóa.",
-                    "details": []
-                }
-            }
+                    "details": [],
+                },
+            },
         )
 
     if comment["student_id"] != student_id:
@@ -163,15 +163,14 @@ async def delete_comment(comment_id: str, student_id: ObjectId, ip_address: str)
                 "error": {
                     "code": "COMMENT_FORBIDDEN",
                     "message": "Bạn không có quyền xóa bình luận này.",
-                    "details": []
-                }
-            }
+                    "details": [],
+                },
+            },
         )
 
     now = datetime.utcnow()
     await db["comments"].update_one(
-        {"_id": oid},
-        {"$set": {"status": "deleted", "deleted_at": now, "updated_at": now}}
+        {"_id": oid}, {"$set": {"status": "deleted", "deleted_at": now, "updated_at": now}}
     )
 
     await audit_service.log_event(
@@ -182,5 +181,5 @@ async def delete_comment(comment_id: str, student_id: ObjectId, ip_address: str)
         object_id=comment_id,
         result="success",
         description="Xóa mềm bình luận thành công.",
-        ip_address=ip_address
+        ip_address=ip_address,
     )

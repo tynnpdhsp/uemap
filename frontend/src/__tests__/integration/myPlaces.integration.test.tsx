@@ -6,9 +6,27 @@ import { activeProfile } from "./helpers/fixtures";
 
 const myPlacesList = {
   data: [
-    { public_id: 1, name: "Quán Cơm Sinh Viên", status: "published" as const, status_label: "Đã đăng", public_url: "/places/1" },
-    { public_id: 2, name: "Phòng tự học tầng 3", status: "draft" as const, status_label: "Bản nháp", public_url: null },
-    { public_id: 3, name: "Xe ôm công nghệ", status: "hidden" as const, status_label: "Bị ẩn", public_url: null },
+    {
+      public_id: 1,
+      name: "Quán Cơm Sinh Viên",
+      status: "published" as const,
+      status_label: "Đã đăng",
+      public_url: "/places/1",
+    },
+    {
+      public_id: 2,
+      name: "Phòng tự học tầng 3",
+      status: "draft" as const,
+      status_label: "Bản nháp",
+      public_url: null,
+    },
+    {
+      public_id: 3,
+      name: "Xe ôm công nghệ",
+      status: "hidden" as const,
+      status_label: "Bị ẩn",
+      public_url: null,
+    },
   ],
   meta: { page: 1, page_size: 20, total: 3 },
 };
@@ -40,8 +58,12 @@ describe("integration: quản lý địa điểm của tôi", () => {
     expect(screen.getByText("Địa điểm của tôi")).toBeInTheDocument();
     expect(screen.getByText("Phòng tự học tầng 3")).toBeInTheDocument();
     expect(screen.getByText("Xe ôm công nghệ")).toBeInTheDocument();
-    expect(screen.getByText("Đã đăng", { selector: "span" })).toBeInTheDocument();
-    expect(screen.getByText("Bản nháp", { selector: "span" })).toBeInTheDocument();
+    expect(
+      screen.getByText("Đã đăng", { selector: "span" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText("Bản nháp", { selector: "span" }),
+    ).toBeInTheDocument();
     expect(screen.getByText("Bị ẩn", { selector: "span" })).toBeInTheDocument();
   });
 
@@ -66,7 +88,13 @@ describe("integration: quản lý địa điểm của tôi", () => {
     const user = userEvent.setup();
     const draftOnlyList = {
       data: [
-        { public_id: 2, name: "Phòng tự học tầng 3", status: "draft" as const, status_label: "Bản nháp", public_url: null },
+        {
+          public_id: 2,
+          name: "Phòng tự học tầng 3",
+          status: "draft" as const,
+          status_label: "Bản nháp",
+          public_url: null,
+        },
       ],
       meta: { page: 1, page_size: 20, total: 1 },
     };
@@ -104,8 +132,20 @@ describe("integration: quản lý địa điểm của tôi", () => {
 
     const updatedList = {
       data: [
-        { public_id: 1, name: "Quán Cơm Sinh Viên", status: "published" as const, status_label: "Đã đăng", public_url: "/places/1" },
-        { public_id: 3, name: "Xe ôm công nghệ", status: "hidden" as const, status_label: "Bị ẩn", public_url: null },
+        {
+          public_id: 1,
+          name: "Quán Cơm Sinh Viên",
+          status: "published" as const,
+          status_label: "Đã đăng",
+          public_url: "/places/1",
+        },
+        {
+          public_id: 3,
+          name: "Xe ôm công nghệ",
+          status: "hidden" as const,
+          status_label: "Bị ẩn",
+          public_url: null,
+        },
       ],
       meta: { page: 1, page_size: 20, total: 2 },
     };
@@ -143,7 +183,11 @@ describe("integration: quản lý địa điểm của tôi", () => {
 
     installFetchMock((url, method) => {
       if (method === "GET" && url.includes("/api/config/map")) {
-        return jsonOk({ default_center: { lat: 10.7628, lng: 106.6824 }, default_zoom: 16, geofence: null });
+        return jsonOk({
+          default_center: { lat: 10.7628, lng: 106.6824 },
+          default_zoom: 16,
+          geofence: null,
+        });
       }
       if (method === "GET" && url.includes("/api/categories")) {
         return jsonOk([]);
@@ -156,7 +200,9 @@ describe("integration: quản lý địa điểm của tôi", () => {
 
     renderApp(["/my/places"]);
 
-    expect(await screen.findByRole("heading", { name: "Đăng Nhập" })).toBeInTheDocument();
+    expect(
+      await screen.findByRole("heading", { name: "Đăng Nhập" }),
+    ).toBeInTheDocument();
   });
 
   it("hiển thị nút đóng góp địa điểm mới", async () => {

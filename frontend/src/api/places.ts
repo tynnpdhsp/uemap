@@ -1,4 +1,5 @@
 import { api } from "./client";
+import type { PaginatedAPIResponse } from "./types";
 
 export interface PlaceMarker {
   public_id: number;
@@ -21,6 +22,7 @@ export interface PlaceListItem {
 
 export interface PlaceDetailImage {
   object_key: string;
+  url?: string;
   sort_order: number;
   mime: string;
 }
@@ -75,6 +77,7 @@ export interface PlaceCreatePayload {
   image_object_keys?: string[];
   video?: PlaceDetailVideo | null;
   status?: "draft" | "published";
+  publish?: boolean;
 }
 
 export interface PlaceCreateResponse {
@@ -107,34 +110,27 @@ export const placesApi = {
     ne_lng?: number;
   }) => api.get<PlaceMarker[]>(`/places/markers${buildQuery(filters)}`),
 
-  getPlaces: (filters: {
-    page?: number;
-    page_size?: number;
-    category_ids?: string[];
-    q?: string;
-    sort?: string;
-  }) =>
-    api.get<{
-      data: PlaceListItem[];
-      meta: { page: number; page_size: number; total: number };
-    }>(`/places${buildQuery(filters)}`),
-
   getDetail: (publicId: number) => api.get<PlaceDetail>(`/places/${publicId}`),
 
-  search: (filters: { q: string; category_ids?: string[]; page?: number }) =>
-    api.get<{
-      data: PlaceListItem[];
-      meta: { page: number; page_size: number; total: number };
-    }>(`/search${buildQuery(filters)}`),
+  search: (filters: {
+    q: string;
+    category_ids?: string[];
+    page?: number;
+    page_size?: number;
+  }) =>
+    api.get<PlaceListItem[]>(`/search${buildQuery(filters)}`) as Promise<
+      PaginatedAPIResponse<PlaceListItem[]>
+    >,
 
   getMyPlaces: (filters: { page?: number; status?: string }) =>
-    api.get<{
-      data: MyPlaceListItem[];
-      meta: { page: number; page_size: number; total: number };
-    }>(`/my/places${buildQuery(filters)}`),
+    api.get<MyPlaceListItem[]>(`/my/places${buildQuery(filters)}`) as Promise<
+      PaginatedAPIResponse<MyPlaceListItem[]>
+    >,
 
   getMyPlaceDetail: (publicId: number) =>
-    api.get<PlaceCreatePayload & { public_id: number }>(`/my/places/${publicId}`),
+    api.get<PlaceCreatePayload & { public_id: number }>(
+      `/my/places/${publicId}`,
+    ),
 
   create: (payload: PlaceCreatePayload) =>
     api.post<PlaceCreateResponse>("/my/places", payload),

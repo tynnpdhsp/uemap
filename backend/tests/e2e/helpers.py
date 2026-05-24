@@ -29,8 +29,8 @@ def _otp_digit(_a: int, _b: int) -> int:
 
 async def clean_auth_db() -> None:
     db = get_db()
-    await db["students"].delete_many({"email": TEST_EMAIL})
     await db["otp_tokens"].delete_many({"email": TEST_EMAIL})
+    await db["students"].delete_many({"email": TEST_EMAIL})
     await db["student_sessions"].delete_many({})
     await db["login_attempts"].delete_many({"email": TEST_EMAIL})
     await db["audit_logs"].delete_many({})

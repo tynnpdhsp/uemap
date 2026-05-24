@@ -19,9 +19,7 @@ jest.mock("../../api/map", () => ({
     }),
     getCategories: jest.fn().mockResolvedValue({
       success: true,
-      data: [
-        { id: "cat1", name: "Quán ăn", color: "#ff0000" },
-      ],
+      data: [{ id: "cat1", name: "Quán ăn", color: "#ff0000" }],
     }),
   },
 }));

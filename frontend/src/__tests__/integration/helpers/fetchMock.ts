@@ -25,7 +25,11 @@ export function installFetchMock(handler: MockFetchHandler) {
         status: 404,
         json: async () => ({
           success: false,
-          error: { code: "NOT_MOCKED", message: `Chưa mock: ${method} ${url}`, details: [] },
+          error: {
+            code: "NOT_MOCKED",
+            message: `Chưa mock: ${method} ${url}`,
+            details: [],
+          },
         }),
       };
     }

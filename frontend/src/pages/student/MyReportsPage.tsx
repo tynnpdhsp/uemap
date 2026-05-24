@@ -1,6 +1,13 @@
 import React, { useEffect, useState, useCallback } from "react";
 import { reportsApi, MyReportItem } from "../../api/reports";
-import { AlertTriangle, Loader, Calendar, CheckCircle, Clock } from "lucide-react";
+import { readPaginatedList } from "../../api/types";
+import {
+  AlertTriangle,
+  Loader,
+  Calendar,
+  CheckCircle,
+  Clock,
+} from "lucide-react";
 
 export const MyReportsPage: React.FC = () => {
   const [reports, setReports] = useState<MyReportItem[]>([]);
@@ -12,10 +19,11 @@ export const MyReportsPage: React.FC = () => {
     setLoading(true);
     try {
       const res = await reportsApi.getMyReports(p);
-      if (res.success && res.data) {
-        setReports(res.data.data);
-        setTotal(res.data.meta.total);
-        setPage(res.data.meta.page);
+      const { items, meta } = readPaginatedList<MyReportItem>(res);
+      setReports(items);
+      if (meta) {
+        setTotal(meta.total);
+        setPage(meta.page);
       }
     } catch (err) {
       console.error("Error loading my reports", err);
@@ -58,36 +66,53 @@ export const MyReportsPage: React.FC = () => {
     <div className="min-h-screen bg-gray-50/50 py-8 px-4 sm:px-6 lg:px-8">
       <div className="max-w-4xl mx-auto space-y-6">
         <div>
-          <h1 className="text-2xl font-black text-gray-800 tracking-tight">Báo cáo vi phạm của tôi</h1>
-          <p className="text-sm text-gray-500 mt-1">Theo dõi danh sách và tình trạng xử lý các báo cáo vi phạm do bạn gửi lên.</p>
+          <h1 className="text-2xl font-black text-gray-800 tracking-tight">
+            Báo cáo vi phạm của tôi
+          </h1>
+          <p className="text-sm text-gray-500 mt-1">
+            Theo dõi danh sách và tình trạng xử lý các báo cáo vi phạm do bạn
+            gửi lên.
+          </p>
         </div>
 
         <div className="bg-white rounded-3xl shadow-xl border border-gray-100 overflow-hidden">
           {loading ? (
             <div className="p-12 text-center">
               <Loader className="w-8 h-8 text-blue-600 animate-spin mx-auto mb-4" />
-              <p className="text-gray-500 font-medium">Đang tải danh sách báo cáo...</p>
+              <p className="text-gray-500 font-medium">
+                Đang tải danh sách báo cáo...
+              </p>
             </div>
           ) : reports.length > 0 ? (
             <div className="divide-y divide-gray-100">
               {reports.map((r) => (
-                <div key={r.report_code} className="p-6 hover:bg-gray-50/20 transition-colors flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                <div
+                  key={r.report_code}
+                  className="p-6 hover:bg-gray-50/20 transition-colors flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4"
+                >
                   <div className="space-y-2">
                     <div className="flex items-center gap-2">
-                      <span className="text-sm font-extrabold text-blue-600">{r.report_code}</span>
+                      <span className="text-sm font-extrabold text-blue-600">
+                        {r.report_code}
+                      </span>
                       <span className="px-2 py-0.5 rounded bg-gray-100 text-gray-600 text-[10px] font-bold tracking-wider uppercase border border-gray-200">
                         {r.report_type_label}
                       </span>
                     </div>
 
-                    <p className="text-sm font-semibold text-gray-800">{r.target_summary}</p>
-                    
+                    <p className="text-sm font-semibold text-gray-800">
+                      {r.target_summary}
+                    </p>
+
                     <div className="flex items-center gap-4 text-xs text-gray-400 font-medium">
                       <span className="inline-flex items-center gap-1">
                         <Calendar className="w-3.5 h-3.5" />
                         {r.created_at_display}
                       </span>
-                      <span className="capitalize">Đối tượng: {r.target_type === "place" ? "địa điểm" : "bình luận"}</span>
+                      <span className="capitalize">
+                        Đối tượng:{" "}
+                        {r.target_type === "place" ? "địa điểm" : "bình luận"}
+                      </span>
                     </div>
                   </div>
 
@@ -122,8 +147,12 @@ export const MyReportsPage: React.FC = () => {
           ) : (
             <div className="p-12 text-center">
               <AlertTriangle className="w-12 h-12 text-gray-300 mx-auto mb-4" />
-              <h3 className="text-base font-bold text-gray-700 mb-1">Chưa gửi báo cáo nào</h3>
-              <p className="text-sm text-gray-500">Lịch sử gửi báo cáo của bạn trống.</p>
+              <h3 className="text-base font-bold text-gray-700 mb-1">
+                Chưa gửi báo cáo nào
+              </h3>
+              <p className="text-sm text-gray-500">
+                Lịch sử gửi báo cáo của bạn trống.
+              </p>
             </div>
           )}
         </div>

@@ -1,22 +1,22 @@
-from typing import List, Optional
+from typing import Any, List, Optional
+
 from bson import ObjectId
+
 from app.core.database import get_db
 
+
 async def search_places(
-    q: str,
-    category_ids: Optional[List[str]] = None,
-    page: int = 1,
-    page_size: int = 20
+    q: str, category_ids: Optional[List[str]] = None, page: int = 1, page_size: int = 20
 ) -> dict:
     db = get_db()
-    
-    query = {"status": "published"}
+
+    query: dict[str, Any] = {"status": "published"}
 
     if q and q.strip():
         search_term = q.strip()
         query["$or"] = [
             {"name": {"$regex": search_term, "$options": "i"}},
-            {"description": {"$regex": search_term, "$options": "i"}}
+            {"description": {"$regex": search_term, "$options": "i"}},
         ]
 
     if category_ids:
@@ -35,9 +35,4 @@ async def search_places(
     cursor = db["places"].find(query).skip(skip).limit(page_size)
     places = await cursor.to_list(length=page_size)
 
-    return {
-        "items": places,
-        "total": total,
-        "page": page,
-        "page_size": page_size
-    }
+    return {"items": places, "total": total, "page": page, "page_size": page_size}

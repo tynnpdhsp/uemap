@@ -5,19 +5,20 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
 from app.api.routes.public import (
-    health_router,
-    config_router,
     categories_router,
-    places_router,
+    config_router,
+    health_router,
     media_router,
+    places_router,
+    search_router,
 )
 from app.api.routes.student import (
     auth_router,
+    comments_router,
     me_router,
     my_places_router,
-    uploads_router,
-    comments_router,
     reports_router,
+    uploads_router,
 )
 from app.api.routes.admin import (
     admin_auth_router,
@@ -87,6 +88,7 @@ app.include_router(health_router, prefix="/api", tags=["Health"])
 app.include_router(config_router, prefix="/api/config", tags=["Map Config"])
 app.include_router(categories_router, prefix="/api/categories", tags=["Categories"])
 app.include_router(places_router, prefix="/api/places", tags=["Places"])
+app.include_router(search_router, prefix="/api/search", tags=["Search"])
 app.include_router(media_router, prefix="/api/media", tags=["Media"])
 
 app.include_router(auth_router, prefix="/api/auth", tags=["Auth"])

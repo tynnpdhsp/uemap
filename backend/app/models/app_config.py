@@ -1,20 +1,25 @@
 from datetime import datetime
 from typing import Optional
+
 from pydantic import BaseModel, Field
+
 
 class MapBoundsPoint(BaseModel):
     lat: float
     lng: float
 
+
 class MapBounds(BaseModel):
     sw: MapBoundsPoint
     ne: MapBoundsPoint
+
 
 class MapGeofence(BaseModel):
     type: str
     bounds: Optional[MapBounds] = None
     center: Optional[MapBoundsPoint] = None
     radius_meters: Optional[float] = None
+
 
 class AppConfigModel(BaseModel):
     id: str = Field(default="map", alias="_id")

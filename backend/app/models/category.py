@@ -1,7 +1,10 @@
 from datetime import datetime
 from typing import Optional
+
 from pydantic import BaseModel, Field
+
 from app.models.student import PyObjectId
+
 
 class CategoryModel(BaseModel):
     id: Optional[PyObjectId] = Field(default=None, alias="_id")

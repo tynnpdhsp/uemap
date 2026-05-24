@@ -2,8 +2,11 @@ import React, { useEffect, useState, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import { placesApi, PlaceDetail } from "../../api/places";
+import { readPaginatedList } from "../../api/types";
 import { commentsApi, CommentItem } from "../../api/comments";
 import { reportsApi, ReportCreatePayload } from "../../api/reports";
+import { placeImageSrc, placeVideoFileSrc } from "../../utils/mediaUrl";
+import { getErrorMessage } from "../../utils/errorMessage";
 import {
   MapPin,
   Clock,
@@ -36,15 +39,25 @@ export const PlaceDetailPage: React.FC = () => {
   const [submittingComment, setSubmittingComment] = useState(false);
 
   const [copied, setCopied] = useState(false);
-  
+
   const [reportModalOpen, setReportModalOpen] = useState(false);
-  const [reportTarget, setReportTarget] = useState<{ type: "place" | "comment"; id: string; summary: string } | null>(null);
-  const [reportType, setReportType] = useState<ReportCreatePayload["report_type"]>("wrong_info");
+  const [reportTarget, setReportTarget] = useState<{
+    type: "place" | "comment";
+    id: string;
+    summary: string;
+  } | null>(null);
+  const [reportType, setReportType] =
+    useState<ReportCreatePayload["report_type"]>("wrong_info");
   const [reportReason, setReportReason] = useState("");
   const [submittingReport, setSubmittingReport] = useState(false);
-  const [reportSuccessCode, setReportSuccessCode] = useState<string | null>(null);
+  const [reportSuccessCode, setReportSuccessCode] = useState<string | null>(
+    null,
+  );
 
   const [activeImageIndex, setActiveImageIndex] = useState(0);
+  const [editingCommentId, setEditingCommentId] = useState<string | null>(null);
+  const [editingCommentContent, setEditingCommentContent] = useState("");
+  const [savingCommentEdit, setSavingCommentEdit] = useState(false);
 
   const loadPlaceDetail = useCallback(async () => {
     if (!publicId) return;
@@ -57,29 +70,36 @@ export const PlaceDetailPage: React.FC = () => {
       } else {
         setError("Không tìm thấy địa điểm.");
       }
-    } catch (err: any) {
-      setError(err.message || "Đã xảy ra lỗi khi tải chi tiết địa điểm.");
+    } catch (err: unknown) {
+      setError(getErrorMessage(err, "Đã xảy ra lỗi khi tải chi tiết địa điểm."));
     } finally {
       setLoading(false);
     }
   }, [publicId]);
 
-  const loadComments = useCallback(async (page: number) => {
-    if (!publicId) return;
-    setCommentLoading(true);
-    try {
-      const res = await commentsApi.getPlaceComments(parseInt(publicId, 10), page);
-      if (res.success && res.data) {
-        setComments(res.data.data);
-        setCommentTotal(res.data.meta.total);
-        setCommentPage(res.data.meta.page);
+  const loadComments = useCallback(
+    async (page: number) => {
+      if (!publicId) return;
+      setCommentLoading(true);
+      try {
+        const res = await commentsApi.getPlaceComments(
+          parseInt(publicId, 10),
+          page,
+        );
+        const { items, meta } = readPaginatedList<CommentItem>(res);
+        setComments(items);
+        if (meta) {
+          setCommentTotal(meta.total);
+          setCommentPage(meta.page);
+        }
+      } catch (err) {
+        console.error("Error loading comments", err);
+      } finally {
+        setCommentLoading(false);
       }
-    } catch (err) {
-      console.error("Error loading comments", err);
-    } finally {
-      setCommentLoading(false);
-    }
-  }, [publicId]);
+    },
+    [publicId],
+  );
 
   useEffect(() => {
     loadPlaceDetail();
@@ -94,22 +114,34 @@ export const PlaceDetailPage: React.FC = () => {
 
   const handleCommentSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!publicId || newComment.trim().length < 10 || newComment.trim().length > 2000) return;
+    if (
+      !publicId ||
+      newComment.trim().length < 10 ||
+      newComment.trim().length > 2000
+    )
+      return;
     setSubmittingComment(true);
     try {
-      const res = await commentsApi.createComment(parseInt(publicId, 10), newComment.trim());
+      const res = await commentsApi.createComment(
+        parseInt(publicId, 10),
+        newComment.trim(),
+      );
       if (res.success) {
         setNewComment("");
         loadComments(1);
       }
-    } catch (err: any) {
-      alert(err.message || "Không thể gửi bình luận.");
+    } catch (err: unknown) {
+      alert(getErrorMessage(err, "Không thể gửi bình luận."));
     } finally {
       setSubmittingComment(false);
     }
   };
 
-  const openReportModal = (type: "place" | "comment", id: string, summary: string) => {
+  const openReportModal = (
+    type: "place" | "comment",
+    id: string,
+    summary: string,
+  ) => {
     setReportTarget({ type, id, summary });
     setReportType("wrong_info");
     setReportReason("");
@@ -119,7 +151,12 @@ export const PlaceDetailPage: React.FC = () => {
 
   const handleReportSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!reportTarget || reportReason.trim().length < 20 || reportReason.trim().length > 500) return;
+    if (
+      !reportTarget ||
+      reportReason.trim().length < 20 ||
+      reportReason.trim().length > 500
+    )
+      return;
     setSubmittingReport(true);
     try {
       const res = await reportsApi.create({
@@ -131,10 +168,40 @@ export const PlaceDetailPage: React.FC = () => {
       if (res.success && res.data) {
         setReportSuccessCode(res.data.report_code);
       }
-    } catch (err: any) {
-      alert(err.message || "Không thể gửi báo cáo.");
+    } catch (err: unknown) {
+      alert(getErrorMessage(err, "Không thể gửi báo cáo."));
     } finally {
       setSubmittingReport(false);
+    }
+  };
+
+  const isOwnPlace =
+    isAuthenticated && student?.id && place?.creator_student_id === student.id;
+
+  const startEditComment = (comment: CommentItem) => {
+    setEditingCommentId(comment.id);
+    setEditingCommentContent(comment.content);
+  };
+
+  const cancelEditComment = () => {
+    setEditingCommentId(null);
+    setEditingCommentContent("");
+  };
+
+  const handleSaveCommentEdit = async (commentId: string) => {
+    const content = editingCommentContent.trim();
+    if (content.length < 10 || content.length > 2000) return;
+    setSavingCommentEdit(true);
+    try {
+      const res = await commentsApi.updateComment(commentId, content);
+      if (res.success) {
+        cancelEditComment();
+        loadComments(commentPage);
+      }
+    } catch (err: unknown) {
+      alert(getErrorMessage(err, "Không thể cập nhật bình luận."));
+    } finally {
+      setSavingCommentEdit(false);
     }
   };
 
@@ -160,7 +227,9 @@ export const PlaceDetailPage: React.FC = () => {
       <div className="min-h-screen bg-gray-50 flex items-center justify-center p-8">
         <div className="text-center">
           <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-gray-500 font-medium">Đang tải thông tin địa điểm...</p>
+          <p className="text-gray-500 font-medium">
+            Đang tải thông tin địa điểm...
+          </p>
         </div>
       </div>
     );
@@ -171,8 +240,12 @@ export const PlaceDetailPage: React.FC = () => {
       <div className="min-h-screen bg-gray-50 flex items-center justify-center p-8">
         <div className="bg-white p-8 rounded-2xl shadow-md max-w-md w-full text-center border border-gray-100">
           <AlertTriangle className="text-red-500 w-12 h-12 mx-auto mb-4" />
-          <h2 className="text-xl font-bold text-gray-800 mb-2">Đã xảy ra lỗi</h2>
-          <p className="text-gray-600 text-sm mb-6">{error || "Địa điểm không tồn tại hoặc chưa được công khai."}</p>
+          <h2 className="text-xl font-bold text-gray-800 mb-2">
+            Đã xảy ra lỗi
+          </h2>
+          <p className="text-gray-600 text-sm mb-6">
+            {error || "Địa điểm không tồn tại hoặc chưa được công khai."}
+          </p>
           <button
             onClick={() => navigate("/")}
             className="w-full py-2.5 bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-700 transition"
@@ -202,7 +275,7 @@ export const PlaceDetailPage: React.FC = () => {
                 <div className="space-y-4">
                   <div className="relative aspect-video bg-gray-100 rounded-2xl overflow-hidden border border-gray-100 group shadow-inner">
                     <img
-                      src={`/api/media/${place.images[activeImageIndex].object_key}`}
+                      src={placeImageSrc(place.images[activeImageIndex])}
                       alt={place.name}
                       className="w-full h-full object-cover group-hover:scale-[1.02] transition duration-500"
                     />
@@ -211,7 +284,9 @@ export const PlaceDetailPage: React.FC = () => {
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
-                            setActiveImageIndex((prev) => (prev === 0 ? place.images.length - 1 : prev - 1));
+                            setActiveImageIndex((prev) =>
+                              prev === 0 ? place.images.length - 1 : prev - 1,
+                            );
                           }}
                           className="p-2 bg-white/90 backdrop-blur rounded-xl text-gray-800 pointer-events-auto hover:bg-white shadow"
                         >
@@ -220,7 +295,9 @@ export const PlaceDetailPage: React.FC = () => {
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
-                            setActiveImageIndex((prev) => (prev === place.images.length - 1 ? 0 : prev + 1));
+                            setActiveImageIndex((prev) =>
+                              prev === place.images.length - 1 ? 0 : prev + 1,
+                            );
                           }}
                           className="p-2 bg-white/90 backdrop-blur rounded-xl text-gray-800 pointer-events-auto hover:bg-white shadow"
                         >
@@ -236,10 +313,16 @@ export const PlaceDetailPage: React.FC = () => {
                           key={img.object_key}
                           onClick={() => setActiveImageIndex(idx)}
                           className={`w-20 aspect-video rounded-lg overflow-hidden border-2 flex-shrink-0 transition ${
-                            idx === activeImageIndex ? "border-blue-600 shadow-md" : "border-transparent"
+                            idx === activeImageIndex
+                              ? "border-blue-600 shadow-md"
+                              : "border-transparent"
                           }`}
                         >
-                          <img src={`/api/media/${img.object_key}`} alt="" className="w-full h-full object-cover" />
+                          <img
+                            src={placeImageSrc(img)}
+                            alt=""
+                            className="w-full h-full object-cover"
+                          />
                         </button>
                       ))}
                     </div>
@@ -257,7 +340,9 @@ export const PlaceDetailPage: React.FC = () => {
                     <Play className="w-4 h-4 text-blue-600" />
                     Video giới thiệu
                   </h3>
-                  {place.video.kind === "embed" && place.video.url && getYoutubeEmbedUrl(place.video.url) ? (
+                  {place.video.kind === "embed" &&
+                  place.video.url &&
+                  getYoutubeEmbedUrl(place.video.url) ? (
                     <div className="aspect-video rounded-xl overflow-hidden shadow">
                       <iframe
                         src={getYoutubeEmbedUrl(place.video.url)!}
@@ -266,16 +351,19 @@ export const PlaceDetailPage: React.FC = () => {
                         allowFullScreen
                       ></iframe>
                     </div>
-                  ) : place.video.kind === "file" && place.video.object_key ? (
+                  ) : place.video.kind === "file" &&
+                    placeVideoFileSrc(place.video) ? (
                     <div className="aspect-video rounded-xl overflow-hidden shadow bg-black">
                       <video
-                        src={`/api/media/${place.video.object_key}`}
+                        src={placeVideoFileSrc(place.video)!}
                         controls
                         className="w-full h-full"
                       ></video>
                     </div>
                   ) : (
-                    <p className="text-xs text-gray-500">Đường dẫn video không hợp lệ.</p>
+                    <p className="text-xs text-gray-500">
+                      Đường dẫn video không hợp lệ.
+                    </p>
                   )}
                 </div>
               )}
@@ -292,7 +380,9 @@ export const PlaceDetailPage: React.FC = () => {
                   </span>
                 </div>
 
-                <h1 className="text-2xl font-black text-gray-800 tracking-tight leading-tight">{place.name}</h1>
+                <h1 className="text-2xl font-black text-gray-800 tracking-tight leading-tight">
+                  {place.name}
+                </h1>
 
                 <p className="text-gray-600 text-sm leading-relaxed bg-gray-50/50 p-4 rounded-2xl border border-gray-100 shadow-inner whitespace-pre-line">
                   {place.description}
@@ -323,13 +413,23 @@ export const PlaceDetailPage: React.FC = () => {
                   onClick={handleShare}
                   className="flex-grow flex items-center justify-center gap-2 py-2.5 px-4 bg-gray-100 text-gray-700 font-bold rounded-xl hover:bg-gray-200 transition-colors shadow-sm text-sm"
                 >
-                  {copied ? <Check className="w-4 h-4 text-green-600" /> : <Copy className="w-4 h-4" />}
+                  {copied ? (
+                    <Check className="w-4 h-4 text-green-600" />
+                  ) : (
+                    <Copy className="w-4 h-4" />
+                  )}
                   {copied ? "Đã sao chép" : "Sao chép liên kết"}
                 </button>
 
-                {isAuthenticated && (
+                {isAuthenticated && !isOwnPlace && (
                   <button
-                    onClick={() => openReportModal("place", String(place.public_id), place.name)}
+                    onClick={() =>
+                      openReportModal(
+                        "place",
+                        String(place.public_id),
+                        place.name,
+                      )
+                    }
                     className="flex-grow flex items-center justify-center gap-2 py-2.5 px-4 bg-red-50 text-red-700 border border-red-100 font-bold rounded-xl hover:bg-red-100/50 transition-colors shadow-sm text-sm"
                   >
                     <AlertTriangle className="w-4 h-4" />
@@ -358,7 +458,11 @@ export const PlaceDetailPage: React.FC = () => {
                 />
                 <button
                   type="submit"
-                  disabled={submittingComment || newComment.trim().length < 10 || newComment.trim().length > 2000}
+                  disabled={
+                    submittingComment ||
+                    newComment.trim().length < 10 ||
+                    newComment.trim().length > 2000
+                  }
                   className="absolute right-3 bottom-3 p-2 bg-blue-600 text-white rounded-xl hover:bg-blue-700 disabled:bg-gray-200 disabled:text-gray-400 transition-colors shadow"
                 >
                   <Send className="w-4 h-4" />
@@ -366,13 +470,17 @@ export const PlaceDetailPage: React.FC = () => {
               </form>
             ) : (
               <div className="p-4 bg-yellow-50 text-yellow-800 text-sm rounded-2xl border border-yellow-100">
-                Tài khoản chưa được kích hoạt hoặc đã bị khóa. Vui lòng hoàn tất kích hoạt để gửi bình luận.
+                Tài khoản chưa được kích hoạt hoặc đã bị khóa. Vui lòng hoàn tất
+                kích hoạt để gửi bình luận.
               </div>
             )
           ) : (
             <div className="p-4 bg-blue-50 text-blue-800 text-sm rounded-2xl border border-blue-100 text-center font-medium">
               Vui lòng{" "}
-              <button onClick={() => navigate("/login")} className="underline font-bold text-blue-700 hover:text-blue-800">
+              <button
+                onClick={() => navigate("/login")}
+                className="underline font-bold text-blue-700 hover:text-blue-800"
+              >
                 Đăng nhập
               </button>{" "}
               để gửi bình luận của bạn.
@@ -380,11 +488,16 @@ export const PlaceDetailPage: React.FC = () => {
           )}
 
           {commentLoading && comments.length === 0 ? (
-            <p className="text-sm text-gray-400 text-center py-6">Đang tải danh sách bình luận...</p>
+            <p className="text-sm text-gray-400 text-center py-6">
+              Đang tải danh sách bình luận...
+            </p>
           ) : comments.length > 0 ? (
             <div className="space-y-4 pt-4 border-t border-gray-100">
               {comments.map((c) => (
-                <div key={c.id} className="group p-4 bg-gray-50/50 rounded-2xl border border-gray-100 shadow-sm flex flex-col justify-between">
+                <div
+                  key={c.id}
+                  className="group p-4 bg-gray-50/50 rounded-2xl border border-gray-100 shadow-sm flex flex-col justify-between"
+                >
                   <div>
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
@@ -392,22 +505,75 @@ export const PlaceDetailPage: React.FC = () => {
                           <User className="w-4 h-4" />
                         </div>
                         <div>
-                          <h4 className="text-sm font-bold text-gray-800">{c.author_display_name}</h4>
-                          <span className="text-[10px] text-gray-400">{c.created_at_display}</span>
+                          <h4 className="text-sm font-bold text-gray-800">
+                            {c.author_display_name}
+                          </h4>
+                          <span className="text-[10px] text-gray-400">
+                            {c.created_at_display}
+                          </span>
                         </div>
                       </div>
-                      {isAuthenticated && (
-                        <button
-                          onClick={() => openReportModal("comment", c.id, c.content)}
-                          className="opacity-0 group-hover:opacity-100 transition-opacity text-xs text-red-500 hover:text-red-700 flex items-center gap-1 font-semibold"
-                          title="Báo cáo bình luận"
-                        >
-                          <AlertTriangle className="w-3.5 h-3.5" />
-                          Báo cáo
-                        </button>
-                      )}
+                      <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                        {c.is_mine && student?.status === "active" && (
+                          <button
+                            type="button"
+                            onClick={() => startEditComment(c)}
+                            className="text-xs text-blue-600 hover:text-blue-800 font-semibold"
+                          >
+                            Sửa
+                          </button>
+                        )}
+                        {isAuthenticated && !c.is_mine && (
+                          <button
+                            type="button"
+                            onClick={() =>
+                              openReportModal("comment", c.id, c.content)
+                            }
+                            className="text-xs text-red-500 hover:text-red-700 flex items-center gap-1 font-semibold"
+                            title="Báo cáo bình luận"
+                          >
+                            <AlertTriangle className="w-3.5 h-3.5" />
+                            Báo cáo
+                          </button>
+                        )}
+                      </div>
                     </div>
-                    <p className="text-sm text-gray-700 mt-3 whitespace-pre-line leading-relaxed">{c.content}</p>
+                    {editingCommentId === c.id ? (
+                      <div className="mt-3 space-y-2">
+                        <textarea
+                          value={editingCommentContent}
+                          onChange={(e) =>
+                            setEditingCommentContent(e.target.value)
+                          }
+                          className="w-full p-3 bg-white border border-gray-200 rounded-xl text-sm min-h-[80px]"
+                        />
+                        <div className="flex gap-2">
+                          <button
+                            type="button"
+                            disabled={
+                              savingCommentEdit ||
+                              editingCommentContent.trim().length < 10 ||
+                              editingCommentContent.trim().length > 2000
+                            }
+                            onClick={() => handleSaveCommentEdit(c.id)}
+                            className="px-3 py-1.5 bg-blue-600 text-white text-xs font-bold rounded-lg disabled:opacity-50"
+                          >
+                            Lưu
+                          </button>
+                          <button
+                            type="button"
+                            onClick={cancelEditComment}
+                            className="px-3 py-1.5 bg-gray-100 text-gray-700 text-xs font-bold rounded-lg"
+                          >
+                            Hủy
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <p className="text-sm text-gray-700 mt-3 whitespace-pre-line leading-relaxed">
+                        {c.content}
+                      </p>
+                    )}
                   </div>
                 </div>
               ))}
@@ -425,7 +591,9 @@ export const PlaceDetailPage: React.FC = () => {
                     Trang {commentPage} / {Math.ceil(commentTotal / 20)}
                   </span>
                   <button
-                    disabled={commentPage * 20 >= commentTotal || commentLoading}
+                    disabled={
+                      commentPage * 20 >= commentTotal || commentLoading
+                    }
                     onClick={() => loadComments(commentPage + 1)}
                     className="p-2 border border-gray-200 rounded-lg disabled:opacity-50 text-gray-600 hover:bg-gray-50"
                   >
@@ -435,7 +603,9 @@ export const PlaceDetailPage: React.FC = () => {
               )}
             </div>
           ) : (
-            <p className="text-sm text-gray-400 text-center py-6">Chưa có bình luận nào. Hãy là người đầu tiên chia sẻ cảm nghĩ!</p>
+            <p className="text-sm text-gray-400 text-center py-6">
+              Chưa có bình luận nào. Hãy là người đầu tiên chia sẻ cảm nghĩ!
+            </p>
           )}
         </div>
       </div>
@@ -455,10 +625,15 @@ export const PlaceDetailPage: React.FC = () => {
                 <div className="w-12 h-12 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto">
                   <Check className="w-6 h-6" />
                 </div>
-                <h3 className="text-lg font-bold text-gray-800">Gửi báo cáo thành công</h3>
+                <h3 className="text-lg font-bold text-gray-800">
+                  Gửi báo cáo thành công
+                </h3>
                 <p className="text-sm text-gray-600">
-                  Mã báo cáo của bạn là: <span className="font-extrabold text-blue-600">{reportSuccessCode}</span>.
-                  Bạn có thể theo dõi tiến độ xử lý tại mục báo cáo của tôi.
+                  Mã báo cáo của bạn là:{" "}
+                  <span className="font-extrabold text-blue-600">
+                    {reportSuccessCode}
+                  </span>
+                  . Bạn có thể theo dõi tiến độ xử lý tại mục báo cáo của tôi.
                 </p>
                 <button
                   onClick={() => setReportModalOpen(false)}
@@ -474,25 +649,36 @@ export const PlaceDetailPage: React.FC = () => {
                   Báo cáo Vi phạm
                 </h3>
                 <p className="text-xs text-gray-500">
-                  Báo cáo: <span className="font-semibold text-gray-700">"{reportTarget.summary.slice(0, 50)}..."</span>
+                  Báo cáo:{" "}
+                  <span className="font-semibold text-gray-700">
+                    "{reportTarget.summary.slice(0, 50)}..."
+                  </span>
                 </p>
 
                 <div className="space-y-1">
-                  <label className="text-xs font-bold text-gray-500 uppercase">Lý do chính</label>
+                  <label className="text-xs font-bold text-gray-500 uppercase">
+                    Lý do chính
+                  </label>
                   <select
                     value={reportType}
-                    onChange={(e) => setReportType(e.target.value as any)}
+                    onChange={(e) =>
+                      setReportType(e.target.value as ReportCreatePayload["report_type"])
+                    }
                     className="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                   >
                     <option value="wrong_info">Thông tin sai lệch</option>
-                    <option value="inappropriate">Nội dung không phù hợp</option>
+                    <option value="inappropriate">
+                      Nội dung không phù hợp
+                    </option>
                     <option value="spam">Spam / Quảng cáo</option>
                     <option value="other">Lý do khác</option>
                   </select>
                 </div>
 
                 <div className="space-y-1">
-                  <label className="text-xs font-bold text-gray-500 uppercase">Chi tiết (20 - 500 ký tự)</label>
+                  <label className="text-xs font-bold text-gray-500 uppercase">
+                    Chi tiết (20 - 500 ký tự)
+                  </label>
                   <textarea
                     placeholder="Mô tả chi tiết vi phạm tại đây..."
                     value={reportReason}
@@ -502,7 +688,14 @@ export const PlaceDetailPage: React.FC = () => {
                   />
                   <div className="flex justify-between text-[10px] text-gray-400">
                     <span>Yêu cầu tối thiểu 20 ký tự</span>
-                    <span className={reportReason.trim().length < 20 || reportReason.trim().length > 500 ? "text-red-500" : "text-green-500"}>
+                    <span
+                      className={
+                        reportReason.trim().length < 20 ||
+                        reportReason.trim().length > 500
+                          ? "text-red-500"
+                          : "text-green-500"
+                      }
+                    >
                       {reportReason.trim().length}/500
                     </span>
                   </div>
@@ -510,7 +703,11 @@ export const PlaceDetailPage: React.FC = () => {
 
                 <button
                   type="submit"
-                  disabled={submittingReport || reportReason.trim().length < 20 || reportReason.trim().length > 500}
+                  disabled={
+                    submittingReport ||
+                    reportReason.trim().length < 20 ||
+                    reportReason.trim().length > 500
+                  }
                   className="w-full py-2.5 bg-red-600 text-white font-bold rounded-xl hover:bg-red-700 disabled:bg-gray-200 disabled:text-gray-400 transition"
                 >
                   {submittingReport ? "Đang gửi báo cáo..." : "Gửi Báo cáo"}

@@ -1,19 +1,35 @@
 import React, { useEffect, useState, useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { MapContainer, TileLayer, Circle, Rectangle, useMap } from "react-leaflet";
+import {
+  MapContainer,
+  TileLayer,
+  Circle,
+  Rectangle,
+  useMap,
+} from "react-leaflet";
 import L from "leaflet";
 import "leaflet.markercluster";
 import { useAuth } from "../../context/AuthContext";
 import { mapApi, MapConfig, Category } from "../../api/map";
-import { placesApi, PlaceMarker } from "../../api/places";
-import { Search, MapPin, Layers, Plus, ChevronRight, Compass } from "lucide-react";
+import { placesApi, PlaceListItem, PlaceMarker } from "../../api/places";
+import {
+  Search,
+  MapPin,
+  Layers,
+  Plus,
+  ChevronRight,
+  Compass,
+} from "lucide-react";
 
 interface ClusterMarkersProps {
   markers: PlaceMarker[];
   onMarkerClick: (place: PlaceMarker) => void;
 }
 
-const ClusterMarkers: React.FC<ClusterMarkersProps> = ({ markers, onMarkerClick }) => {
+const ClusterMarkers: React.FC<ClusterMarkersProps> = ({
+  markers,
+  onMarkerClick,
+}) => {
   const map = useMap();
   const clusterGroupRef = useRef<L.MarkerClusterGroup | null>(null);
 
@@ -87,9 +103,16 @@ export const HomePage: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [debouncedQuery, setDebouncedQuery] = useState("");
   const [markers, setMarkers] = useState<PlaceMarker[]>([]);
+  const [searchResults, setSearchResults] = useState<PlaceListItem[]>([]);
+  const [searchTotal, setSearchTotal] = useState(0);
+  const [searchLoading, setSearchLoading] = useState(false);
   const [selectedPlace, setSelectedPlace] = useState<PlaceMarker | null>(null);
-  const [userLocation, setUserLocation] = useState<[number, number] | null>(null);
-  const [mapCenter, setMapCenter] = useState<[number, number]>([10.7628, 106.6824]);
+  const [userLocation, setUserLocation] = useState<[number, number] | null>(
+    null,
+  );
+  const [mapCenter, setMapCenter] = useState<[number, number]>([
+    10.7628, 106.6824,
+  ]);
   const [mapZoom, setMapZoom] = useState(16);
 
   const debounceTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -100,7 +123,10 @@ export const HomePage: React.FC = () => {
         const configRes = await mapApi.getConfig();
         if (configRes.success && configRes.data) {
           setConfig(configRes.data);
-          setMapCenter([configRes.data.default_center.lat, configRes.data.default_center.lng]);
+          setMapCenter([
+            configRes.data.default_center.lat,
+            configRes.data.default_center.lng,
+          ]);
           setMapZoom(configRes.data.default_zoom);
         }
 
@@ -131,30 +157,65 @@ export const HomePage: React.FC = () => {
     };
   }, [searchQuery]);
 
+  const categoryFilter =
+    selectedCategoryIds.length > 0 &&
+    selectedCategoryIds.length < categories.length
+      ? selectedCategoryIds
+      : undefined;
+
   const loadMarkers = useCallback(async () => {
     try {
-      const filters: { category_ids?: string[] } = {};
-      if (selectedCategoryIds.length > 0 && selectedCategoryIds.length < categories.length) {
-        filters.category_ids = selectedCategoryIds;
+      const res = await placesApi.getMarkers({ category_ids: categoryFilter });
+      if (!res.success || !res.data) return;
+
+      let list = res.data;
+      const q = debouncedQuery.trim();
+      if (q.length >= 2 && searchResults.length > 0) {
+        const ids = new Set(searchResults.map((p) => p.public_id));
+        list = list.filter((m) => ids.has(m.public_id));
+      } else if (q.length >= 2 && searchResults.length === 0) {
+        list = [];
       }
-      
-      const res = await placesApi.getMarkers(filters);
-      if (res.success && res.data) {
-        let list = res.data;
-        if (debouncedQuery.trim().length >= 2) {
-          const q = debouncedQuery.toLowerCase();
-          list = list.filter(
-            (m) =>
-              m.name.toLowerCase().includes(q) ||
-              m.address_short.toLowerCase().includes(q)
-          );
-        }
-        setMarkers(list);
-      }
+      setMarkers(list);
     } catch (err) {
       console.error("Error loading markers", err);
     }
-  }, [selectedCategoryIds, debouncedQuery, categories.length]);
+  }, [categoryFilter, debouncedQuery, searchResults]);
+
+  const loadSearch = useCallback(async () => {
+    const q = debouncedQuery.trim();
+    if (q.length < 2) {
+      setSearchResults([]);
+      setSearchTotal(0);
+      return;
+    }
+    setSearchLoading(true);
+    try {
+      const res = await placesApi.search({
+        q,
+        category_ids: categoryFilter,
+        page: 1,
+        page_size: 50,
+      });
+      if (res.success && Array.isArray(res.data)) {
+        setSearchResults(res.data);
+        setSearchTotal(res.meta?.total ?? res.data.length);
+      } else {
+        setSearchResults([]);
+        setSearchTotal(0);
+      }
+    } catch (err) {
+      console.error("Error searching places", err);
+      setSearchResults([]);
+      setSearchTotal(0);
+    } finally {
+      setSearchLoading(false);
+    }
+  }, [debouncedQuery, categoryFilter]);
+
+  useEffect(() => {
+    loadSearch();
+  }, [loadSearch]);
 
   useEffect(() => {
     loadMarkers();
@@ -166,7 +227,7 @@ export const HomePage: React.FC = () => {
         ? prev.length === 1
           ? prev
           : prev.filter((x) => x !== id)
-        : [...prev, id]
+        : [...prev, id],
     );
   };
 
@@ -174,14 +235,17 @@ export const HomePage: React.FC = () => {
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         (position) => {
-          const loc: [number, number] = [position.coords.latitude, position.coords.longitude];
+          const loc: [number, number] = [
+            position.coords.latitude,
+            position.coords.longitude,
+          ];
           setUserLocation(loc);
           setMapCenter(loc);
           setMapZoom(17);
         },
         (err) => {
           console.error("Error obtaining geolocation", err);
-        }
+        },
       );
     }
   };
@@ -215,6 +279,43 @@ export const HomePage: React.FC = () => {
         </div>
 
         <div className="flex-grow overflow-y-auto p-6 space-y-6">
+          {debouncedQuery.trim().length >= 2 && (
+            <div>
+              <h2 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">
+                Kết quả tìm kiếm ({searchTotal})
+              </h2>
+              {searchLoading ? (
+                <p className="text-sm text-gray-500">Đang tìm...</p>
+              ) : searchResults.length > 0 ? (
+                <ul className="space-y-2 max-h-48 overflow-y-auto">
+                  {searchResults.map((item) => (
+                    <li key={item.public_id}>
+                      <button
+                        type="button"
+                        onClick={() => navigate(`/places/${item.public_id}`)}
+                        className="w-full text-left p-3 rounded-xl border border-gray-100 bg-white hover:border-blue-200 hover:bg-blue-50/30 transition"
+                      >
+                        <p className="text-sm font-semibold text-gray-800 line-clamp-1">
+                          {item.name}
+                        </p>
+                        <p className="text-xs text-gray-500 mt-0.5 line-clamp-1">
+                          {item.address_short}
+                        </p>
+                        <p className="text-[10px] text-gray-400 mt-1">
+                          {item.category_name}
+                        </p>
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="text-sm text-gray-500">
+                  Không tìm thấy địa điểm phù hợp.
+                </p>
+              )}
+            </div>
+          )}
+
           <div>
             <h2 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3 flex items-center gap-1.5">
               <Layers className="w-3.5 h-3.5" />
@@ -238,7 +339,9 @@ export const HomePage: React.FC = () => {
                         className="w-3.5 h-3.5 rounded-full border border-white shadow-sm flex-shrink-0"
                         style={{ backgroundColor: c.color }}
                       ></span>
-                      <span className={`text-sm font-medium ${isActive ? "text-blue-900" : "text-gray-700"}`}>
+                      <span
+                        className={`text-sm font-medium ${isActive ? "text-blue-900" : "text-gray-700"}`}
+                      >
                         {c.name}
                       </span>
                     </div>
@@ -250,7 +353,10 @@ export const HomePage: React.FC = () => {
                       }`}
                     >
                       {isActive && (
-                        <svg className="w-2.5 h-2.5 fill-current" viewBox="0 0 20 20">
+                        <svg
+                          className="w-2.5 h-2.5 fill-current"
+                          viewBox="0 0 20 20"
+                        >
                           <path d="M0 11l2-2 5 5L18 3l2 2L7 18z" />
                         </svg>
                       )}
@@ -275,7 +381,10 @@ export const HomePage: React.FC = () => {
         <div className="p-4 bg-gray-50 border-t border-gray-100 text-center">
           {isAuthenticated ? (
             <div className="text-xs text-gray-500">
-              Sinh viên: <span className="font-bold text-gray-700">{student?.full_name}</span>
+              Sinh viên:{" "}
+              <span className="font-bold text-gray-700">
+                {student?.full_name}
+              </span>
             </div>
           ) : (
             <button
@@ -303,29 +412,59 @@ export const HomePage: React.FC = () => {
 
           <ClusterMarkers markers={markers} onMarkerClick={handleMarkerClick} />
 
-          {config && config.geofence && config.geofence.type === "rectangle" && config.geofence.bounds && (
-            <Rectangle
-              bounds={[
-                [config.geofence.bounds.sw.lat, config.geofence.bounds.sw.lng],
-                [config.geofence.bounds.ne.lat, config.geofence.bounds.ne.lng],
-              ]}
-              pathOptions={{ color: "#3b82f6", weight: 1.5, fillOpacity: 0.05, dashArray: "5, 5" }}
-            />
-          )}
+          {config &&
+            config.geofence &&
+            config.geofence.type === "rectangle" &&
+            config.geofence.bounds && (
+              <Rectangle
+                bounds={[
+                  [
+                    config.geofence.bounds.sw.lat,
+                    config.geofence.bounds.sw.lng,
+                  ],
+                  [
+                    config.geofence.bounds.ne.lat,
+                    config.geofence.bounds.ne.lng,
+                  ],
+                ]}
+                pathOptions={{
+                  color: "#3b82f6",
+                  weight: 1.5,
+                  fillOpacity: 0.05,
+                  dashArray: "5, 5",
+                }}
+              />
+            )}
 
-          {config && config.geofence && config.geofence.type === "radius" && config.geofence.center && config.geofence.radius_meters && (
-            <Circle
-              center={[config.geofence.center.lat, config.geofence.center.lng]}
-              radius={config.geofence.radius_meters}
-              pathOptions={{ color: "#3b82f6", weight: 1.5, fillOpacity: 0.05, dashArray: "5, 5" }}
-            />
-          )}
+          {config &&
+            config.geofence &&
+            config.geofence.type === "radius" &&
+            config.geofence.center &&
+            config.geofence.radius_meters && (
+              <Circle
+                center={[
+                  config.geofence.center.lat,
+                  config.geofence.center.lng,
+                ]}
+                radius={config.geofence.radius_meters}
+                pathOptions={{
+                  color: "#3b82f6",
+                  weight: 1.5,
+                  fillOpacity: 0.05,
+                  dashArray: "5, 5",
+                }}
+              />
+            )}
 
           {userLocation && (
             <Circle
               center={userLocation}
               radius={10}
-              pathOptions={{ color: "#10b981", fillColor: "#10b981", fillOpacity: 0.5 }}
+              pathOptions={{
+                color: "#10b981",
+                fillColor: "#10b981",
+                fillOpacity: 0.5,
+              }}
             />
           )}
 
@@ -357,7 +496,9 @@ export const HomePage: React.FC = () => {
                   ✕
                 </button>
               </div>
-              <h3 className="text-base font-bold text-gray-800 mt-2 line-clamp-1">{selectedPlace.name}</h3>
+              <h3 className="text-base font-bold text-gray-800 mt-2 line-clamp-1">
+                {selectedPlace.name}
+              </h3>
               <p className="text-xs text-gray-500 mt-1 flex items-start gap-1">
                 <MapPin className="w-3.5 h-3.5 flex-shrink-0 text-gray-400 mt-0.5" />
                 {selectedPlace.address_short}

@@ -53,6 +53,25 @@ Dịch vụ sẽ khởi chạy tại http://localhost:3000. Mọi thay đổi tr
 
 _Lưu ý: Để ứng dụng có thể lấy được dữ liệu thực, bạn vẫn cần đảm bảo backend API đang hoạt động_
 
+### Docker dev (`docker-compose.dev.yml`)
+
+Container frontend mount mã nguồn và volume riêng cho `node_modules`. Khi thêm dependency mới (ví dụ `leaflet.markercluster`), rebuild service frontend:
+
+```bash
+cd source/docker
+docker compose -f docker-compose.dev.yml up --build -d frontend
+```
+
+Nếu vẫn báo thiếu package, xóa volume cũ rồi chạy lại:
+
+```bash
+docker compose -f docker-compose.dev.yml down
+docker volume ls | grep node_modules   # tìm volume gắn frontend nếu cần
+docker compose -f docker-compose.dev.yml up --build frontend
+```
+
+Image dev chạy `npm install` mỗi lần khởi động container (entrypoint) để đồng bộ `package.json`.
+
 ## Linter và định dạng code
 
 Dự án sử dụng **ESLint** để kiểm tra chất lượng code và **Prettier** để định dạng.
@@ -77,10 +96,10 @@ npm run test:integration
 npm run test:coverage
 ```
 
-| Loại | Thư mục | Mô tả |
-|------|---------|--------|
-| Unit | `src/__tests__/` (trừ `integration/`) | Component, context, API client |
-| Integration | `src/__tests__/integration/` | Router + AuthProvider + mock `fetch`, luồng auth đầy đủ |
+| Loại        | Thư mục                               | Mô tả                                                   |
+| ----------- | ------------------------------------- | ------------------------------------------------------- |
+| Unit        | `src/__tests__/` (trừ `integration/`) | Component, context, API client                          |
+| Integration | `src/__tests__/integration/`          | Router + AuthProvider + mock `fetch`, luồng auth đầy đủ |
 
 Kiểm thử API (pytest): [backend/README.md](../backend/README.md#kiểm-thử). Tổng quan: [README gốc](../README.md#kiểm-thử).
 

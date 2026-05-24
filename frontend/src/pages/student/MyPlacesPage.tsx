@@ -1,7 +1,19 @@
 import React, { useEffect, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { placesApi, MyPlaceListItem } from "../../api/places";
-import { Edit3, Trash2, Plus, ExternalLink, Loader, FileText, CheckCircle, EyeOff, AlertTriangle } from "lucide-react";
+import { readPaginatedList } from "../../api/types";
+import { getErrorMessage } from "../../utils/errorMessage";
+import {
+  Edit3,
+  Trash2,
+  Plus,
+  ExternalLink,
+  Loader,
+  FileText,
+  CheckCircle,
+  EyeOff,
+  AlertTriangle,
+} from "lucide-react";
 
 export const MyPlacesPage: React.FC = () => {
   const navigate = useNavigate();
@@ -14,11 +26,15 @@ export const MyPlacesPage: React.FC = () => {
   const loadMyPlaces = useCallback(async (p: number, status: string) => {
     setLoading(true);
     try {
-      const res = await placesApi.getMyPlaces({ page: p, status: status || undefined });
-      if (res.success && res.data) {
-        setPlaces(res.data.data);
-        setTotal(res.data.meta.total);
-        setPage(res.data.meta.page);
+      const res = await placesApi.getMyPlaces({
+        page: p,
+        status: status || undefined,
+      });
+      const { items, meta } = readPaginatedList<MyPlaceListItem>(res);
+      setPlaces(items);
+      if (meta) {
+        setTotal(meta.total);
+        setPage(meta.page);
       }
     } catch (err) {
       console.error("Error loading my places", err);
@@ -32,12 +48,17 @@ export const MyPlacesPage: React.FC = () => {
   }, [loadMyPlaces, statusFilter]);
 
   const handleDelete = async (publicId: number) => {
-    if (!window.confirm("Bạn có chắc chắn muốn xóa địa điểm này? Thao tác này không thể hoàn tác.")) return;
+    if (
+      !window.confirm(
+        "Bạn có chắc chắn muốn xóa địa điểm này? Thao tác này không thể hoàn tác.",
+      )
+    )
+      return;
     try {
       await placesApi.delete(publicId);
       loadMyPlaces(page, statusFilter);
-    } catch (err: any) {
-      alert(err.message || "Không thể xóa địa điểm.");
+    } catch (err: unknown) {
+      alert(getErrorMessage(err, "Không thể xóa địa điểm."));
     }
   };
 
@@ -79,8 +100,12 @@ export const MyPlacesPage: React.FC = () => {
       <div className="max-w-5xl mx-auto space-y-6">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-black text-gray-800 tracking-tight">Địa điểm của tôi</h1>
-            <p className="text-sm text-gray-500 mt-1">Danh sách các địa điểm bạn đã đăng ký hoặc lưu nháp trên hệ thống.</p>
+            <h1 className="text-2xl font-black text-gray-800 tracking-tight">
+              Địa điểm của tôi
+            </h1>
+            <p className="text-sm text-gray-500 mt-1">
+              Danh sách các địa điểm bạn đã đăng ký hoặc lưu nháp trên hệ thống.
+            </p>
           </div>
           <button
             onClick={() => navigate("/my/places/new")}
@@ -94,7 +119,9 @@ export const MyPlacesPage: React.FC = () => {
         <div className="bg-white rounded-3xl shadow-xl border border-gray-100 overflow-hidden">
           <div className="p-6 border-b border-gray-100 bg-gray-50/50 flex flex-wrap gap-4 items-center justify-between">
             <div className="flex items-center gap-2">
-              <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">Lọc theo trạng thái:</span>
+              <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">
+                Lọc theo trạng thái:
+              </span>
               <select
                 value={statusFilter}
                 onChange={(e) => setStatusFilter(e.target.value)}
@@ -106,13 +133,17 @@ export const MyPlacesPage: React.FC = () => {
                 <option value="hidden">Bị ẩn</option>
               </select>
             </div>
-            <div className="text-xs text-gray-400 font-bold">Tổng số: {total}</div>
+            <div className="text-xs text-gray-400 font-bold">
+              Tổng số: {total}
+            </div>
           </div>
 
           {loading ? (
             <div className="p-12 text-center">
               <Loader className="w-8 h-8 text-blue-600 animate-spin mx-auto mb-4" />
-              <p className="text-gray-500 font-medium">Đang tải danh sách địa điểm...</p>
+              <p className="text-gray-500 font-medium">
+                Đang tải danh sách địa điểm...
+              </p>
             </div>
           ) : places.length > 0 ? (
             <div className="overflow-x-auto">
@@ -127,10 +158,19 @@ export const MyPlacesPage: React.FC = () => {
                 </thead>
                 <tbody className="divide-y divide-gray-100 text-sm">
                   {places.map((p) => (
-                    <tr key={p.public_id} className="hover:bg-gray-50/30 transition-colors">
-                      <td className="py-4 px-6 font-extrabold text-blue-600">#{p.public_id}</td>
-                      <td className="py-4 px-6 font-semibold text-gray-800">{p.name}</td>
-                      <td className="py-4 px-6">{getStatusBadge(p.status, p.status_label)}</td>
+                    <tr
+                      key={p.public_id}
+                      className="hover:bg-gray-50/30 transition-colors"
+                    >
+                      <td className="py-4 px-6 font-extrabold text-blue-600">
+                        #{p.public_id}
+                      </td>
+                      <td className="py-4 px-6 font-semibold text-gray-800">
+                        {p.name}
+                      </td>
+                      <td className="py-4 px-6">
+                        {getStatusBadge(p.status, p.status_label)}
+                      </td>
                       <td className="py-4 px-6 text-right">
                         <div className="inline-flex gap-2">
                           {p.status === "published" && (
@@ -143,7 +183,9 @@ export const MyPlacesPage: React.FC = () => {
                             </button>
                           )}
                           <button
-                            onClick={() => navigate(`/my/places/${p.public_id}/edit`)}
+                            onClick={() =>
+                              navigate(`/my/places/${p.public_id}/edit`)
+                            }
                             className="p-2 border border-gray-100 rounded-lg hover:bg-gray-50 text-gray-600 hover:text-indigo-600 transition"
                             title="Sửa"
                           >
@@ -188,8 +230,12 @@ export const MyPlacesPage: React.FC = () => {
           ) : (
             <div className="p-12 text-center">
               <FileText className="w-12 h-12 text-gray-300 mx-auto mb-4" />
-              <h3 className="text-base font-bold text-gray-700 mb-1">Chưa có địa điểm nào</h3>
-              <p className="text-sm text-gray-500 mb-6">Bạn chưa tạo hoặc đăng ký địa điểm nào trên hệ thống.</p>
+              <h3 className="text-base font-bold text-gray-700 mb-1">
+                Chưa có địa điểm nào
+              </h3>
+              <p className="text-sm text-gray-500 mb-6">
+                Bạn chưa tạo hoặc đăng ký địa điểm nào trên hệ thống.
+              </p>
               <button
                 onClick={() => navigate("/my/places/new")}
                 className="py-2.5 px-4 bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-700 transition"
