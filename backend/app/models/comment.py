@@ -14,6 +14,7 @@ class CommentModel(BaseModel):
     author_display_name: str
     content: str
     status: str = "visible"
+    admin_delete_reason: Optional[str] = None
     deleted_at: Optional[datetime] = None
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: datetime = Field(default_factory=datetime.utcnow)

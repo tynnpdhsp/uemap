@@ -59,10 +59,49 @@ async def test_get_current_student_forbidden_role():
 
 
 @pytest.mark.asyncio
-async def test_get_current_admin_success():
-    token = create_access_token({"sub": "admin-id"}, role="admin")
-    payload = await get_current_admin(_credentials(token))
-    assert payload["role"] == "admin"
+async def test_get_current_admin_success(mock_db):
+    admin_id = ObjectId()
+    await mock_db["admins"].insert_one({
+        "_id": admin_id, "username": "sysadmin", "display_name": "Admin",
+        "is_system_admin": True, "status": "active",
+    })
+    token = create_access_token({"sub": str(admin_id), "jti": "admin-jti"}, role="admin")
+    with patch(
+        "app.services.admin_auth_service.verify_admin_session",
+        AsyncMock(return_value=True),
+    ):
+        admin = await get_current_admin(_credentials(token))
+    assert admin["username"] == "sysadmin"
+    assert admin["jti"] == "admin-jti"
+
+
+@pytest.mark.asyncio
+async def test_get_current_admin_invalid_session():
+    admin_id = ObjectId()
+    token = create_access_token({"sub": str(admin_id), "jti": "bad-jti"}, role="admin")
+    with patch(
+        "app.services.admin_auth_service.verify_admin_session",
+        AsyncMock(return_value=False),
+    ):
+        with pytest.raises(HTTPException) as exc:
+            await get_current_admin(_credentials(token))
+    assert exc.value.status_code == 401
+
+
+@pytest.mark.asyncio
+async def test_get_current_admin_disabled_account(mock_db):
+    admin_id = ObjectId()
+    await mock_db["admins"].insert_one({
+        "_id": admin_id, "username": "disabled", "status": "disabled",
+    })
+    token = create_access_token({"sub": str(admin_id), "jti": "jti"}, role="admin")
+    with patch(
+        "app.services.admin_auth_service.verify_admin_session",
+        AsyncMock(return_value=True),
+    ):
+        with pytest.raises(HTTPException) as exc:
+            await get_current_admin(_credentials(token))
+    assert exc.value.status_code == 401
 
 
 @pytest.mark.asyncio

@@ -78,7 +78,25 @@ async def get_current_admin(
                     },
                 },
             )
-        return payload
+
+        jti = payload.get("jti")
+        admin_id_str = payload.get("sub")
+        if not jti or not admin_id_str:
+            raise ValueError()
+
+        from app.services import admin_auth_service
+        is_active = await admin_auth_service.verify_admin_session(jti)
+        if not is_active:
+            raise ValueError()
+
+        db = get_db()
+        admin = await db["admins"].find_one({"_id": ObjectId(admin_id_str)})
+        if not admin or admin.get("status") != "active":
+            raise ValueError()
+
+        admin["jti"] = jti
+        return admin
+
     except HTTPException:
         raise
     except Exception:
@@ -87,12 +105,30 @@ async def get_current_admin(
             detail={
                 "success": False,
                 "error": {
-                    "code": "AUTH_FORBIDDEN",
+                    "code": "AUTH_UNAUTHORIZED",
                     "message": "Chưa đăng nhập hoặc token hết hạn.",
                     "details": [],
                 },
             },
         )
+
+
+async def require_system_admin(
+    current_admin: dict = Depends(get_current_admin),
+) -> dict:
+    if not current_admin.get("is_system_admin"):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail={
+                "success": False,
+                "error": {
+                    "code": "ADMIN_FORBIDDEN",
+                    "message": "Tài khoản quản trị không đủ quyền.",
+                    "details": [],
+                },
+            },
+        )
+    return current_admin
 
 
 async def require_active_student(

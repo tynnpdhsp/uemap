@@ -12,3 +12,11 @@ from app.models.report import ReportModel as ReportModel
 from app.models.student import PyObjectId as PyObjectId
 from app.models.student import StudentModel as StudentModel
 from app.models.student_session import StudentSessionModel as StudentSessionModel
+from app.models.category import CategoryModel as CategoryModel
+from app.models.place import PlaceModel as PlaceModel, GeoJSONPoint as GeoJSONPoint, PlaceImage as PlaceImage, PlaceVideo as PlaceVideo
+from app.models.comment import CommentModel as CommentModel
+from app.models.report import ReportModel as ReportModel
+from app.models.app_config import AppConfigModel as AppConfigModel
+from app.models.admin import AdminModel as AdminModel
+from app.models.admin_session import AdminSessionModel as AdminSessionModel
+from app.models.admin_login_attempt import AdminLoginAttemptModel as AdminLoginAttemptModel

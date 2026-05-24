@@ -30,6 +30,16 @@ GET_DB_TARGETS = [
     "app.api.routes.student.reports.get_db",
     "app.services.media_service.get_db",
     "app.api.routes.public.media.get_db",
+    "app.services.admin_auth_service.get_db",
+    "app.services.admin_category_service.get_db",
+    "app.services.admin_place_service.get_db",
+    "app.services.admin_report_service.get_db",
+    "app.services.admin_student_service.get_db",
+    "app.services.admin_account_service.get_db",
+    "app.services.audit_export_service.get_db",
+    "app.services.config_service.get_db",
+    "app.api.routes.admin.dashboard.get_db",
+    "app.api.routes.admin.comments.get_db",
 ]
 
 TEST_EMAIL = "4901104172@student.hcmue.edu.vn"

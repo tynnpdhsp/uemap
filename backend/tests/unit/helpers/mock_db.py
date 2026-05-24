@@ -20,18 +20,33 @@ class UpdateResult:
 
 def _field_matches(doc_value: Any, condition: Any) -> bool:
     if isinstance(condition, dict):
+        operators = {"$gte", "$gt", "$lte", "$ne", "$exists", "$in", "$regex", "$options"}
+        if not any(k in operators for k in condition):
+            return doc_value == condition
         if "$gte" in condition:
             if doc_value is None:
                 return False
-            return doc_value >= condition["$gte"]
+            if not (doc_value >= condition["$gte"]):
+                return False
         if "$gt" in condition:
             if doc_value is None:
                 return False
-            return doc_value > condition["$gt"]
+            if not (doc_value > condition["$gt"]):
+                return False
+        if "$lte" in condition:
+            if doc_value is None:
+                return False
+            if not (doc_value <= condition["$lte"]):
+                return False
         if "$ne" in condition:
-            return doc_value != condition["$ne"]
+            if not (doc_value != condition["$ne"]):
+                return False
+        if "$exists" in condition:
+            if not ((doc_value is not None) == condition["$exists"]):
+                return False
         if "$in" in condition:
-            return doc_value in condition["$in"]
+            if doc_value not in condition["$in"]:
+                return False
         if "$regex" in condition:
             if doc_value is None:
                 return False
@@ -40,8 +55,9 @@ def _field_matches(doc_value: Any, condition: Any) -> bool:
             if "$options" in condition:
                 if "i" in condition["$options"]:
                     flags |= re.IGNORECASE
-            return bool(re.search(pattern, str(doc_value), flags))
-        return False
+            if not bool(re.search(pattern, str(doc_value), flags)):
+                return False
+        return True
     if condition is None:
         return doc_value is None
     return doc_value == condition
@@ -63,6 +79,7 @@ def _doc_matches(doc: dict[str, Any], query: dict[str, Any]) -> bool:
 class MockCursor:
     def __init__(self, docs: list[dict[str, Any]]) -> None:
         self.docs = docs
+        self._iter_index = 0
 
     def sort(self, *args, **kwargs) -> MockCursor:
         return self
@@ -70,11 +87,24 @@ class MockCursor:
     def skip(self, *args, **kwargs) -> MockCursor:
         return self
 
-    def limit(self, *args, **kwargs) -> MockCursor:
+    def limit(self, limit: int = 0, *args, **kwargs) -> MockCursor:
+        if limit > 0:
+            self.docs = self.docs[:limit]
         return self
 
     async def to_list(self, length: int) -> list[dict[str, Any]]:
         return deepcopy(self.docs[:length])
+
+    def __aiter__(self):
+        self._iter_index = 0
+        return self
+
+    async def __anext__(self) -> dict[str, Any]:
+        if self._iter_index >= len(self.docs):
+            raise StopAsyncIteration
+        doc = deepcopy(self.docs[self._iter_index])
+        self._iter_index += 1
+        return doc
 
 
 class MockCollection:
@@ -141,14 +171,27 @@ class MockCollection:
         self.docs.append(doc)
         return InsertOneResult(doc["_id"])
 
-    async def update_one(self, query: dict[str, Any], update: dict[str, Any]) -> UpdateResult:
+    async def update_one(self, query: dict[str, Any], update: dict[str, Any], upsert: bool = False) -> UpdateResult:
         modified = 0
         for doc in self.docs:
             if _doc_matches(doc, query):
                 if "$set" in update:
                     doc.update(update["$set"])
                     modified += 1
+                if "$setOnInsert" in update:
+                    pass
                 break
+        else:
+            if upsert:
+                new_doc = deepcopy(query)
+                if "$set" in update:
+                    new_doc.update(update["$set"])
+                if "$setOnInsert" in update:
+                    new_doc.update(update["$setOnInsert"])
+                if "_id" not in new_doc:
+                    new_doc["_id"] = ObjectId()
+                self.docs.append(new_doc)
+                modified = 1
         return UpdateResult(modified)
 
     async def update_many(self, query: dict[str, Any], update: dict[str, Any]) -> UpdateResult:
@@ -158,6 +201,13 @@ class MockCollection:
                 doc.update(update["$set"])
                 modified += 1
         return UpdateResult(modified)
+
+    async def delete_one(self, query: dict[str, Any]) -> UpdateResult:
+        for i, doc in enumerate(self.docs):
+            if _doc_matches(doc, query):
+                self.docs.pop(i)
+                return UpdateResult(1)
+        return UpdateResult(0)
 
     async def delete_many(self, query: dict[str, Any]) -> UpdateResult:
         before = len(self.docs)

@@ -1,5 +1,4 @@
 import type { RouteObject } from "react-router-dom";
-import { Navigate } from "react-router-dom";
 import StudentLayout from "../layouts/StudentLayout";
 import ProtectedRoute from "../components/ProtectedRoute";
 import HomePage from "../pages/public/HomePage";
@@ -102,9 +101,5 @@ export const appRoutes: RouteObject[] = [
   {
     path: "/forgot-password/reset",
     element: <ResetPasswordPage />,
-  },
-  {
-    path: "*",
-    element: <Navigate to="/" replace />,
   },
 ];
