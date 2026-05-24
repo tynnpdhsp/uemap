@@ -1,6 +1,9 @@
 import math
+
 from fastapi import HTTPException, status
+
 from app.core.database import get_db
+
 
 def haversine(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
     R = 6371000
@@ -8,9 +11,13 @@ def haversine(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
     phi2 = math.radians(lat2)
     delta_phi = math.radians(lat2 - lat1)
     delta_lambda = math.radians(lon2 - lon1)
-    a = math.sin(delta_phi / 2)**2 + math.cos(phi1) * math.cos(phi2) * math.sin(delta_lambda / 2)**2
+    a = (
+        math.sin(delta_phi / 2) ** 2
+        + math.cos(phi1) * math.cos(phi2) * math.sin(delta_lambda / 2) ** 2
+    )
     c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
     return R * c
+
 
 async def validate_point(lat: float, lng: float) -> bool:
     db = get_db()
@@ -27,7 +34,7 @@ async def validate_point(lat: float, lng: float) -> bool:
         bounds = geofence.get("bounds", {})
         sw = bounds.get("sw", {})
         ne = bounds.get("ne", {})
-        
+
         sw_lat = sw.get("lat")
         sw_lng = sw.get("lng")
         ne_lat = ne.get("lat")
@@ -64,9 +71,9 @@ async def validate_point(lat: float, lng: float) -> bool:
                 "error": {
                     "code": "PLACE_OUT_OF_BOUNDS",
                     "message": "Tọa độ nằm ngoài vùng địa lý cho phép. Vui lòng điều chỉnh lại trên bản đồ.",
-                    "details": []
-                }
-            }
+                    "details": [],
+                },
+            },
         )
 
     return True

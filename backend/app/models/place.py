@@ -1,22 +1,28 @@
 from datetime import datetime
 from typing import List, Optional
+
 from pydantic import BaseModel, Field
+
 from app.models.student import PyObjectId
+
 
 class GeoJSONPoint(BaseModel):
     type: str = "Point"
     coordinates: List[float]
+
 
 class PlaceImage(BaseModel):
     object_key: str
     sort_order: int = 0
     mime: str
 
+
 class PlaceVideo(BaseModel):
     kind: str
     object_key: Optional[str] = None
     mime: Optional[str] = None
     url: Optional[str] = None
+
 
 class PlaceModel(BaseModel):
     id: Optional[PyObjectId] = Field(default=None, alias="_id")

@@ -1,5 +1,5 @@
-from typing import Optional
 from pydantic import BaseModel, Field, field_validator
+
 
 class ReportCreateRequest(BaseModel):
     target_type: str
@@ -12,11 +12,13 @@ class ReportCreateRequest(BaseModel):
     def clean_reason(cls, v: str) -> str:
         return " ".join(v.split())
 
+
 class ReportCreateResponse(BaseModel):
     report_code: str
     status: str
     status_label: str
     created_at_display: str
+
 
 class ReportMyResponseItem(BaseModel):
     report_code: str

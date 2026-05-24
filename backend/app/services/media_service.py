@@ -1,8 +1,10 @@
 from typing import Optional
+
 from fastapi import HTTPException, status
-from bson import ObjectId
-from app.core.minio_client import minio_client
+
 from app.core.database import get_db
+from app.core.minio_client import minio_client
+
 
 async def get_media_stream(object_key: str, current_student: Optional[dict] = None):
     is_allowed = False
@@ -37,9 +39,9 @@ async def get_media_stream(object_key: str, current_student: Optional[dict] = No
                 "error": {
                     "code": "PLACE_NOT_FOUND",
                     "message": "Không tìm thấy tệp tin phương tiện yêu cầu hoặc không có quyền truy cập.",
-                    "details": []
-                }
-            }
+                    "details": [],
+                },
+            },
         )
 
     try:
@@ -53,7 +55,7 @@ async def get_media_stream(object_key: str, current_student: Optional[dict] = No
                 "error": {
                     "code": "PLACE_NOT_FOUND",
                     "message": "Tệp tin không tồn tại trên bộ lưu trữ.",
-                    "details": []
-                }
-            }
+                    "details": [],
+                },
+            },
         )

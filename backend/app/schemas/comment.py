@@ -1,11 +1,12 @@
-from typing import Optional
 from pydantic import BaseModel, Field, field_validator
+
 
 class CommentResponse(BaseModel):
     id: str
     author_display_name: str
     content: str
     created_at_display: str
+
 
 class CommentMyResponseItem(BaseModel):
     id: str
@@ -14,6 +15,7 @@ class CommentMyResponseItem(BaseModel):
     place_public_id: int
     status_label: str
     created_at_display: str
+
 
 class CommentCreateRequest(BaseModel):
     content: str = Field(..., min_length=10, max_length=2000)

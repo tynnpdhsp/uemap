@@ -1,20 +1,25 @@
 from typing import List, Optional
+
 from pydantic import BaseModel, Field, field_validator
+
 
 class GeoJSONPointSchema(BaseModel):
     type: str = "Point"
     coordinates: List[float]
+
 
 class PlaceImageSchema(BaseModel):
     object_key: str
     sort_order: int = 0
     mime: str
 
+
 class PlaceVideoSchema(BaseModel):
     kind: str
     object_key: Optional[str] = None
     mime: Optional[str] = None
     url: Optional[str] = None
+
 
 class PlaceMarkerResponse(BaseModel):
     public_id: int
@@ -26,12 +31,14 @@ class PlaceMarkerResponse(BaseModel):
     category_icon_url: Optional[str] = None
     address_short: str
 
+
 class PlaceListResponseItem(BaseModel):
     public_id: int
     name: str
     category_name: str
     address_short: str
     updated_at_display: str
+
 
 class PlaceDetailResponse(BaseModel):
     public_id: int
@@ -51,6 +58,7 @@ class PlaceDetailResponse(BaseModel):
     video: Optional[PlaceVideoSchema] = None
     updated_at_display: str
 
+
 class PlaceCreateRequest(BaseModel):
     name: str = Field(..., min_length=5, max_length=200)
     category_id: str
@@ -69,6 +77,7 @@ class PlaceCreateRequest(BaseModel):
     @classmethod
     def clean_text(cls, v: str) -> str:
         return " ".join(v.split())
+
 
 class PlaceCreateResponse(BaseModel):
     public_id: int

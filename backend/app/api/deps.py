@@ -124,4 +124,3 @@ async def require_active_student(
                 },
             )
     return current_student
-
