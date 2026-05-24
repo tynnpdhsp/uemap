@@ -18,4 +18,5 @@ testpaths = ["tests"]
 markers = [
     "unit: Unit tests with mocked MongoDB (no real database).",
     "integration: API tests against real MongoDB (requires running instance).",
+    "e2e: End-to-end API flows through FastAPI with real MongoDB (requires running instance).",
 ]

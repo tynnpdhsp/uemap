@@ -21,7 +21,7 @@ backend/
 │   ├── schemas/      # Định nghĩa cấu trúc dữ liệu Request/Response (Pydantic)
 │   ├── services/     # Logic nghiệp vụ (Business logic), gửi mail, xử lý ảnh
 │   └── main.py       # Điểm khởi chạy của ứng dụng FastAPI
-├── tests/            # Integration test API (pytest + httpx)
+├── tests/            # Unit, integration, E2E (pytest + httpx)
 ├── Dockerfile        # Đóng gói backend thành Docker image
 ├── pyproject.toml    # Thông tin dự án và cấu hình công cụ (ruff, pytest)
 ├── requirements.txt  # Danh sách thư viện phụ thuộc
@@ -63,86 +63,25 @@ Sau khi chạy thành công, bạn có thể truy cập:
 
 ## Kiểm thử
 
-### Phân loại test trong backend
-
-| Loại | Vị trí | Mô tả |
-|------|--------|--------|
-| **Unit test** | `tests/unit/` | Test logic module auth (services, schemas, security, deps) với **MongoDB mock** — không cần DB thật. |
-| **Integration test (API)** | `tests/test_*.py` | Gọi endpoint FastAPI qua `httpx`, dùng **MongoDB thật**; email OTP được mock. |
-
-Không có E2E browser trong thư mục `backend/`. E2E full-stack (React + API) xem mục [Kiểm thử E2E](../README.md#kiểm-thử-e2e) tại README gốc `source/`.
-
-### Môi trường Conda (khuyến nghị)
-
 ```bash
 conda activate devops
 cd backend
-pip install -r requirements.txt
 ```
 
-### Unit test — không cần MongoDB
-
-Bao phủ module auth: `security`, `schemas`, `otp_service`, `session_service`, `auth_service`, `audit_service`, `email_service`, `deps`, routes (`auth`, `me`, `health`), `format_student_profile`, exception handler (~96 test).
+Integration và E2E cần MongoDB chạy (từ thư mục `source/`):
 
 ```bash
-pytest tests/unit -m unit -v
+docker compose -f docker/docker-compose.dev.yml up -d mongodb
 ```
 
-Coverage unit + integration:
+| Loại | Thư mục | Lệnh |
+|------|---------|------|
+| Unit | `tests/unit/` | `pytest tests/unit -m unit` |
+| Integration | `tests/test_*.py` | `pytest tests/ -m integration` |
+| E2E | `tests/e2e/` | `pytest tests/e2e -m e2e` |
+| Tất cả | `tests/` | `pytest tests/` |
 
-```bash
-pytest tests/ --cov=app --cov-report=term-missing
-```
-
-### Integration test — cần MongoDB
-
-1. **MongoDB** đang chạy (ví dụ Docker Compose dev stack).
-2. `MONGODB_URI` trỏ đúng instance (mặc định `mongodb://localhost:27017`).
-
-```bash
-docker compose -f docker/docker-compose.dev.yml up -d mongodb   # từ thư mục source/
-pytest tests/ -m integration -v
-```
-
-### Integration test — chạy toàn bộ file API
-
-```bash
-pytest tests/ -m integration -v
-```
-
-| File | Nội dung |
-|------|----------|
-| `test_integration_auth_flows.py` | Luồng E2E: đăng ký → OTP → login → logout; quên MK; đổi MK; audit |
-| `test_auth.py` | Validation, rate limit, login scenarios |
-| `test_me.py` | Hồ sơ, đổi MK, tài khoản khóa |
-| `test_health.py` | Health check |
-
-Tiện ích dùng chung: `tests/auth_integration_helpers.py` (mock SMTP, OTP cố định cho test).
-
-Một test cụ thể:
-
-```bash
-pytest tests/test_auth.py::test_login_scenarios -v
-```
-
-### Integration test — báo cáo độ phủ mã (coverage)
-
-Đo phần trăm dòng trong package `app/` được test chạm tới; in thêm **dòng chưa cover**:
-
-```bash
-pytest tests/ --cov=app --cov-report=term-missing
-```
-
-Báo cáo HTML (mở file `htmlcov/index.html` sau khi chạy):
-
-```bash
-pytest tests/ --cov=app --cov-report=html
-```
-
-### Lưu ý
-
-- Integration test **không** gửi SMTP thật khi đã mock `send_otp_email`.
-- `Settings` bỏ qua biến `VITE_*` trong `source/.env` (dùng chung frontend/backend).
+E2E trình duyệt (React): [README gốc](../README.md#kiểm-thử-e2e).
 
 ## Linter và Format Code
 
