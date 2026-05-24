@@ -35,6 +35,7 @@ async function request<T = unknown>(
   let result: APIResponse<T> | Record<string, unknown>;
   try {
     result = (await response.json()) as APIResponse<T> | Record<string, unknown>;
+    console.log("[adminClient] Original parsed json for endpoint", endpoint, result);
   } catch {
     result = {
       success: false,
@@ -59,6 +60,31 @@ async function request<T = unknown>(
     const err = new Error(errorDetail.message || "Đã xảy ra lỗi.");
     (err as any).code = errorDetail.code;
     throw err;
+  }
+
+  console.log("[adminClient] Conditions check:", {
+    hasResult: !!result,
+    isObject: typeof result === "object",
+    success: result && (result as any).success,
+    isArrayData: result && Array.isArray((result as any).data),
+    hasMeta: result && !!(result as any).meta
+  });
+
+  if (
+    result &&
+    typeof result === "object" &&
+    result.success &&
+    Array.isArray(result.data) &&
+    result.meta
+  ) {
+    result = {
+      success: true,
+      data: {
+        data: result.data,
+        meta: result.meta,
+      },
+    } as unknown as APIResponse<T>;
+    console.log("[adminClient] Wrapped result:", result);
   }
 
   return result as APIResponse<T>;

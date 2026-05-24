@@ -30,6 +30,23 @@ describe("adminClient", () => {
     expect(headers.get("Authorization")).toBe("Bearer admin-tok");
   });
 
+  it("tự động định dạng cấu trúc dữ liệu phân trang", async () => {
+    mockFetch.mockResolvedValue(
+      jsonResponse({
+        success: true,
+        data: [{ id: "1" }],
+        meta: { page: 1, page_size: 50, total: 1 },
+      }),
+    );
+
+    const res = await adminApi.get<{ data: any[]; meta: any }>("/admin/audit-logs");
+    expect(res.success).toBe(true);
+    expect(res.data).toEqual({
+      data: [{ id: "1" }],
+      meta: { page: 1, page_size: 50, total: 1 },
+    });
+  });
+
   it("không gửi Authorization khi không có token", async () => {
     mockFetch.mockResolvedValue(jsonResponse({ success: true, data: {} }));
 
