@@ -21,7 +21,7 @@ status_label_map = {
     "resolved": "đã xử lý"
 }
 
-@router.post("", response_model=dict, status_code=status.HTTP_201_CREATED)
+@router.post("/reports", response_model=dict, status_code=status.HTTP_201_CREATED)
 async def post_student_report(
     payload: ReportCreateRequest,
     request: Request,

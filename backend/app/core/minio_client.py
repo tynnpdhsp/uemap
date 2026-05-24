@@ -60,3 +60,7 @@ class MinioClient:
         await asyncio.to_thread(_copy)
 
 minio_client = MinioClient()
+
+def connect_minio():
+    minio_client._ensure_bucket_exists()
+
