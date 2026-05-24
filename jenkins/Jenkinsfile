@@ -1,3 +1,137 @@
 pipeline {
-    // Bổ sung sau
+    agent any
+
+    environment {
+        DOCKER_REGISTRY = "bin05"
+        FE_IMAGE = "frontend"
+        BE_IMAGE = "backend"
+        BUILD_TAG = "${env.BUILD_NUMBER}"
+        SERVER_IP = "103.162.30.79"
+    }
+
+    stages {
+        stage('Checkout Code') {
+            when {
+                anyOf {
+                    branch 'main'
+                    branch 'staging'
+                }
+            }
+            steps {
+                checkout scm
+            }
+        }
+
+        stage('Code Formatting & Linting') {
+            when {
+                anyOf {
+                    branch 'main'
+                    branch 'staging'
+                }
+            }
+            steps {
+                echo "Running Linter for Frontend & Backend..."
+                
+                sh "cd frontend && npm ci && npm run lint && npm run format"
+                
+                sh "cd backend && pip install -r requirements.txt"
+                sh "cd backend && ruff check ."
+            }
+        }
+
+        stage('Frontend Tests (Unit & Integration)') {
+            when {
+                anyOf {
+                    branch 'main'
+                    branch 'staging'
+                }
+            }
+            steps {
+                echo "Running Frontend Tests..."
+                sh "cd frontend && npm run test:unit"
+                sh "cd frontend && npm run test:integration"
+            }
+        }
+
+        stage('Backend Tests (Unit, Integration, E2E)') {
+            when {
+                anyOf {
+                    branch 'main'
+                    branch 'staging'
+                }
+            }
+            steps {
+                echo "Running Backend Tests..."
+                sh "docker run -d --name mongo_test_db -p 27017:27017 mongo:6.0"
+                script {
+                    try {
+                        sh "cd backend && export MONGO_URI=mongodb://localhost:27017/test_db && pytest tests/unit"
+                        sh "cd backend && export MONGO_URI=mongodb://localhost:27017/test_db && pytest tests/test_integration_auth_flows.py"
+                        sh "cd backend && export MONGO_URI=mongodb://localhost:27017/test_db && pytest tests/e2e"
+                    } finally {
+                        sh "docker rm -f mongo_test_db"
+                    }
+                }
+            }
+        }
+
+        stage('SonarQube Code Analysis') {
+            when {
+                anyOf {
+                    branch 'main'
+                    branch 'staging'
+                }
+            }
+            steps {
+                withSonarQubeEnv('SonarQubeServer') {
+                    sh 'sonar-scanner'
+                }
+            }
+        }
+
+        stage('Build & Push Images to Docker Hub') {
+            when {
+                branch 'main'
+            }
+            steps {
+                script {
+                    sh "docker build -f frontend/Dockerfile.prod -t ${DOCKER_REGISTRY}/${FE_IMAGE}:${BUILD_TAG} -t ${DOCKER_REGISTRY}/${FE_IMAGE}:latest ./frontend"
+                    sh "docker build -f backend/Dockerfile.prod -t ${DOCKER_REGISTRY}/${BE_IMAGE}:${BUILD_TAG} -t ${DOCKER_REGISTRY}/${BE_IMAGE}:latest ./backend"
+                }
+                
+                withCredentials([usernamePassword(credentialsId: 'dockerhub-creds', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
+                    sh "echo \$DOCKER_PASS | docker login -u \$DOCKER_USER --password-stdin"
+                    sh "docker push ${DOCKER_REGISTRY}/${FE_IMAGE}:${BUILD_TAG}"
+                    sh "docker push ${DOCKER_REGISTRY}/${FE_IMAGE}:latest"
+                    sh "docker push ${DOCKER_REGISTRY}/${BE_IMAGE}:${BUILD_TAG}"
+                    sh "docker push ${DOCKER_REGISTRY}/${BE_IMAGE}:latest"
+                }
+            }
+        }
+
+        stage('Deploy to Server via SSH') {
+            when {
+                branch 'main'
+            }
+            steps {
+                withCredentials([usernamePassword(credentialsId: 'server-creds', usernameVariable: 'SSH_USER', passwordVariable: 'SSH_PASS')]) {
+                    sh "sshpass -p \$SSH_PASS ssh -o StrictHostKeyChecking=no \$SSH_USER@${SERVER_IP} 'mkdir -p ~/app'"
+                    sh "sshpass -p \$SSH_PASS scp -o StrictHostKeyChecking=no docker/docker-compose.prod.yml \$SSH_USER@${SERVER_IP}:~/app/docker-compose.yml"
+                    sh """
+                        sshpass -p \$SSH_PASS ssh -o StrictHostKeyChecking=no \$SSH_USER@${SERVER_IP} "
+                            cd ~/app &&
+                            docker compose pull &&
+                            docker compose up -d
+                        "
+                    """
+                }
+            }
+        }
+    }
+
+    post {
+        always {
+            cleanWs()
+        }
+    }
 }
