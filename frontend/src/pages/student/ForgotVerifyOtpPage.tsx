@@ -76,7 +76,7 @@ export const ForgotVerifyOtpPage: React.FC = () => {
     try {
       const res = await api.post("/auth/otp/resend", {
         email,
-        purpose: "forgot_password",
+        purpose: "password_reset",
       });
 
       if (res.success) {

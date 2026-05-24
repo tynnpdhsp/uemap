@@ -71,13 +71,18 @@ Dự án sử dụng **ESLint** để kiểm tra chất lượng code và **Pret
 
 ```bash
 npm install
-npm run test
+npm run test              # unit + integration
+npm run test:unit
+npm run test:integration
 npm run test:coverage
 ```
 
-Unit test (Jest + Testing Library) trong `src/__tests__/`: `api/client`, `AuthContext`, `ProtectedRoute`, trang auth/profile, layout.
+| Loại | Thư mục | Mô tả |
+|------|---------|--------|
+| Unit | `src/__tests__/` (trừ `integration/`) | Component, context, API client |
+| Integration | `src/__tests__/integration/` | Router + AuthProvider + mock `fetch`, luồng auth đầy đủ |
 
-API integration / E2E backend: [backend/README.md](../backend/README.md#kiểm-thử). E2E trình duyệt: [README gốc](../README.md#kiểm-thử-e2e).
+API + MongoDB: [backend/README.md](../backend/README.md#kiểm-thử). E2E trình duyệt: [README gốc](../README.md#kiểm-thử-e2e).
 
 ## Quy chuẩn phát triển
 
