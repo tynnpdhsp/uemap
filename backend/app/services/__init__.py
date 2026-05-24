@@ -26,3 +26,11 @@ from app.services.place_service import create_place as create_place, update_plac
 from app.services.comment_service import create_comment as create_comment, update_comment as update_comment, delete_comment as delete_comment
 from app.services.report_service import create_report as create_report
 from app.services.search_service import search_places as search_places
+from app.services import admin_auth_service as admin_auth_service
+from app.services import admin_category_service as admin_category_service
+from app.services import admin_place_service as admin_place_service
+from app.services import admin_report_service as admin_report_service
+from app.services import admin_student_service as admin_student_service
+from app.services import admin_account_service as admin_account_service
+from app.services import audit_export_service as audit_export_service
+from app.services import config_service as config_service
