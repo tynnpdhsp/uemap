@@ -67,18 +67,17 @@ Dự án sử dụng **ESLint** để kiểm tra chất lượng code và **Pret
   ```
   _Hoặc tận dụng tính năng Format on Save của trình soạn thảo VSCode._
 
-## Kiểm thử tự động
+## Kiểm thử
 
-Dự án sử dụng **Jest** làm nền tảng kiểm thử chức năng và UI cốt lõi.
+```bash
+npm install
+npm run test
+npm run test:coverage
+```
 
-- Khởi chạy kiểm thử:
-  ```bash
-  npm run test
-  ```
-- Xem báo cáo mức độ bao phủ code:
-  ```bash
-  npm run test:coverage
-  ```
+Unit test (Jest + Testing Library) trong `src/__tests__/`: `api/client`, `AuthContext`, `ProtectedRoute`, trang auth/profile, layout.
+
+API integration / E2E backend: [backend/README.md](../backend/README.md#kiểm-thử). E2E trình duyệt: [README gốc](../README.md#kiểm-thử-e2e).
 
 ## Quy chuẩn phát triển
 

@@ -17,7 +17,7 @@ export const router = createBrowserRouter([
     children: [
       {
         index: true,
-        element: <HomePage />
+        element: <HomePage />,
       },
       {
         path: "profile",
@@ -25,36 +25,36 @@ export const router = createBrowserRouter([
           <ProtectedRoute>
             <ProfilePage />
           </ProtectedRoute>
-        )
-      }
-    ]
+        ),
+      },
+    ],
   },
   {
     path: "/login",
-    element: <LoginPage />
+    element: <LoginPage />,
   },
   {
     path: "/register",
-    element: <RegisterPage />
+    element: <RegisterPage />,
   },
   {
     path: "/register/verify-otp",
-    element: <VerifyOtpPage />
+    element: <VerifyOtpPage />,
   },
   {
     path: "/forgot-password",
-    element: <ForgotPasswordPage />
+    element: <ForgotPasswordPage />,
   },
   {
     path: "/forgot-password/verify-otp",
-    element: <ForgotVerifyOtpPage />
+    element: <ForgotVerifyOtpPage />,
   },
   {
     path: "/forgot-password/reset",
-    element: <ResetPasswordPage />
+    element: <ResetPasswordPage />,
   },
   {
     path: "*",
-    element: <Navigate to="/" replace />
-  }
+    element: <Navigate to="/" replace />,
+  },
 ]);

@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { api } from "../../api/client";
+import { getErrorMessage } from "../../utils/errorMessage";
 
 export const RegisterPage: React.FC = () => {
   const navigate = useNavigate();
@@ -18,7 +19,9 @@ export const RegisterPage: React.FC = () => {
 
     const emailRegex = /^[0-9]{10}@student\.hcmue\.edu\.vn$/;
     if (!emailRegex.test(email.trim().toLowerCase())) {
-      setErrorMsg("Email phải đúng định dạng mã số sinh viên 10 chữ số @student.hcmue.edu.vn");
+      setErrorMsg(
+        "Email phải đúng định dạng mã số sinh viên 10 chữ số @student.hcmue.edu.vn",
+      );
       return;
     }
     if (password.length < 8 || password.length > 128) {
@@ -46,14 +49,16 @@ export const RegisterPage: React.FC = () => {
         password,
         password_confirm: passwordConfirm,
         full_name: fullName.trim(),
-        accept_terms: acceptTerms
+        accept_terms: acceptTerms,
       });
 
       if (res.success) {
-        navigate(`/register/verify-otp?email=${encodeURIComponent(email.trim())}`);
+        navigate(
+          `/register/verify-otp?email=${encodeURIComponent(email.trim())}`,
+        );
       }
-    } catch (err: any) {
-      setErrorMsg(err.message || "Đăng ký thất bại. Vui lòng thử lại.");
+    } catch (err: unknown) {
+      setErrorMsg(getErrorMessage(err, "Đăng ký thất bại. Vui lòng thử lại."));
     } finally {
       setLoading(false);
     }
@@ -63,8 +68,12 @@ export const RegisterPage: React.FC = () => {
     <div className="flex min-h-screen items-center justify-center bg-gradient-to-tr from-blue-100 via-white to-blue-50 px-4 py-8">
       <div className="w-full max-w-md rounded-2xl bg-white p-8 shadow-xl border border-gray-100 transition-all hover:shadow-2xl">
         <div className="text-center">
-          <h2 className="text-3xl font-extrabold text-gray-900 tracking-tight">Đăng Ký</h2>
-          <p className="mt-2 text-sm text-gray-500">Tạo tài khoản Bản đồ Sinh viên Sư phạm</p>
+          <h2 className="text-3xl font-extrabold text-gray-900 tracking-tight">
+            Đăng Ký
+          </h2>
+          <p className="mt-2 text-sm text-gray-500">
+            Tạo tài khoản Bản đồ Sinh viên Sư phạm
+          </p>
         </div>
 
         {errorMsg && (
@@ -75,7 +84,9 @@ export const RegisterPage: React.FC = () => {
 
         <form className="mt-6 space-y-4" onSubmit={handleSubmit}>
           <div>
-            <label className="block text-sm font-semibold text-gray-700">Email Sinh Viên</label>
+            <label className="block text-sm font-semibold text-gray-700">
+              Email Sinh Viên
+            </label>
             <input
               type="email"
               required
@@ -87,7 +98,9 @@ export const RegisterPage: React.FC = () => {
           </div>
 
           <div>
-            <label className="block text-sm font-semibold text-gray-700">Họ và Tên</label>
+            <label className="block text-sm font-semibold text-gray-700">
+              Họ và Tên
+            </label>
             <input
               type="text"
               required
@@ -99,7 +112,9 @@ export const RegisterPage: React.FC = () => {
           </div>
 
           <div>
-            <label className="block text-sm font-semibold text-gray-700">Mật Khẩu</label>
+            <label className="block text-sm font-semibold text-gray-700">
+              Mật Khẩu
+            </label>
             <input
               type="password"
               required
@@ -111,7 +126,9 @@ export const RegisterPage: React.FC = () => {
           </div>
 
           <div>
-            <label className="block text-sm font-semibold text-gray-700">Xác Nhận Mật Khẩu</label>
+            <label className="block text-sm font-semibold text-gray-700">
+              Xác Nhận Mật Khẩu
+            </label>
             <input
               type="password"
               required
@@ -132,7 +149,10 @@ export const RegisterPage: React.FC = () => {
             />
             <label htmlFor="acceptTerms" className="ml-2 text-sm text-gray-600">
               Tôi đồng ý với{" "}
-              <a href="#" className="font-semibold text-blue-600 hover:underline">
+              <a
+                href="#"
+                className="font-semibold text-blue-600 hover:underline"
+              >
                 Điều khoản dịch vụ
               </a>
             </label>
@@ -149,7 +169,10 @@ export const RegisterPage: React.FC = () => {
 
         <p className="mt-6 text-center text-sm text-gray-500">
           Đã có tài khoản?{" "}
-          <Link to="/login" className="font-semibold text-blue-600 hover:text-blue-800 transition">
+          <Link
+            to="/login"
+            className="font-semibold text-blue-600 hover:text-blue-800 transition"
+          >
             Đăng nhập
           </Link>
         </p>

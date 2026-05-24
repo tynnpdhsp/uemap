@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { api } from "../../api/client";
+import { getErrorMessage } from "../../utils/errorMessage";
 
 export const ResetPasswordPage: React.FC = () => {
   const [searchParams] = useSearchParams();
@@ -16,7 +17,9 @@ export const ResetPasswordPage: React.FC = () => {
 
   useEffect(() => {
     if (!email || !token) {
-      setErrorMsg("Yêu cầu đặt lại mật khẩu không hợp lệ hoặc thiếu thông tin xác thực.");
+      setErrorMsg(
+        "Yêu cầu đặt lại mật khẩu không hợp lệ hoặc thiếu thông tin xác thực.",
+      );
     }
   }, [email, token]);
 
@@ -40,17 +43,21 @@ export const ResetPasswordPage: React.FC = () => {
       const res = await api.post("/auth/forgot-password/reset", {
         email,
         reset_token: token,
-        password
+        password,
       });
 
       if (res.success) {
-        setSuccessMsg("Đặt lại mật khẩu thành công! Bạn sẽ được chuyển tới trang đăng nhập.");
+        setSuccessMsg(
+          "Đặt lại mật khẩu thành công! Bạn sẽ được chuyển tới trang đăng nhập.",
+        );
         setTimeout(() => {
           navigate("/login");
         }, 3000);
       }
-    } catch (err: any) {
-      setErrorMsg(err.message || "Đặt lại mật khẩu thất bại. Vui lòng thử lại.");
+    } catch (err: unknown) {
+      setErrorMsg(
+        getErrorMessage(err, "Đặt lại mật khẩu thất bại. Vui lòng thử lại."),
+      );
     } finally {
       setLoading(false);
     }
@@ -60,8 +67,12 @@ export const ResetPasswordPage: React.FC = () => {
     <div className="flex min-h-screen items-center justify-center bg-gradient-to-tr from-blue-100 via-white to-blue-50 px-4">
       <div className="w-full max-w-md rounded-2xl bg-white p-8 shadow-xl border border-gray-100">
         <div className="text-center">
-          <h2 className="text-3xl font-extrabold text-gray-900 tracking-tight">Đặt Lại Mật Khẩu</h2>
-          <p className="mt-2 text-sm text-gray-500">Nhập mật khẩu mới cho tài khoản của bạn</p>
+          <h2 className="text-3xl font-extrabold text-gray-900 tracking-tight">
+            Đặt Lại Mật Khẩu
+          </h2>
+          <p className="mt-2 text-sm text-gray-500">
+            Nhập mật khẩu mới cho tài khoản của bạn
+          </p>
         </div>
 
         {errorMsg && (
@@ -78,7 +89,9 @@ export const ResetPasswordPage: React.FC = () => {
 
         <form className="mt-6 space-y-4" onSubmit={handleSubmit}>
           <div>
-            <label className="block text-sm font-semibold text-gray-700">Mật Khẩu Mới</label>
+            <label className="block text-sm font-semibold text-gray-700">
+              Mật Khẩu Mới
+            </label>
             <input
               type="password"
               required
@@ -91,7 +104,9 @@ export const ResetPasswordPage: React.FC = () => {
           </div>
 
           <div>
-            <label className="block text-sm font-semibold text-gray-700">Xác Nhận Mật Khẩu</label>
+            <label className="block text-sm font-semibold text-gray-700">
+              Xác Nhận Mật Khẩu
+            </label>
             <input
               type="password"
               required

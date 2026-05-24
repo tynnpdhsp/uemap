@@ -19,7 +19,9 @@ export const StudentLayout: React.FC = () => {
           <div className="flex justify-between h-16">
             <div className="flex items-center">
               <Link to="/" className="flex items-center space-x-2">
-                <span className="text-2xl font-extrabold text-blue-600 tracking-tight">UE<span className="text-gray-800">Map</span></span>
+                <span className="text-2xl font-extrabold text-blue-600 tracking-tight">
+                  UE<span className="text-gray-800">Map</span>
+                </span>
               </Link>
             </div>
 
@@ -67,7 +69,10 @@ export const StudentLayout: React.FC = () => {
 
       {/* Footer */}
       <footer className="bg-gray-900 text-white text-center py-6 text-sm border-t border-gray-800">
-        <p>&copy; {new Date().getFullYear()} Bản đồ Sinh viên Sư phạm (HCMUE). Bảo lưu mọi quyền.</p>
+        <p>
+          &copy; {new Date().getFullYear()} Bản đồ Sinh viên Sư phạm (HCMUE).
+          Bảo lưu mọi quyền.
+        </p>
       </footer>
     </div>
   );

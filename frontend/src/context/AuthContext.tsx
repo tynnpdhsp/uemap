@@ -1,5 +1,9 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
-import { api } from "../api/client";
+import { api, type APIResponse } from "../api/client";
+
+interface LoginResponseData {
+  access_token: string;
+}
 
 export interface StudentProfile {
   email: string;
@@ -14,7 +18,10 @@ interface AuthContextType {
   student: StudentProfile | null;
   isAuthenticated: boolean;
   loading: boolean;
-  login: (email: string, password: string) => Promise<any>;
+  login: (
+    email: string,
+    password: string,
+  ) => Promise<APIResponse<LoginResponseData>>;
   logout: () => Promise<void>;
   updateProfile: (fullName: string) => Promise<void>;
   fetchProfile: () => Promise<void>;
@@ -22,7 +29,9 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
+  children,
+}) => {
   const [student, setStudent] = useState<StudentProfile | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
   const [loading, setLoading] = useState<boolean>(true);
@@ -36,7 +45,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       } else {
         throw new Error();
       }
-    } catch (err) {
+    } catch {
       sessionStorage.removeItem("sv_access_token");
       setStudent(null);
       setIsAuthenticated(false);
@@ -55,7 +64,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, []);
 
   const login = async (email: string, password: string) => {
-    const res = await api.post("/auth/login", { email, password });
+    const res = await api.post<LoginResponseData>("/auth/login", {
+      email,
+      password,
+    });
     if (res.success && res.data?.access_token) {
       sessionStorage.setItem("sv_access_token", res.data.access_token);
       await fetchProfile();
@@ -66,7 +78,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const logout = async () => {
     try {
       await api.post("/auth/logout");
-    } catch (err) {
+    } catch {
+      // vẫn xóa session cục bộ khi API logout lỗi
     } finally {
       sessionStorage.removeItem("sv_access_token");
       setStudent(null);
