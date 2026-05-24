@@ -12,7 +12,7 @@ pipeline {
     stages {
         stage('Checkout Code') {
             when {
-                anyOf { branch 'main'; branch 'staging' }
+                anyOf { branch 'main'; branch 'staging'; branch 'feature/sonarqube' }
             }
             steps {
                 checkout scm
@@ -21,7 +21,7 @@ pipeline {
 
         stage('Code Formatting & Linting') {
             when {
-                anyOf { branch 'main'; branch 'staging' }
+                anyOf { branch 'main'; branch 'staging'; branch 'feature/sonarqube' }
             }
             steps {
                 echo "Running Linter for Frontend & Backend..."
@@ -38,7 +38,7 @@ pipeline {
 
         stage('Frontend Tests (Unit & Integration)') {
             when {
-                anyOf { branch 'main'; branch 'staging' }
+                anyOf { branch 'main'; branch 'staging'; branch 'feature/sonarqube' }
             }
             steps {
                 echo "Running Frontend Tests..."
@@ -53,7 +53,7 @@ pipeline {
 
         stage('Backend Tests (Unit, Integration, E2E)') {
             when {
-                anyOf { branch 'main'; branch 'staging' }
+                anyOf { branch 'main'; branch 'staging'; branch 'feature/sonarqube' }
             }
             steps {
                 echo "Running Backend Tests..."
