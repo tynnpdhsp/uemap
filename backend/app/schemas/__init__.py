@@ -37,3 +37,31 @@ from app.schemas.upload import (
     UploadMediaResponse as UploadMediaResponse,
     UploadImagesResponse as UploadImagesResponse,
 )
+from app.schemas.admin import (
+    AdminLoginRequest as AdminLoginRequest,
+    AdminLoginResponse as AdminLoginResponse,
+    AdminInfoResponse as AdminInfoResponse,
+    AdminCreateRequest as AdminCreateRequest,
+    AdminUpdateRequest as AdminUpdateRequest,
+)
+from app.schemas.admin_category import (
+    AdminCategoryCreateRequest as AdminCategoryCreateRequest,
+    AdminCategoryUpdateRequest as AdminCategoryUpdateRequest,
+    AdminCategoryHideRequest as AdminCategoryHideRequest,
+    AdminCategoryResponse as AdminCategoryResponse,
+)
+from app.schemas.admin_place import (
+    AdminPlaceHideRequest as AdminPlaceHideRequest,
+    AdminPlaceTransferCreatorRequest as AdminPlaceTransferCreatorRequest,
+    AdminPlaceUpdateRequest as AdminPlaceUpdateRequest,
+)
+from app.schemas.admin_report import (
+    AdminReportUpdateRequest as AdminReportUpdateRequest,
+    AdminReportActionRequest as AdminReportActionRequest,
+)
+from app.schemas.admin_config import (
+    AdminMapConfigUpdateRequest as AdminMapConfigUpdateRequest,
+    AdminEmailTemplatesUpdateRequest as AdminEmailTemplatesUpdateRequest,
+    AdminEmailTestRequest as AdminEmailTestRequest,
+)
+from app.schemas.audit_log import AuditLogResponse as AuditLogResponse

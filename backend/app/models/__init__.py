@@ -9,3 +9,6 @@ from app.models.place import PlaceModel as PlaceModel, GeoJSONPoint as GeoJSONPo
 from app.models.comment import CommentModel as CommentModel
 from app.models.report import ReportModel as ReportModel
 from app.models.app_config import AppConfigModel as AppConfigModel
+from app.models.admin import AdminModel as AdminModel
+from app.models.admin_session import AdminSessionModel as AdminSessionModel
+from app.models.admin_login_attempt import AdminLoginAttemptModel as AdminLoginAttemptModel
