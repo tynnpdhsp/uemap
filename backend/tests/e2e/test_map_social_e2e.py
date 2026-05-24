@@ -309,9 +309,13 @@ async def test_e2e_map_places_list_and_search(mock_upload_minio):
         assert len(data) == 1
         assert data[0]["name"] == "Quán bún bò Huế ngon"
 
-        res = await client.get(f"/api/places?category_id={category_id}")
+        res = await client.get(f"/api/places?category_ids={category_id}")
         assert res.status_code == 200
         assert len(res.json()["data"]) == 2
+
+        res = await client.get("/api/search?q=bún bò")
+        assert res.status_code == 200
+        assert len(res.json()["data"]) == 1
 
 
 @pytest.mark.asyncio
@@ -620,8 +624,40 @@ async def test_e2e_reports_validation_and_failures(mock_upload_minio):
             }
         )
         category_id = str(cat_res.inserted_id)
+
+        await db["app_config"].insert_one(
+            {
+                "_id": "map",
+                "geofence": {
+                    "type": "rectangle",
+                    "bounds": {
+                        "sw": {"lat": 10.75, "lng": 106.66},
+                        "ne": {"lat": 10.78, "lng": 106.71},
+                    },
+                },
+            }
+        )
+
         token_a = await setup_active_student(client)
         headers_a = auth_headers(token_a)
+
+        student_b_id = ObjectId()
+        await db["students"].insert_one(
+            {
+                "_id": student_b_id,
+                "email": "4901104199@student.hcmue.edu.vn",
+                "password_hash": hash_password("testpassword123"),
+                "full_name": "Nguyễn Văn B",
+                "status": "active",
+                "created_at": datetime.utcnow(),
+            }
+        )
+        res_login_b = await client.post(
+            "/api/auth/login",
+            json={"email": "4901104199@student.hcmue.edu.vn", "password": "testpassword123"},
+        )
+        token_b = res_login_b.json()["data"]["access_token"]
+        headers_b = auth_headers(token_b)
 
         payload = {
             "name": "Quán cơm tấm ngon tuyệt vời",
@@ -684,9 +720,21 @@ async def test_e2e_reports_validation_and_failures(mock_upload_minio):
             },
             headers=headers_a,
         )
+        assert_error(res, 403, "REPORT_FORBIDDEN")
+
+        res = await client.post(
+            "/api/reports",
+            json={
+                "target_type": "place",
+                "target_id": str(public_id),
+                "report_type": "wrong_info",
+                "reason": "Địa điểm này có thông tin sai lệch",
+            },
+            headers=headers_b,
+        )
         assert res.status_code == 201
 
-        res = await client.get("/api/my/reports", headers=headers_a)
+        res = await client.get("/api/my/reports", headers=headers_b)
         assert res.status_code == 200
         reports_list = res.json()["data"]
         assert len(reports_list) == 1
@@ -704,7 +752,9 @@ async def test_e2e_uploads_validation_and_failures(mock_upload_minio):
         files = [("files", ("test.png", b"image-data", "image/png"))]
         res = await client.post("/api/uploads/images", files=files, headers=headers_a)
         assert res.status_code == 201
-        assert "object_keys" in res.json()
+        body = res.json()
+        assert body["success"] is True
+        assert "object_keys" in body["data"]
 
         files_large = [("files", (f"img_{i}.png", b"img-data", "image/png")) for i in range(11)]
         res = await client.post("/api/uploads/images", files=files_large, headers=headers_a)
@@ -740,7 +790,9 @@ async def test_e2e_uploads_validation_and_failures(mock_upload_minio):
             headers=headers_a,
         )
         assert res.status_code == 201
-        assert "object_key" in res.json()
+        vid_body = res.json()
+        assert vid_body["success"] is True
+        assert "object_key" in vid_body["data"]
 
 
 @pytest.mark.asyncio

@@ -47,6 +47,18 @@ async def create_report(
                     },
                 },
             )
+        if place["creator_student_id"] == student_id:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail={
+                    "success": False,
+                    "error": {
+                        "code": "REPORT_FORBIDDEN",
+                        "message": "Bạn không thể báo cáo địa điểm do chính mình tạo.",
+                        "details": [],
+                    },
+                },
+            )
         target_place_id = place["_id"]
         place_public_id = pub_id
 
@@ -74,6 +86,18 @@ async def create_report(
                     "error": {
                         "code": "COMMENT_NOT_FOUND",
                         "message": "Không tìm thấy bình luận được báo cáo hoặc bình luận đã bị xóa.",
+                        "details": [],
+                    },
+                },
+            )
+        if comment["student_id"] == student_id:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail={
+                    "success": False,
+                    "error": {
+                        "code": "REPORT_FORBIDDEN",
+                        "message": "Bạn không thể báo cáo bình luận của chính mình.",
                         "details": [],
                     },
                 },

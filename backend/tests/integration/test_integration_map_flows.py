@@ -179,10 +179,10 @@ async def test_map_and_social_integration_flow(mock_media_minio, mock_upload_min
             json={
                 "target_type": "comment",
                 "target_id": comment_id,
-                "report_type": "harassment",
+                "report_type": "inappropriate",
                 "reason": "Bình luận này có chứa ngôn từ không phù hợp.",
             },
-            headers=headers_a,
+            headers=headers_b,
         )
         assert res.status_code == 201
         assert "report_code" in res.json()["data"]

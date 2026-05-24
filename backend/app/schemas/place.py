@@ -10,6 +10,7 @@ class GeoJSONPointSchema(BaseModel):
 
 class PlaceImageSchema(BaseModel):
     object_key: str
+    url: Optional[str] = None
     sort_order: int = 0
     mime: str
 
@@ -61,21 +62,29 @@ class PlaceDetailResponse(BaseModel):
 
 class PlaceCreateRequest(BaseModel):
     name: str = Field(..., min_length=5, max_length=200)
-    category_id: str
-    scope_type: str
-    description: str = Field(..., min_length=20, max_length=5000)
-    address: str = Field(..., min_length=5, max_length=500)
-    lat: float
-    lng: float
+    category_id: Optional[str] = None
+    scope_type: Optional[str] = None
+    description: Optional[str] = Field(None, max_length=5000)
+    address: Optional[str] = Field(None, max_length=500)
+    lat: Optional[float] = None
+    lng: Optional[float] = None
     hours: Optional[str] = None
     contact: Optional[str] = None
     image_object_keys: List[str] = Field(default_factory=list)
     video: Optional[PlaceVideoSchema] = None
     status: str = "draft"
+    publish: bool = False
 
-    @field_validator("name", "description", "address")
+    @field_validator("name")
     @classmethod
-    def clean_text(cls, v: str) -> str:
+    def clean_name(cls, v: str) -> str:
+        return " ".join(v.split())
+
+    @field_validator("description", "address")
+    @classmethod
+    def clean_optional_text(cls, v: Optional[str]) -> Optional[str]:
+        if v is None:
+            return None
         return " ".join(v.split())
 
 

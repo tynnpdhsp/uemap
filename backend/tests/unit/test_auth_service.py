@@ -50,6 +50,26 @@ async def test_register_student_duplicate_email(mock_db):
 
 
 @pytest.mark.asyncio
+async def test_register_student_rejects_pending_activation_otp(mock_db):
+    now = datetime.utcnow()
+    await mock_db["otp_tokens"].insert_one(
+        {
+            "email": TEST_EMAIL,
+            "purpose": "activation",
+            "otp_hash": "hash",
+            "sent_at": now,
+            "expires_at": now + timedelta(minutes=15),
+            "resend_available_at": now + timedelta(seconds=60),
+            "used_at": None,
+            "created_at": now,
+        }
+    )
+    with pytest.raises(HTTPException) as exc:
+        await auth_service.register_student(TEST_EMAIL, TEST_PASSWORD, TEST_NAME, "127.0.0.1")
+    assert exc.value.detail["error"]["code"] == "AUTH_EMAIL_EXISTS"
+
+
+@pytest.mark.asyncio
 async def test_activate_student_account(mock_db):
     student_id = ObjectId()
     await mock_db["students"].insert_one(

@@ -6,13 +6,24 @@ from fastapi import APIRouter, HTTPException, Query, status
 
 from app.core.database import get_db
 from app.services import search_service
+from app.utils.place_format import format_place_images, format_place_list_items, format_place_video
 
 router = APIRouter()
+
+
+def _merge_category_ids(
+    category_ids: Optional[List[str]], category_id: Optional[str]
+) -> Optional[List[str]]:
+    merged: List[str] = list(category_ids or [])
+    if category_id:
+        merged.append(category_id)
+    return merged or None
 
 
 @router.get("/markers", response_model=dict)
 async def get_markers(
     category_ids: Optional[List[str]] = Query(None),
+    category_id: Optional[str] = Query(None),
     sw_lat: Optional[float] = Query(None),
     sw_lng: Optional[float] = Query(None),
     ne_lat: Optional[float] = Query(None),
@@ -20,6 +31,7 @@ async def get_markers(
 ):
     db = get_db()
     query: dict[str, Any] = {"status": "published"}
+    category_ids = _merge_category_ids(category_ids, category_id)
 
     if category_ids:
         oids = []
@@ -69,9 +81,12 @@ async def get_places(
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=100),
     category_ids: Optional[List[str]] = Query(None),
+    category_id: Optional[str] = Query(None),
     q: Optional[str] = Query(None),
     sort: str = Query("updated_desc"),
 ):
+    category_ids = _merge_category_ids(category_ids, category_id)
+
     if q and len(q.strip()) >= 2:
         result = await search_service.search_places(
             q=q, category_ids=category_ids, page=page, page_size=page_size
@@ -104,28 +119,7 @@ async def get_places(
 
         result = {"items": items, "total": total, "page": page, "page_size": page_size}
 
-    db = get_db()
-    cat_ids = list(set([p["category_id"] for p in result["items"]]))
-    categories = await db["categories"].find({"_id": {"$in": cat_ids}}).to_list(length=100)
-    cat_map = {cat["_id"]: cat["name"] for cat in categories}
-
-    formatted_items = []
-    for p in result["items"]:
-        addr = p["address"]
-        addr_short = addr[:50] + "..." if len(addr) > 50 else addr
-
-        vn_time = p["updated_at"] + timedelta(hours=7)
-        updated_at_display = vn_time.strftime("%d/%m/%Y %H:%M")
-
-        formatted_items.append(
-            {
-                "public_id": p["public_id"],
-                "name": p["name"],
-                "category_name": cat_map.get(p["category_id"], "Khác"),
-                "address_short": addr_short,
-                "updated_at_display": updated_at_display,
-            }
-        )
+    formatted_items = await format_place_list_items(result["items"])
 
     return {
         "success": True,
@@ -166,25 +160,8 @@ async def get_place_detail(public_id: int):
     vn_time = place["updated_at"] + timedelta(hours=7)
     updated_at_display = vn_time.strftime("%d/%m/%Y %H:%M")
 
-    formatted_images = []
-    for img in place.get("images", []):
-        formatted_images.append(
-            {
-                "object_key": img["object_key"],
-                "sort_order": img.get("sort_order", 0),
-                "mime": img["mime"],
-            }
-        )
-
-    video_data = None
-    if place.get("video"):
-        v = place["video"]
-        video_data = {
-            "kind": v["kind"],
-            "object_key": v.get("object_key"),
-            "mime": v.get("mime"),
-            "url": v.get("url"),
-        }
+    formatted_images = format_place_images(place.get("images", []))
+    video_data = format_place_video(place.get("video"))
 
     data = {
         "public_id": place["public_id"],

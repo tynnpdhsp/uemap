@@ -11,18 +11,25 @@ pytestmark = pytest.mark.unit
 @pytest.mark.asyncio
 async def test_report_place_success(mock_db):
     place_id = ObjectId()
+    reporter_id = ObjectId()
     await mock_db["places"].insert_one(
-        {"_id": place_id, "public_id": 1, "status": "published", "name": "Địa điểm vi phạm"}
+        {
+            "_id": place_id,
+            "public_id": 1,
+            "status": "published",
+            "name": "Địa điểm vi phạm",
+            "creator_student_id": ObjectId(),
+        }
     )
 
     payload = ReportCreateRequest(
         target_type="place",
         target_id="1",
-        report_type="inappropriate_content",
+        report_type="inappropriate",
         reason="Có từ ngữ tục tĩu và vô cùng phản cảm trên trang này.",
     )
 
-    student_id = ObjectId()
+    student_id = reporter_id
     result = await report_service.create_report(student_id, payload, "127.0.0.1")
 
     assert "report_code" in result
@@ -40,7 +47,7 @@ async def test_report_place_not_found(mock_db):
     payload = ReportCreateRequest(
         target_type="place",
         target_id="999",
-        report_type="inappropriate_content",
+        report_type="wrong_info",
         reason="Địa điểm này thực tế không hề tồn tại trên bản đồ.",
     )
 
@@ -55,18 +62,25 @@ async def test_report_place_not_found(mock_db):
 @pytest.mark.asyncio
 async def test_report_comment_success(mock_db):
     comment_id = ObjectId()
+    reporter_id = ObjectId()
     await mock_db["comments"].insert_one(
-        {"_id": comment_id, "content": "Bình luận xấu", "place_public_id": 1, "status": "visible"}
+        {
+            "_id": comment_id,
+            "content": "Bình luận xấu",
+            "place_public_id": 1,
+            "status": "visible",
+            "student_id": ObjectId(),
+        }
     )
 
     payload = ReportCreateRequest(
         target_type="comment",
         target_id=str(comment_id),
-        report_type="harassment",
+        report_type="inappropriate",
         reason="Bình luận này mang tính chất quấy rối người khác nghiêm trọng.",
     )
 
-    student_id = ObjectId()
+    student_id = reporter_id
     result = await report_service.create_report(student_id, payload, "127.0.0.1")
 
     assert "report_code" in result
@@ -84,7 +98,7 @@ async def test_report_comment_not_found(mock_db):
     payload = ReportCreateRequest(
         target_type="comment",
         target_id=str(ObjectId()),
-        report_type="harassment",
+        report_type="spam",
         reason="Bình luận này hiện tại không tìm thấy trên hệ thống.",
     )
 

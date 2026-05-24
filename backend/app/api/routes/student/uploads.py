@@ -3,13 +3,12 @@ from typing import List
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
 
 from app.api.deps import require_active_student
-from app.schemas.upload import UploadImagesResponse, UploadMediaResponse
 from app.services import upload_service
 
 router = APIRouter()
 
 
-@router.post("/images", response_model=UploadImagesResponse, status_code=status.HTTP_201_CREATED)
+@router.post("/images", response_model=dict, status_code=status.HTTP_201_CREATED)
 async def upload_student_images(
     files: List[UploadFile] = File(...), current_student: dict = Depends(require_active_student)
 ):
@@ -82,10 +81,13 @@ async def upload_student_images(
         object_keys.append(key)
         preview_urls.append(f"/api/media/{key}")
 
-    return {"object_keys": object_keys, "preview_urls": preview_urls}
+    return {
+        "success": True,
+        "data": {"object_keys": object_keys, "preview_urls": preview_urls},
+    }
 
 
-@router.post("/video", response_model=UploadMediaResponse, status_code=status.HTTP_201_CREATED)
+@router.post("/video", response_model=dict, status_code=status.HTTP_201_CREATED)
 async def upload_student_video(
     file: UploadFile = File(...), current_student: dict = Depends(require_active_student)
 ):
@@ -139,4 +141,7 @@ async def upload_student_video(
         student_id=str(current_student["_id"]),
     )
 
-    return {"object_key": key, "preview_url": f"/api/media/{key}"}
+    return {
+        "success": True,
+        "data": {"object_key": key, "preview_url": f"/api/media/{key}"},
+    }

@@ -6,6 +6,7 @@ from app.api.deps import require_active_student
 from app.core.database import get_db
 from app.schemas.place import PlaceCreateRequest
 from app.services import place_service
+from app.utils.place_format import format_place_images, format_place_video
 
 router = APIRouter()
 
@@ -101,25 +102,8 @@ async def get_my_place_detail(
 
     coords = place["location"]["coordinates"]
 
-    images_list = []
-    for img in place.get("images", []):
-        images_list.append(
-            {
-                "object_key": img["object_key"],
-                "sort_order": img.get("sort_order", 0),
-                "mime": img["mime"],
-            }
-        )
-
-    video_data = None
-    if place.get("video"):
-        v = place["video"]
-        video_data = {
-            "kind": v["kind"],
-            "object_key": v.get("object_key"),
-            "mime": v.get("mime"),
-            "url": v.get("url"),
-        }
+    images_list = format_place_images(place.get("images", []))
+    video_data = format_place_video(place.get("video"))
 
     data = {
         "public_id": place["public_id"],

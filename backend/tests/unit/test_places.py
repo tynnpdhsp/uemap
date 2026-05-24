@@ -6,29 +6,21 @@ from fastapi import HTTPException
 
 from app.schemas.place import PlaceCreateRequest
 from app.services import place_service
+from tests.unit.helpers.map_fixtures import seed_map_test_config, seed_visible_category
 
 pytestmark = pytest.mark.unit
 
 
 @pytest.mark.asyncio
 async def test_create_place_draft_success(mock_db):
-    cat_id = ObjectId()
     await mock_db["categories"].insert_one(
-        {"_id": cat_id, "name": "Quán ăn", "is_hidden": False, "order": 1}
+        {"_id": ObjectId(), "name": "Quán ăn", "is_hidden": False, "order": 1}
+    )
+    await mock_db["app_config"].insert_one(
+        {"_id": "map", "default_center": {"lat": 10.7628, "lng": 106.6824}}
     )
 
-    payload = PlaceCreateRequest(
-        name="Quán cơm sinh viên",
-        category_id=str(cat_id),
-        scope_type="near_campus",
-        description="Quán cơm tấm bình dân ngon bổ rẻ dành cho sinh viên.",
-        address="280 An Dương Vương",
-        lat=10.7628,
-        lng=106.6824,
-        status="draft",
-        image_object_keys=[],
-        video=None,
-    )
+    payload = PlaceCreateRequest(name="Quán cơm sinh viên")
 
     student_id = ObjectId()
 
@@ -91,10 +83,8 @@ async def test_create_place_published_out_of_bounds(mock_db):
 
 @pytest.mark.asyncio
 async def test_create_place_published_success(mock_db):
-    cat_id = ObjectId()
-    await mock_db["categories"].insert_one(
-        {"_id": cat_id, "name": "Quán ăn", "is_hidden": False, "order": 1}
-    )
+    await seed_map_test_config(mock_db)
+    cat_id = await seed_visible_category(mock_db)
 
     # Cấu hình Geofence
     await mock_db["app_config"].insert_one(
@@ -138,9 +128,10 @@ async def test_create_place_published_success(mock_db):
 
 @pytest.mark.asyncio
 async def test_update_place_forbidden(mock_db):
+    await seed_map_test_config(mock_db)
     student_owner = ObjectId()
     student_other = ObjectId()
-    cat_id = ObjectId()
+    cat_id = await seed_visible_category(mock_db)
 
     await mock_db["places"].insert_one(
         {
@@ -196,8 +187,9 @@ async def test_delete_place_success(mock_db):
 
 @pytest.mark.asyncio
 async def test_update_place_success(mock_db):
+    await seed_map_test_config(mock_db)
     student_owner = ObjectId()
-    cat_id = ObjectId()
+    cat_id = await seed_visible_category(mock_db)
 
     await mock_db["places"].insert_one(
         {
@@ -236,8 +228,9 @@ async def test_update_place_success(mock_db):
 
 @pytest.mark.asyncio
 async def test_update_place_not_found(mock_db):
+    await seed_map_test_config(mock_db)
     student_owner = ObjectId()
-    cat_id = ObjectId()
+    cat_id = await seed_visible_category(mock_db)
 
     payload = PlaceCreateRequest(
         name="Sửa quán ảo",

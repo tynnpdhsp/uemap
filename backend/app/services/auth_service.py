@@ -35,25 +35,41 @@ def decode_reset_token(token: str, email: str) -> None:
         )
 
 
+def _raise_email_exists() -> None:
+    raise HTTPException(
+        status_code=status.HTTP_400_BAD_REQUEST,
+        detail={
+            "success": False,
+            "error": {
+                "code": "AUTH_EMAIL_EXISTS",
+                "message": "Email này đã được sử dụng trong hệ thống.",
+                "details": [],
+            },
+        },
+    )
+
+
 async def register_student(email: str, password: str, full_name: str, ip_address: str) -> dict:
     db = get_db()
+    now = datetime.utcnow()
 
     existing = await db["students"].find_one({"email": email})
     if existing:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail={
-                "success": False,
-                "error": {
-                    "code": "AUTH_EMAIL_EXISTS",
-                    "message": "Email này đã được sử dụng trong hệ thống.",
-                    "details": [],
-                },
-            },
-        )
+        _raise_email_exists()
+
+    pending_activation_otp = await db["otp_tokens"].find_one(
+        {
+            "email": email,
+            "purpose": "activation",
+            "used_at": None,
+            "expires_at": {"$gt": now},
+        },
+        sort=[("created_at", -1)],
+    )
+    if pending_activation_otp:
+        _raise_email_exists()
 
     password_hash = hash_password(password)
-    now = datetime.utcnow()
 
     student_doc = {
         "email": email,
