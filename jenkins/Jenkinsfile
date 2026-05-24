@@ -12,10 +12,7 @@ pipeline {
     stages {
         stage('Checkout Code') {
             when {
-                anyOf {
-                    branch 'main'
-                    branch 'staging'
-                }
+                anyOf { branch 'main'; branch 'staging' }
             }
             steps {
                 checkout scm
@@ -24,50 +21,56 @@ pipeline {
 
         stage('Code Formatting & Linting') {
             when {
-                anyOf {
-                    branch 'main'
-                    branch 'staging'
-                }
+                anyOf { branch 'main'; branch 'staging' }
             }
             steps {
                 echo "Running Linter for Frontend & Backend..."
-                
-                sh "cd frontend && npm ci && npm run lint && npm run format"
-                
-                sh "cd backend && pip install -r requirements.txt"
-                sh "cd backend && ruff check ."
+                script {
+                    docker.image('node:20-alpine').inside {
+                        sh "cd frontend && npm ci && npm run lint"
+                    }
+                    docker.image('python:3.11-slim').inside {
+                        sh "cd backend && pip install --break-system-packages ruff && ruff check ."
+                    }
+                }
             }
         }
 
         stage('Frontend Tests (Unit & Integration)') {
             when {
-                anyOf {
-                    branch 'main'
-                    branch 'staging'
-                }
+                anyOf { branch 'main'; branch 'staging' }
             }
             steps {
                 echo "Running Frontend Tests..."
-                sh "cd frontend && npm run test:unit"
-                sh "cd frontend && npm run test:integration"
+                script {
+                    docker.image('node:20-alpine').inside {
+                        sh "cd frontend && npm ci && npm run test:unit"
+                        sh "cd frontend && npm run test:integration"
+                    }
+                }
             }
         }
 
         stage('Backend Tests (Unit, Integration, E2E)') {
             when {
-                anyOf {
-                    branch 'main'
-                    branch 'staging'
-                }
+                anyOf { branch 'main'; branch 'staging' }
             }
             steps {
                 echo "Running Backend Tests..."
-                sh "docker run -d --name mongo_test_db -p 27017:27017 mongo:6.0"
                 script {
+                    sh "docker run -d --name mongo_test_db -p 27017:27017 mongo:6.0"
+
                     try {
-                        sh "cd backend && export MONGO_URI=mongodb://localhost:27017/test_db && pytest tests/unit"
-                        sh "cd backend && export MONGO_URI=mongodb://localhost:27017/test_db && pytest tests/test_integration_auth_flows.py"
-                        sh "cd backend && export MONGO_URI=mongodb://localhost:27017/test_db && pytest tests/e2e"
+                        docker.image('python:3.11-slim').inside('--network=host') {
+                            sh """
+                                cd backend
+                                pip install --break-system-packages -r requirements.txt
+                                export MONGO_URI=mongodb://127.0.0.1:27017/test_db
+                                pytest tests/unit
+                                pytest tests/test_integration_auth_flows.py
+                                pytest tests/e2e
+                            """
+                        }
                     } finally {
                         sh "docker rm -f mongo_test_db"
                     }
@@ -77,14 +80,13 @@ pipeline {
 
         stage('SonarQube Code Analysis') {
             when {
-                anyOf {
-                    branch 'main'
-                    branch 'staging'
-                }
+                anyOf { branch 'main'; branch 'staging' }
             }
             steps {
-                withSonarQubeEnv('SonarQubeServer') {
-                    sh 'sonar-scanner'
+                script {
+                    withSonarQubeEnv('SonarQubeServer') {
+                        sh 'sonar-scanner'
+                    }
                 }
             }
         }
@@ -98,7 +100,7 @@ pipeline {
                     sh "docker build -f frontend/Dockerfile.prod -t ${DOCKER_REGISTRY}/${FE_IMAGE}:${BUILD_TAG} -t ${DOCKER_REGISTRY}/${FE_IMAGE}:latest ./frontend"
                     sh "docker build -f backend/Dockerfile.prod -t ${DOCKER_REGISTRY}/${BE_IMAGE}:${BUILD_TAG} -t ${DOCKER_REGISTRY}/${BE_IMAGE}:latest ./backend"
                 }
-                
+
                 withCredentials([usernamePassword(credentialsId: 'dockerhub-creds', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
                     sh "echo \$DOCKER_PASS | docker login -u \$DOCKER_USER --password-stdin"
                     sh "docker push ${DOCKER_REGISTRY}/${FE_IMAGE}:${BUILD_TAG}"
@@ -115,15 +117,19 @@ pipeline {
             }
             steps {
                 withCredentials([usernamePassword(credentialsId: 'server-creds', usernameVariable: 'SSH_USER', passwordVariable: 'SSH_PASS')]) {
-                    sh "sshpass -p \$SSH_PASS ssh -o StrictHostKeyChecking=no \$SSH_USER@${SERVER_IP} 'mkdir -p ~/app'"
-                    sh "sshpass -p \$SSH_PASS scp -o StrictHostKeyChecking=no docker/docker-compose.prod.yml \$SSH_USER@${SERVER_IP}:~/app/docker-compose.yml"
-                    sh """
-                        sshpass -p \$SSH_PASS ssh -o StrictHostKeyChecking=no \$SSH_USER@${SERVER_IP} "
-                            cd ~/app &&
-                            docker compose pull &&
-                            docker compose up -d
-                        "
-                    """
+                    script {
+                        docker.image('hudecu/sshpass:latest').inside {
+                            sh "sshpass -p \$SSH_PASS ssh -o StrictHostKeyChecking=no \$SSH_USER@${SERVER_IP} 'mkdir -p ~/app'"
+                            sh "sshpass -p \$SSH_PASS scp -o StrictHostKeyChecking=no docker/docker-compose.prod.yml \$SSH_USER@${SERVER_IP}:~/app/docker-compose.yml"
+                            sh """
+                                sshpass -p \$SSH_PASS ssh -o StrictHostKeyChecking=no \$SSH_USER@${SERVER_IP} "
+                                    cd ~/app &&
+                                    docker compose pull &&
+                                    docker compose up -d
+                                "
+                            """
+                        }
+                    }
                 }
             }
         }
