@@ -1,7 +1,9 @@
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timedelta
+
+from bson import ObjectId
 from fastapi import HTTPException, status
 from jose import jwt
-from bson import ObjectId
+
 from app.core.config import settings
 from app.core.database import get_db
 from app.core.security import hash_password, verify_password
@@ -35,7 +37,7 @@ def decode_reset_token(token: str, email: str) -> None:
 
 async def register_student(email: str, password: str, full_name: str, ip_address: str) -> dict:
     db = get_db()
-    
+
     existing = await db["students"].find_one({"email": email})
     if existing:
         raise HTTPException(
@@ -63,7 +65,7 @@ async def register_student(email: str, password: str, full_name: str, ip_address
         "otp_locked_until": None,
         "failed_otp_attempts": 0,
         "created_at": now,
-        "updated_at": now
+        "updated_at": now,
     }
 
     result = await db["students"].insert_one(student_doc)
@@ -73,8 +75,7 @@ async def register_student(email: str, password: str, full_name: str, ip_address
     await email_service.send_otp_email(email, full_name, otp_code, "activation")
 
     otp_doc = await db["otp_tokens"].find_one(
-        {"email": email, "purpose": "activation", "used_at": None},
-        sort=[("created_at", -1)]
+        {"email": email, "purpose": "activation", "used_at": None}, sort=[("created_at", -1)]
     )
     resend_avail = otp_doc["resend_available_at"] if otp_doc else now + timedelta(seconds=60)
 
@@ -86,7 +87,7 @@ async def register_student(email: str, password: str, full_name: str, ip_address
         object_id=str(student_id),
         result="success",
         description="Đăng ký tài khoản sinh viên mới thành công",
-        ip_address=ip_address
+        ip_address=ip_address,
     )
 
     await audit_service.log_event(
@@ -97,14 +98,10 @@ async def register_student(email: str, password: str, full_name: str, ip_address
         object_id=str(otp_doc["_id"]) if otp_doc else None,
         result="success",
         description="Gửi mã OTP kích hoạt tài khoản",
-        ip_address=ip_address
+        ip_address=ip_address,
     )
 
-    return {
-        "email": email,
-        "status": "pending_activation",
-        "otp_resend_available_at": resend_avail
-    }
+    return {"email": email, "status": "pending_activation", "otp_resend_available_at": resend_avail}
 
 
 async def activate_student_account(email: str, otp: str, ip_address: str) -> dict:
@@ -114,10 +111,10 @@ async def activate_student_account(email: str, otp: str, ip_address: str) -> dic
     await otp_service.verify_otp(email, otp, "activation")
 
     student = await db["students"].find_one({"email": email})
-    
+    assert student is not None
     await db["students"].update_one(
         {"_id": student["_id"]},
-        {"$set": {"status": "active", "activated_at": now, "updated_at": now}}
+        {"$set": {"status": "active", "activated_at": now, "updated_at": now}},
     )
 
     vn_time = now + timedelta(hours=7)
@@ -131,13 +128,10 @@ async def activate_student_account(email: str, otp: str, ip_address: str) -> dic
         object_id=str(student["_id"]),
         result="success",
         description="Kích hoạt tài khoản thành công qua OTP",
-        ip_address=ip_address
+        ip_address=ip_address,
     )
 
-    return {
-        "success": True,
-        "activated_at_display": activated_at_display
-    }
+    return {"success": True, "activated_at_display": activated_at_display}
 
 
 async def login_student(email: str, password: str, ip_address: str, user_agent: str) -> dict:
@@ -145,11 +139,9 @@ async def login_student(email: str, password: str, ip_address: str, user_agent: 
     now = datetime.utcnow()
 
     fifteen_minutes_ago = now - timedelta(minutes=15)
-    failed_attempts_count = await db["login_attempts"].count_documents({
-        "email": email,
-        "ip_address": ip_address,
-        "failed_at": {"$gte": fifteen_minutes_ago}
-    })
+    failed_attempts_count = await db["login_attempts"].count_documents(
+        {"email": email, "ip_address": ip_address, "failed_at": {"$gte": fifteen_minutes_ago}}
+    )
 
     if failed_attempts_count >= 10:
         raise HTTPException(
@@ -165,13 +157,11 @@ async def login_student(email: str, password: str, ip_address: str, user_agent: 
         )
 
     student = await db["students"].find_one({"email": email})
-    
+
     if not student:
-        await db["login_attempts"].insert_one({
-            "email": email,
-            "ip_address": ip_address,
-            "failed_at": now
-        })
+        await db["login_attempts"].insert_one(
+            {"email": email, "ip_address": ip_address, "failed_at": now}
+        )
         await audit_service.log_event(
             event_code="AUTH_LOGIN",
             actor_role="guest",
@@ -180,7 +170,7 @@ async def login_student(email: str, password: str, ip_address: str, user_agent: 
             object_id=None,
             result="failure",
             description=f"Đăng nhập thất bại: Không tìm thấy email {email}",
-            ip_address=ip_address
+            ip_address=ip_address,
         )
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -205,7 +195,7 @@ async def login_student(email: str, password: str, ip_address: str, user_agent: 
             object_id=str(student_id),
             result="failure",
             description="Đăng nhập thất bại: Tài khoản chưa kích hoạt",
-            ip_address=ip_address
+            ip_address=ip_address,
         )
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -228,7 +218,7 @@ async def login_student(email: str, password: str, ip_address: str, user_agent: 
             object_id=str(student_id),
             result="failure",
             description=f"Đăng nhập thất bại: Tài khoản bị khóa. Lý do: {student.get('locked_reason')}",
-            ip_address=ip_address
+            ip_address=ip_address,
         )
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -243,11 +233,9 @@ async def login_student(email: str, password: str, ip_address: str, user_agent: 
         )
 
     if not verify_password(password, student["password_hash"]):
-        await db["login_attempts"].insert_one({
-            "email": email,
-            "ip_address": ip_address,
-            "failed_at": now
-        })
+        await db["login_attempts"].insert_one(
+            {"email": email, "ip_address": ip_address, "failed_at": now}
+        )
         await audit_service.log_event(
             event_code="AUTH_LOGIN",
             actor_role="guest",
@@ -256,7 +244,7 @@ async def login_student(email: str, password: str, ip_address: str, user_agent: 
             object_id=str(student_id),
             result="failure",
             description="Đăng nhập thất bại: Sai mật khẩu",
-            ip_address=ip_address
+            ip_address=ip_address,
         )
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -280,7 +268,7 @@ async def login_student(email: str, password: str, ip_address: str, user_agent: 
         object_id=None,
         result="success",
         description="Đăng nhập thành công",
-        ip_address=ip_address
+        ip_address=ip_address,
     )
 
     return {
@@ -289,8 +277,8 @@ async def login_student(email: str, password: str, ip_address: str, user_agent: 
         "student": {
             "email": student["email"],
             "full_name": student["full_name"],
-            "status": student["status"]
-        }
+            "status": student["status"],
+        },
     }
 
 
@@ -304,7 +292,7 @@ async def logout_student(student_id: ObjectId, jti: str, ip_address: str) -> Non
         object_id=jti,
         result="success",
         description="Đăng xuất thành công",
-        ip_address=ip_address
+        ip_address=ip_address,
     )
 
 
@@ -313,17 +301,13 @@ async def request_forgot_password(email: str, ip_address: str) -> dict:
     student = await db["students"].find_one({"email": email})
 
     if not student or student.get("status") not in ("active", "pending_activation"):
-        return {
-            "success": True,
-            "message": "Nếu email tồn tại trong hệ thống, mã OTP đã được gửi."
-        }
+        return {"success": True, "message": "Nếu email tồn tại trong hệ thống, mã OTP đã được gửi."}
 
     otp_code = await otp_service.create_otp(email, "password_reset", ip_address)
     await email_service.send_otp_email(email, student["full_name"], otp_code, "password_reset")
 
     otp_doc = await db["otp_tokens"].find_one(
-        {"email": email, "purpose": "password_reset", "used_at": None},
-        sort=[("created_at", -1)]
+        {"email": email, "purpose": "password_reset", "used_at": None}, sort=[("created_at", -1)]
     )
 
     await audit_service.log_event(
@@ -334,13 +318,10 @@ async def request_forgot_password(email: str, ip_address: str) -> dict:
         object_id=str(otp_doc["_id"]) if otp_doc else None,
         result="success",
         description="Gửi mã OTP đặt lại mật khẩu",
-        ip_address=ip_address
+        ip_address=ip_address,
     )
 
-    return {
-        "success": True,
-        "message": "Nếu email tồn tại trong hệ thống, mã OTP đã được gửi."
-    }
+    return {"success": True, "message": "Nếu email tồn tại trong hệ thống, mã OTP đã được gửi."}
 
 
 async def verify_forgot_password_otp(email: str, otp: str, ip_address: str) -> str:
@@ -358,15 +339,17 @@ async def verify_forgot_password_otp(email: str, otp: str, ip_address: str) -> s
         object_id=str(student["_id"]) if student else None,
         result="success",
         description="Xác thực OTP đặt lại mật khẩu thành công",
-        ip_address=ip_address
+        ip_address=ip_address,
     )
 
     return reset_token
 
 
-async def reset_password_with_token(email: str, reset_token: str, password: str, ip_address: str) -> None:
+async def reset_password_with_token(
+    email: str, reset_token: str, password: str, ip_address: str
+) -> None:
     db = get_db()
-    
+
     decode_reset_token(reset_token, email)
 
     student = await db["students"].find_one({"email": email})
@@ -387,8 +370,7 @@ async def reset_password_with_token(email: str, reset_token: str, password: str,
     now = datetime.utcnow()
 
     await db["students"].update_one(
-        {"_id": student["_id"]},
-        {"$set": {"password_hash": password_hash, "updated_at": now}}
+        {"_id": student["_id"]}, {"$set": {"password_hash": password_hash, "updated_at": now}}
     )
 
     await session_service.revoke_all_sessions(student["_id"])
@@ -401,14 +383,20 @@ async def reset_password_with_token(email: str, reset_token: str, password: str,
         object_id=str(student["_id"]),
         result="success",
         description="Đặt lại mật khẩu thành công qua reset token",
-        ip_address=ip_address
+        ip_address=ip_address,
     )
 
 
-async def change_password(student_id: ObjectId, current_jti: str, current_password: str, new_password: str, ip_address: str) -> None:
+async def change_password(
+    student_id: ObjectId,
+    current_jti: str,
+    current_password: str,
+    new_password: str,
+    ip_address: str,
+) -> None:
     db = get_db()
     student = await db["students"].find_one({"_id": student_id})
-    
+
     if not student:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -439,8 +427,7 @@ async def change_password(student_id: ObjectId, current_jti: str, current_passwo
     now = datetime.utcnow()
 
     await db["students"].update_one(
-        {"_id": student_id},
-        {"$set": {"password_hash": password_hash, "updated_at": now}}
+        {"_id": student_id}, {"$set": {"password_hash": password_hash, "updated_at": now}}
     )
 
     await session_service.revoke_other_sessions(student_id, current_jti)
@@ -453,5 +440,5 @@ async def change_password(student_id: ObjectId, current_jti: str, current_passwo
         object_id=str(student_id),
         result="success",
         description="Đổi mật khẩu thành công trong hồ sơ",
-        ip_address=ip_address
+        ip_address=ip_address,
     )

@@ -1,22 +1,14 @@
 from datetime import datetime
-from typing import Any, Optional, Annotated
+from typing import Annotated, Optional
+
 from bson import ObjectId
-from pydantic import BaseModel, Field, GetCoreSchemaHandler
-from pydantic_core import core_schema
+from pydantic import BaseModel, BeforeValidator, Field, PlainSerializer
 
-
-class PyObjectId(ObjectId):
-    @classmethod
-    def __get_pydantic_core_schema__(
-        cls, source_type: Any, handler: GetCoreSchemaHandler
-    ) -> core_schema.CoreSchema:
-        return core_schema.json_or_python_schema(
-            json_schema=core_schema.str_schema(),
-            python_schema=core_schema.is_instance_schema(ObjectId),
-            serialization=core_schema.plain_serializer_function_broker(
-                lambda val: str(val)
-            ),
-        )
+PyObjectId = Annotated[
+    ObjectId,
+    BeforeValidator(lambda x: ObjectId(x) if ObjectId.is_valid(x) else x),
+    PlainSerializer(lambda x: str(x), return_type=str),
+]
 
 
 class StudentModel(BaseModel):

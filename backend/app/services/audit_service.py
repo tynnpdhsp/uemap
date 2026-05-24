@@ -1,6 +1,8 @@
 from datetime import datetime
 from typing import Optional
+
 from bson import ObjectId
+
 from app.core.database import get_db
 from app.models.audit_log import AuditLogModel
 
@@ -25,6 +27,6 @@ async def log_event(
         result=result,
         description=description,
         ip_address=ip_address,
-        occurred_at=datetime.utcnow()
+        occurred_at=datetime.utcnow(),
     )
     await db["audit_logs"].insert_one(audit_log.model_dump(by_alias=True, exclude_none=True))

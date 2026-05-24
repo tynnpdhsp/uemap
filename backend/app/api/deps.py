@@ -1,6 +1,7 @@
 from bson import ObjectId
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
+
 from app.core.database import get_db
 from app.core.security import decode_access_token
 from app.services import session_service
@@ -25,7 +26,7 @@ async def get_current_student(
                     },
                 },
             )
-        
+
         jti = payload.get("jti")
         student_id_str = payload.get("sub")
         if not jti or not student_id_str:

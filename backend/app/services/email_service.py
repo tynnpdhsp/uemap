@@ -1,6 +1,8 @@
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
+
 import aiosmtplib
+
 from app.core.config import settings
 
 
@@ -38,7 +40,9 @@ async def send_otp_email(email: str, full_name: str, otp_code: str, purpose: str
         return
 
     message = MIMEMultipart("alternative")
-    message["From"] = f"{settings.SMTP_FROM_NAME} <{settings.SMTP_FROM_EMAIL or settings.SMTP_USER}>"
+    message["From"] = (
+        f"{settings.SMTP_FROM_NAME} <{settings.SMTP_FROM_EMAIL or settings.SMTP_USER}>"
+    )
     message["To"] = email
     message["Subject"] = subject
 

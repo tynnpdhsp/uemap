@@ -1,7 +1,8 @@
-from datetime import datetime, timedelta
 import random
+from datetime import datetime, timedelta
+
 from fastapi import HTTPException, status
-from app.core.config import settings
+
 from app.core.database import get_db
 from app.core.security import hash_password, verify_password
 
@@ -11,8 +12,7 @@ async def create_otp(email: str, purpose: str, send_ip: str) -> str:
     now = datetime.utcnow()
 
     last_otp = await db["otp_tokens"].find_one(
-        {"email": email, "purpose": purpose},
-        sort=[("created_at", -1)]
+        {"email": email, "purpose": purpose}, sort=[("created_at", -1)]
     )
 
     if last_otp:
@@ -31,11 +31,9 @@ async def create_otp(email: str, purpose: str, send_ip: str) -> str:
             )
 
     one_hour_ago = now - timedelta(hours=1)
-    recent_otps_count = await db["otp_tokens"].count_documents({
-        "email": email,
-        "purpose": purpose,
-        "created_at": {"$gte": one_hour_ago}
-    })
+    recent_otps_count = await db["otp_tokens"].count_documents(
+        {"email": email, "purpose": purpose, "created_at": {"$gte": one_hour_ago}}
+    )
 
     if recent_otps_count >= 3:
         raise HTTPException(
@@ -51,13 +49,12 @@ async def create_otp(email: str, purpose: str, send_ip: str) -> str:
         )
 
     await db["otp_tokens"].update_many(
-        {"email": email, "purpose": purpose, "used_at": None},
-        {"$set": {"expires_at": now}}
+        {"email": email, "purpose": purpose, "used_at": None}, {"$set": {"expires_at": now}}
     )
 
     otp_code = "".join([str(random.randint(0, 9)) for _ in range(6)])
     otp_hash = hash_password(otp_code)
-    
+
     expires_at = now + timedelta(minutes=15)
     resend_available_at = now + timedelta(seconds=60)
 
@@ -70,7 +67,7 @@ async def create_otp(email: str, purpose: str, send_ip: str) -> str:
         "used_at": None,
         "resend_available_at": resend_available_at,
         "send_ip": send_ip,
-        "created_at": now
+        "created_at": now,
     }
 
     await db["otp_tokens"].insert_one(otp_doc)
@@ -110,13 +107,8 @@ async def verify_otp(email: str, otp: str, purpose: str) -> bool:
         )
 
     otp_doc = await db["otp_tokens"].find_one(
-        {
-            "email": email,
-            "purpose": purpose,
-            "used_at": None,
-            "expires_at": {"$gt": now}
-        },
-        sort=[("created_at", -1)]
+        {"email": email, "purpose": purpose, "used_at": None, "expires_at": {"$gt": now}},
+        sort=[("created_at", -1)],
     )
 
     is_valid = False
@@ -126,7 +118,7 @@ async def verify_otp(email: str, otp: str, purpose: str) -> bool:
     if not is_valid:
         failed_attempts = student.get("failed_otp_attempts", 0) + 1
         update_doc = {"failed_otp_attempts": failed_attempts}
-        
+
         if failed_attempts >= 5:
             update_doc["otp_locked_until"] = now + timedelta(minutes=30)
             update_doc["failed_otp_attempts"] = 0
@@ -156,9 +148,9 @@ async def verify_otp(email: str, otp: str, purpose: str) -> bool:
                 },
             )
 
+    assert otp_doc is not None
     await db["otp_tokens"].update_one({"_id": otp_doc["_id"]}, {"$set": {"used_at": now}})
     await db["students"].update_one(
-        {"_id": student["_id"]},
-        {"$set": {"failed_otp_attempts": 0, "otp_locked_until": None}}
+        {"_id": student["_id"]}, {"$set": {"failed_otp_attempts": 0, "otp_locked_until": None}}
     )
     return True

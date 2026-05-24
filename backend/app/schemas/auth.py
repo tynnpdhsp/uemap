@@ -1,13 +1,15 @@
 import re
 from datetime import datetime
-from typing import Optional
+
 from pydantic import BaseModel, Field, field_validator, model_validator
 
 
 def validate_student_email(email: str) -> str:
     email = email.strip().lower()
     if not re.match(r"^[0-9]{10}@student\.hcmue\.edu\.vn$", email):
-        raise ValueError("Email phải đúng định dạng mã số sinh viên 10 chữ số @student.hcmue.edu.vn")
+        raise ValueError(
+            "Email phải đúng định dạng mã số sinh viên 10 chữ số @student.hcmue.edu.vn"
+        )
     return email
 
 
