@@ -2,57 +2,113 @@ services:
 
   # Prometheus (Metrics Collector)
   prometheus:
-    image: prom/prometheus:v2.52.0
+    image: prom/prometheus:latest
     container_name: ban-do-prometheus
+    restart: unless-stopped
     volumes:
-      - ./prometheus:/etc/prometheus
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
       - prometheus_data:/prometheus
     command:
-      - '--config.file=/etc/prometheus/prometheus.yml'
-      - '--storage.tsdb.path=/prometheus'
-      - '--web.console.libraries=/usr/share/prometheus/console_libraries'
-      - '--web.console.templates=/usr/share/prometheus/consoles'
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--storage.tsdb.path=/prometheus"
+      - "--storage.tsdb.retention.time=15d"
     ports:
-      - "9090:9090"
+      - "127.0.0.1:9090:9090"
     networks:
-      - ban-do-network-dev
-    restart: always
+      - monitoring
+
+  # Node Exporter (Server Metrics)
+  node_exporter:
+    image: prom/node-exporter:latest
+    container_name: ban-do-node-exporter
+    restart: unless-stopped
+    pid: host
+    volumes:
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /:/rootfs:ro
+    command:
+      - "--path.procfs=/host/proc"
+      - "--path.sysfs=/host/sys"
+      - "--collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc)($$|/)"
+    ports:
+      - "127.0.0.1:9100:9100"
+    networks:
+      - monitoring
+
+  # cAdvisor (Container Resource Usage)
+  cadvisor:
+    image: gcr.io/cadvisor/cadvisor:v0.49.1
+    container_name: ban-do-cadvisor
+    privileged: true
+    devices:
+      - /dev/kmsg
+    restart: unless-stopped
+    volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:ro
+      - /sys:/sys:ro
+      - /var/lib/docker/:/var/lib/docker:ro
+      - /dev/disk/:/dev/disk:ro
+    ports:
+      - "127.0.0.1:8088:8080"
+    networks:
+      - monitoring
 
   # Loki (Logs Aggregator)
   loki:
-    image: grafana/loki:3.0.0
+    image: grafana/loki:latest
     container_name: ban-do-loki
+    restart: unless-stopped
     volumes:
-      - ./loki:/etc/loki
-    ports:
-      - "3100:3100"
+      - ./loki/loki-config.yml:/etc/loki/local-config.yaml:ro
+      - loki_data:/loki
     command: -config.file=/etc/loki/local-config.yaml
+    ports:
+      - "127.0.0.1:3100:3100"
     networks:
-      - ban-do-network-dev
-    restart: always
+      - monitoring
+
+  # Promtail (Docker Logs Collector)
+  promtail:
+    image: grafana/promtail:latest
+    container_name: ban-do-promtail
+    restart: unless-stopped
+    volumes:
+      - ./promtail/promtail-config.yml:/etc/promtail/config.yml:ro
+      - /var/lib/docker/containers:/var/lib/docker/containers:ro
+      - /var/run/docker.sock:/var/run/docker.sock
+    command: -config.file=/etc/promtail/config.yml
+    depends_on:
+      - loki
+    networks:
+      - monitoring
 
   # Grafana (Dashboard Visualizer)
   grafana:
-    image: grafana/grafana:10.4.2
+    image: grafana/grafana:latest
     container_name: ban-do-grafana
+    restart: unless-stopped
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=your_strong_password
+      - GF_USERS_ALLOW_SIGN_UP=false
+      - GF_SERVER_ROOT_URL=http://grafana.hcmue.info.vn
     volumes:
       - grafana_data:/var/lib/grafana
       - ./grafana/provisioning:/etc/grafana/provisioning
-    environment:
-      - GF_SECURITY_ADMIN_PASSWORD=admin
     ports:
-      - "4000:3000"
+      - "127.0.0.1:3001:3000"
     depends_on:
       - prometheus
       - loki
     networks:
-      - ban-do-network-dev
-    restart: always
+      - monitoring
 
 volumes:
   prometheus_data:
+  loki_data:
   grafana_data:
 
 networks:
-  ban-do-network-dev:
-    external: true
+  monitoring:
+    name: monitoring
