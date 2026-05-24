@@ -71,9 +71,13 @@ async def test_lock_and_unlock_student():
         token = await admin_login(client)
         h = auth(token)
 
-        res = await client.patch(f"/api/admin/students/{sid}/lock", headers=h, json={
-            "locked_reason": "Vi phạm quy định sử dụng hệ thống",
-        })
+        res = await client.patch(
+            f"/api/admin/students/{sid}/lock",
+            headers=h,
+            json={
+                "locked_reason": "Vi phạm quy định sử dụng hệ thống",
+            },
+        )
         assert res.status_code == 200
         assert res.json()["data"]["status"] == "locked"
 
@@ -97,15 +101,24 @@ async def test_lock_student_revokes_sessions():
         h = auth(token)
 
         from datetime import datetime, timedelta
-        db = get_db()
-        await db["student_sessions"].insert_one({
-            "student_id": sid, "jti": "inttest-jti-1", "revoked_at": None,
-            "expires_at": datetime.utcnow() + timedelta(days=7),
-        })
 
-        await client.patch(f"/api/admin/students/{sid}/lock", headers=h, json={
-            "locked_reason": "Vi phạm quy định sử dụng hệ thống",
-        })
+        db = get_db()
+        await db["student_sessions"].insert_one(
+            {
+                "student_id": sid,
+                "jti": "inttest-jti-1",
+                "revoked_at": None,
+                "expires_at": datetime.utcnow() + timedelta(days=7),
+            }
+        )
+
+        await client.patch(
+            f"/api/admin/students/{sid}/lock",
+            headers=h,
+            json={
+                "locked_reason": "Vi phạm quy định sử dụng hệ thống",
+            },
+        )
 
         session = await db["student_sessions"].find_one({"jti": "inttest-jti-1"})
         assert session["revoked_at"] is not None

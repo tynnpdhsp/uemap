@@ -32,12 +32,15 @@ export const AdminEmailConfigPage: React.FC = () => {
         setResetText(d.reset_password?.text_body || "");
       }
     } catch {
+      void 0;
     } finally {
       setLoading(false);
     }
   };
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => {
+    load();
+  }, []);
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -46,8 +49,16 @@ export const AdminEmailConfigPage: React.FC = () => {
     setSuccessMsg(null);
     try {
       await adminConfigApi.updateEmailTemplates({
-        activation: { subject: actSubject, html_body: actHtml, text_body: actText },
-        reset_password: { subject: resetSubject, html_body: resetHtml, text_body: resetText },
+        activation: {
+          subject: actSubject,
+          html_body: actHtml,
+          text_body: actText,
+        },
+        reset_password: {
+          subject: resetSubject,
+          html_body: resetHtml,
+          text_body: resetText,
+        },
       });
       setSuccessMsg("Cập nhật mẫu email thành công.");
     } catch (err: unknown) {
@@ -83,52 +94,110 @@ export const AdminEmailConfigPage: React.FC = () => {
   return (
     <div className="space-y-6 max-w-3xl">
       <div>
-        <h1 className="text-2xl font-black text-gray-800 tracking-tight">Cấu hình email</h1>
-        <p className="text-sm text-gray-500 mt-1">Thiết lập mẫu email OTP kích hoạt và đặt lại mật khẩu</p>
+        <h1 className="text-2xl font-black text-gray-800 tracking-tight">
+          Cấu hình email
+        </h1>
+        <p className="text-sm text-gray-500 mt-1">
+          Thiết lập mẫu email OTP kích hoạt và đặt lại mật khẩu
+        </p>
       </div>
 
       {successMsg && (
-        <div className="p-3 rounded-lg bg-green-50 text-green-700 text-sm border border-green-100">{successMsg}</div>
+        <div className="p-3 rounded-lg bg-green-50 text-green-700 text-sm border border-green-100">
+          {successMsg}
+        </div>
       )}
       {errorMsg && (
-        <div className="p-3 rounded-lg bg-red-50 text-red-700 text-sm border border-red-100">{errorMsg}</div>
+        <div className="p-3 rounded-lg bg-red-50 text-red-700 text-sm border border-red-100">
+          {errorMsg}
+        </div>
       )}
 
       <form onSubmit={handleSave} className="space-y-6">
         <div className="rounded-2xl bg-white p-6 shadow-md border border-gray-100">
-          <h2 className="text-lg font-bold text-gray-800 border-b border-gray-100 pb-3 mb-4">Mẫu kích hoạt tài khoản</h2>
-          <p className="text-xs text-gray-400 mb-4">Biến hỗ trợ: {"{full_name}"}, {"{otp_code}"}</p>
+          <h2 className="text-lg font-bold text-gray-800 border-b border-gray-100 pb-3 mb-4">
+            Mẫu kích hoạt tài khoản
+          </h2>
+          <p className="text-xs text-gray-400 mb-4">
+            Biến hỗ trợ: {"{full_name}"}, {"{otp_code}"}
+          </p>
           <div className="space-y-4">
             <div>
-              <label className="block text-sm font-semibold text-gray-700">Tiêu đề</label>
-              <input type="text" className="mt-1 w-full rounded-lg border border-gray-300 px-4 py-2 text-gray-900 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition" value={actSubject} onChange={(e) => setActSubject(e.target.value)} />
+              <label className="block text-sm font-semibold text-gray-700">
+                Tiêu đề
+              </label>
+              <input
+                type="text"
+                className="mt-1 w-full rounded-lg border border-gray-300 px-4 py-2 text-gray-900 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition"
+                value={actSubject}
+                onChange={(e) => setActSubject(e.target.value)}
+              />
             </div>
             <div>
-              <label className="block text-sm font-semibold text-gray-700">HTML Body</label>
-              <textarea className="mt-1 w-full rounded-lg border border-gray-300 px-4 py-2 text-gray-900 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition text-sm font-mono" rows={4} value={actHtml} onChange={(e) => setActHtml(e.target.value)} />
+              <label className="block text-sm font-semibold text-gray-700">
+                HTML Body
+              </label>
+              <textarea
+                className="mt-1 w-full rounded-lg border border-gray-300 px-4 py-2 text-gray-900 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition text-sm font-mono"
+                rows={4}
+                value={actHtml}
+                onChange={(e) => setActHtml(e.target.value)}
+              />
             </div>
             <div>
-              <label className="block text-sm font-semibold text-gray-700">Text Body</label>
-              <textarea className="mt-1 w-full rounded-lg border border-gray-300 px-4 py-2 text-gray-900 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition text-sm" rows={3} value={actText} onChange={(e) => setActText(e.target.value)} />
+              <label className="block text-sm font-semibold text-gray-700">
+                Text Body
+              </label>
+              <textarea
+                className="mt-1 w-full rounded-lg border border-gray-300 px-4 py-2 text-gray-900 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition text-sm"
+                rows={3}
+                value={actText}
+                onChange={(e) => setActText(e.target.value)}
+              />
             </div>
           </div>
         </div>
 
         <div className="rounded-2xl bg-white p-6 shadow-md border border-gray-100">
-          <h2 className="text-lg font-bold text-gray-800 border-b border-gray-100 pb-3 mb-4">Mẫu đặt lại mật khẩu</h2>
-          <p className="text-xs text-gray-400 mb-4">Biến hỗ trợ: {"{full_name}"}, {"{otp_code}"}</p>
+          <h2 className="text-lg font-bold text-gray-800 border-b border-gray-100 pb-3 mb-4">
+            Mẫu đặt lại mật khẩu
+          </h2>
+          <p className="text-xs text-gray-400 mb-4">
+            Biến hỗ trợ: {"{full_name}"}, {"{otp_code}"}
+          </p>
           <div className="space-y-4">
             <div>
-              <label className="block text-sm font-semibold text-gray-700">Tiêu đề</label>
-              <input type="text" className="mt-1 w-full rounded-lg border border-gray-300 px-4 py-2 text-gray-900 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition" value={resetSubject} onChange={(e) => setResetSubject(e.target.value)} />
+              <label className="block text-sm font-semibold text-gray-700">
+                Tiêu đề
+              </label>
+              <input
+                type="text"
+                className="mt-1 w-full rounded-lg border border-gray-300 px-4 py-2 text-gray-900 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition"
+                value={resetSubject}
+                onChange={(e) => setResetSubject(e.target.value)}
+              />
             </div>
             <div>
-              <label className="block text-sm font-semibold text-gray-700">HTML Body</label>
-              <textarea className="mt-1 w-full rounded-lg border border-gray-300 px-4 py-2 text-gray-900 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition text-sm font-mono" rows={4} value={resetHtml} onChange={(e) => setResetHtml(e.target.value)} />
+              <label className="block text-sm font-semibold text-gray-700">
+                HTML Body
+              </label>
+              <textarea
+                className="mt-1 w-full rounded-lg border border-gray-300 px-4 py-2 text-gray-900 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition text-sm font-mono"
+                rows={4}
+                value={resetHtml}
+                onChange={(e) => setResetHtml(e.target.value)}
+              />
             </div>
             <div>
-              <label className="block text-sm font-semibold text-gray-700">Text Body</label>
-              <textarea className="mt-1 w-full rounded-lg border border-gray-300 px-4 py-2 text-gray-900 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition text-sm" rows={3} value={resetText} onChange={(e) => setResetText(e.target.value)} />
+              <label className="block text-sm font-semibold text-gray-700">
+                Text Body
+              </label>
+              <textarea
+                className="mt-1 w-full rounded-lg border border-gray-300 px-4 py-2 text-gray-900 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition text-sm"
+                rows={3}
+                value={resetText}
+                onChange={(e) => setResetText(e.target.value)}
+              />
             </div>
           </div>
         </div>
@@ -144,10 +213,14 @@ export const AdminEmailConfigPage: React.FC = () => {
       </form>
 
       <div className="rounded-2xl bg-white p-6 shadow-md border border-gray-100">
-        <h2 className="text-lg font-bold text-gray-800 border-b border-gray-100 pb-3 mb-4">Gửi email thử nghiệm</h2>
+        <h2 className="text-lg font-bold text-gray-800 border-b border-gray-100 pb-3 mb-4">
+          Gửi email thử nghiệm
+        </h2>
         <div className="flex gap-3 items-end">
           <div className="flex-1">
-            <label className="block text-sm font-semibold text-gray-700">Email nhận</label>
+            <label className="block text-sm font-semibold text-gray-700">
+              Email nhận
+            </label>
             <input
               type="email"
               className="mt-1 w-full rounded-lg border border-gray-300 px-4 py-2 text-gray-900 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition"

@@ -15,14 +15,18 @@ async def dashboard_stats(current_admin: dict = Depends(get_current_admin)):
     seven_days_ago = now - timedelta(days=7)
 
     new_reports_count = await db["reports"].count_documents({"status": "new"})
-    pending_students_7d_count = await db["students"].count_documents({
-        "status": "pending_activation",
-        "created_at": {"$gte": seven_days_ago},
-    })
-    new_published_places_7d_count = await db["places"].count_documents({
-        "status": "published",
-        "published_at": {"$gte": seven_days_ago},
-    })
+    pending_students_7d_count = await db["students"].count_documents(
+        {
+            "status": "pending_activation",
+            "created_at": {"$gte": seven_days_ago},
+        }
+    )
+    new_published_places_7d_count = await db["places"].count_documents(
+        {
+            "status": "published",
+            "published_at": {"$gte": seven_days_ago},
+        }
+    )
 
     return {
         "success": True,

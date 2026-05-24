@@ -16,8 +16,10 @@ export const adminCategoriesApi = {
   create: (data: { name: string; color: string; order?: number }) =>
     adminApi.post<CategoryItem>("/admin/categories", data),
 
-  update: (id: string, data: { name?: string; color?: string; order?: number }) =>
-    adminApi.patch<CategoryItem>(`/admin/categories/${id}`, data),
+  update: (
+    id: string,
+    data: { name?: string; color?: string; order?: number },
+  ) => adminApi.patch<CategoryItem>(`/admin/categories/${id}`, data),
 
   hide: (id: string, is_hidden: boolean) =>
     adminApi.patch<CategoryItem>(`/admin/categories/${id}/hide`, { is_hidden }),

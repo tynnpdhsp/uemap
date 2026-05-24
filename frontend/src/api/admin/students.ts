@@ -27,10 +27,13 @@ export const adminStudentsApi = {
     return adminApi.get<PaginatedStudents>(`/admin/students${qs}`);
   },
 
-  detail: (id: string) => adminApi.get<AdminStudentDetail>(`/admin/students/${id}`),
+  detail: (id: string) =>
+    adminApi.get<AdminStudentDetail>(`/admin/students/${id}`),
 
   lock: (id: string, locked_reason: string) =>
-    adminApi.patch<AdminStudentDetail>(`/admin/students/${id}/lock`, { locked_reason }),
+    adminApi.patch<AdminStudentDetail>(`/admin/students/${id}/lock`, {
+      locked_reason,
+    }),
 
   unlock: (id: string) =>
     adminApi.patch<AdminStudentDetail>(`/admin/students/${id}/unlock`),

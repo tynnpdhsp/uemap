@@ -71,7 +71,9 @@ export const PlaceDetailPage: React.FC = () => {
         setError("Không tìm thấy địa điểm.");
       }
     } catch (err: unknown) {
-      setError(getErrorMessage(err, "Đã xảy ra lỗi khi tải chi tiết địa điểm."));
+      setError(
+        getErrorMessage(err, "Đã xảy ra lỗi khi tải chi tiết địa điểm."),
+      );
     } finally {
       setLoading(false);
     }
@@ -662,7 +664,9 @@ export const PlaceDetailPage: React.FC = () => {
                   <select
                     value={reportType}
                     onChange={(e) =>
-                      setReportType(e.target.value as ReportCreatePayload["report_type"])
+                      setReportType(
+                        e.target.value as ReportCreatePayload["report_type"],
+                      )
                     }
                     className="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                   >

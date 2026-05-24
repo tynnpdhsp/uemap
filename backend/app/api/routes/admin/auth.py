@@ -12,7 +12,10 @@ async def login(payload: AdminLoginRequest, request: Request):
     ip = request.client.host if request.client else "127.0.0.1"
     ua = request.headers.get("user-agent", "")
     result = await admin_auth_service.login(
-        username=payload.username, password=payload.password, ip_address=ip, user_agent=ua,
+        username=payload.username,
+        password=payload.password,
+        ip_address=ip,
+        user_agent=ua,
     )
     return {"success": True, "data": result}
 
@@ -21,7 +24,9 @@ async def login(payload: AdminLoginRequest, request: Request):
 async def logout(request: Request, current_admin: dict = Depends(get_current_admin)):
     ip = request.client.host if request.client else "127.0.0.1"
     await admin_auth_service.logout(
-        admin_id=current_admin["_id"], jti=current_admin["jti"], ip_address=ip,
+        admin_id=current_admin["_id"],
+        jti=current_admin["jti"],
+        ip_address=ip,
     )
 
 

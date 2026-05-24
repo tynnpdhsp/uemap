@@ -4,7 +4,6 @@ from app.core.database import get_db
 from tests.e2e.admin_e2e_helpers import (
     ADMIN_PASS,
     ADMIN_USER,
-    admin_login_token,
     auth,
     clean_admin_e2e_db,
     seed_system_admin,
@@ -21,9 +20,13 @@ async def test_e2e_admin_full_auth_lifecycle():
         await clean_admin_e2e_db()
         await seed_system_admin()
 
-        res = await client.post("/api/admin/auth/login", json={
-            "username": ADMIN_USER, "password": ADMIN_PASS,
-        })
+        res = await client.post(
+            "/api/admin/auth/login",
+            json={
+                "username": ADMIN_USER,
+                "password": ADMIN_PASS,
+            },
+        )
         assert res.status_code == 200
         body = res.json()
         assert body["success"] is True
@@ -58,16 +61,22 @@ async def test_e2e_admin_login_failures_and_rate_limit():
         await seed_system_admin()
 
         for _ in range(5):
-            res = await client.post("/api/admin/auth/login", json={
-                "username": ADMIN_USER, "password": "wrongpassword1",
-            })
+            res = await client.post(
+                "/api/admin/auth/login",
+                json={
+                    "username": ADMIN_USER,
+                    "password": "wrongpassword1",
+                },
+            )
             assert_error(res, 401, "ADMIN_LOGIN_FAILED")
 
         db = get_db()
         attempts = await db["admin_login_attempts"].count_documents({"username": ADMIN_USER})
         assert attempts >= 5
 
-        fail_log = await db["audit_logs"].find_one({"event_code": "ADMIN_LOGIN", "result": "failure"})
+        fail_log = await db["audit_logs"].find_one(
+            {"event_code": "ADMIN_LOGIN", "result": "failure"}
+        )
         assert fail_log is not None
 
 
@@ -80,12 +89,17 @@ async def test_e2e_admin_disabled_account_blocked():
 
         db = get_db()
         await db["admins"].update_one(
-            {"username": ADMIN_USER}, {"$set": {"status": "disabled"}},
+            {"username": ADMIN_USER},
+            {"$set": {"status": "disabled"}},
         )
 
-        res = await client.post("/api/admin/auth/login", json={
-            "username": ADMIN_USER, "password": ADMIN_PASS,
-        })
+        res = await client.post(
+            "/api/admin/auth/login",
+            json={
+                "username": ADMIN_USER,
+                "password": ADMIN_PASS,
+            },
+        )
         assert_error(res, 401, "ADMIN_ACCOUNT_DISABLED")
 
 
@@ -95,8 +109,10 @@ async def test_e2e_admin_protected_routes_reject_student_token():
     async with api_client() as client:
         await clean_admin_e2e_db()
 
-        from app.core.security import create_access_token
         from bson import ObjectId
+
+        from app.core.security import create_access_token
+
         fake_token = create_access_token({"sub": str(ObjectId()), "jti": "f"}, role="student")
 
         res = await client.get("/api/admin/auth/me", headers=auth(fake_token))

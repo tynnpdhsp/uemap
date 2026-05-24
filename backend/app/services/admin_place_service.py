@@ -57,15 +57,17 @@ async def list_places(params: dict) -> dict:
     for p in places:
         cat = await db["categories"].find_one({"_id": p.get("category_id")})
         creator = await db["students"].find_one({"_id": p.get("creator_student_id")})
-        items.append({
-            "public_id": p["public_id"],
-            "name": p["name"],
-            "category_name": cat["name"] if cat else None,
-            "status": p["status"],
-            "status_label": STATUS_LABELS.get(p["status"], p["status"]),
-            "creator_email": creator["email"] if creator else None,
-            "updated_at_display": _vn_display(p["updated_at"]),
-        })
+        items.append(
+            {
+                "public_id": p["public_id"],
+                "name": p["name"],
+                "category_name": cat["name"] if cat else None,
+                "status": p["status"],
+                "status_label": STATUS_LABELS.get(p["status"], p["status"]),
+                "creator_email": creator["email"] if creator else None,
+                "updated_at_display": _vn_display(p["updated_at"]),
+            }
+        )
 
     return {
         "items": items,
@@ -108,7 +110,9 @@ async def get_place_detail(public_id: int) -> dict:
         "hidden_note": place.get("hidden_note"),
         "images": place.get("images", []),
         "video": place.get("video"),
-        "creator_student_id": str(place["creator_student_id"]) if place.get("creator_student_id") else None,
+        "creator_student_id": str(place["creator_student_id"])
+        if place.get("creator_student_id")
+        else None,
         "creator_email": creator["email"] if creator else None,
         "published_at": place.get("published_at"),
         "created_at": place["created_at"],
@@ -287,7 +291,9 @@ async def soft_delete_place(public_id: int, admin_id: ObjectId, ip_address: str)
     )
 
 
-async def transfer_creator(public_id: int, new_student_id_str: str, admin_id: ObjectId, ip_address: str) -> None:
+async def transfer_creator(
+    public_id: int, new_student_id_str: str, admin_id: ObjectId, ip_address: str
+) -> None:
     db = get_db()
     place = await db["places"].find_one({"public_id": public_id, "status": {"$ne": "deleted"}})
     if not place:

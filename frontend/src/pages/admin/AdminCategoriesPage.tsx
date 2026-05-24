@@ -1,5 +1,8 @@
 import React, { useEffect, useState, useCallback } from "react";
-import { adminCategoriesApi, type CategoryItem } from "../../api/admin/categories";
+import {
+  adminCategoriesApi,
+  type CategoryItem,
+} from "../../api/admin/categories";
 import { getErrorMessage } from "../../utils/errorMessage";
 import { Plus, Edit3, Trash2, EyeOff, Eye, Loader } from "lucide-react";
 
@@ -21,12 +24,15 @@ export const AdminCategoriesPage: React.FC = () => {
       const res = await adminCategoriesApi.list();
       if (res.success) setCategories(res.data);
     } catch {
+      void 0;
     } finally {
       setLoading(false);
     }
   }, []);
 
-  useEffect(() => { load(); }, [load]);
+  useEffect(() => {
+    load();
+  }, [load]);
 
   const resetForm = () => {
     setFormOpen(false);
@@ -83,7 +89,12 @@ export const AdminCategoriesPage: React.FC = () => {
   };
 
   const handleDelete = async (cat: CategoryItem) => {
-    if (!window.confirm(`Xóa danh mục "${cat.name}"? Thao tác này không thể hoàn tác.`)) return;
+    if (
+      !window.confirm(
+        `Xóa danh mục "${cat.name}"? Thao tác này không thể hoàn tác.`,
+      )
+    )
+      return;
     try {
       await adminCategoriesApi.remove(cat.id);
       setSuccessMsg("Đã xóa danh mục.");
@@ -97,8 +108,12 @@ export const AdminCategoriesPage: React.FC = () => {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-black text-gray-800 tracking-tight">Danh mục</h1>
-          <p className="text-sm text-gray-500 mt-1">Quản lý danh mục địa điểm trên hệ thống</p>
+          <h1 className="text-2xl font-black text-gray-800 tracking-tight">
+            Danh mục
+          </h1>
+          <p className="text-sm text-gray-500 mt-1">
+            Quản lý danh mục địa điểm trên hệ thống
+          </p>
         </div>
         <button
           onClick={openCreate}
@@ -110,7 +125,9 @@ export const AdminCategoriesPage: React.FC = () => {
       </div>
 
       {successMsg && (
-        <div className="p-3 rounded-lg bg-green-50 text-green-700 text-sm border border-green-100">{successMsg}</div>
+        <div className="p-3 rounded-lg bg-green-50 text-green-700 text-sm border border-green-100">
+          {successMsg}
+        </div>
       )}
 
       {formOpen && (
@@ -119,12 +136,16 @@ export const AdminCategoriesPage: React.FC = () => {
             {editId ? "Sửa danh mục" : "Tạo danh mục mới"}
           </h2>
           {errorMsg && (
-            <div className="mb-4 p-3 rounded-lg bg-red-50 text-red-700 text-sm border border-red-100">{errorMsg}</div>
+            <div className="mb-4 p-3 rounded-lg bg-red-50 text-red-700 text-sm border border-red-100">
+              {errorMsg}
+            </div>
           )}
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div>
-                <label className="block text-sm font-semibold text-gray-700">Tên danh mục</label>
+                <label className="block text-sm font-semibold text-gray-700">
+                  Tên danh mục
+                </label>
                 <input
                   type="text"
                   required
@@ -134,7 +155,9 @@ export const AdminCategoriesPage: React.FC = () => {
                 />
               </div>
               <div>
-                <label className="block text-sm font-semibold text-gray-700">Màu sắc</label>
+                <label className="block text-sm font-semibold text-gray-700">
+                  Màu sắc
+                </label>
                 <div className="mt-1 flex items-center gap-2">
                   <input
                     type="color"
@@ -151,7 +174,9 @@ export const AdminCategoriesPage: React.FC = () => {
                 </div>
               </div>
               <div>
-                <label className="block text-sm font-semibold text-gray-700">Thứ tự</label>
+                <label className="block text-sm font-semibold text-gray-700">
+                  Thứ tự
+                </label>
                 <input
                   type="number"
                   className="mt-1 w-full rounded-lg border border-gray-300 px-4 py-2 text-gray-900 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition"
@@ -200,13 +225,23 @@ export const AdminCategoriesPage: React.FC = () => {
               </thead>
               <tbody className="divide-y divide-gray-100 text-sm">
                 {categories.map((cat) => (
-                  <tr key={cat.id} className="hover:bg-gray-50/30 transition-colors">
+                  <tr
+                    key={cat.id}
+                    className="hover:bg-gray-50/30 transition-colors"
+                  >
                     <td className="py-4 px-6">
-                      <div className="w-6 h-6 rounded-full border border-gray-200" style={{ backgroundColor: cat.color }} />
+                      <div
+                        className="w-6 h-6 rounded-full border border-gray-200"
+                        style={{ backgroundColor: cat.color }}
+                      />
                     </td>
-                    <td className="py-4 px-6 font-semibold text-gray-800">{cat.name}</td>
+                    <td className="py-4 px-6 font-semibold text-gray-800">
+                      {cat.name}
+                    </td>
                     <td className="py-4 px-6 text-gray-500">{cat.order}</td>
-                    <td className="py-4 px-6 font-bold text-blue-600">{cat.place_count}</td>
+                    <td className="py-4 px-6 font-bold text-blue-600">
+                      {cat.place_count}
+                    </td>
                     <td className="py-4 px-6">
                       {cat.is_hidden ? (
                         <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-gray-50 text-gray-600 border border-gray-100">
@@ -232,7 +267,11 @@ export const AdminCategoriesPage: React.FC = () => {
                           className="p-2 border border-gray-100 rounded-lg hover:bg-gray-50 text-gray-600 hover:text-amber-600 transition"
                           title={cat.is_hidden ? "Hiển thị" : "Ẩn"}
                         >
-                          {cat.is_hidden ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
+                          {cat.is_hidden ? (
+                            <Eye className="w-4 h-4" />
+                          ) : (
+                            <EyeOff className="w-4 h-4" />
+                          )}
                         </button>
                         <button
                           onClick={() => handleDelete(cat)}
@@ -251,7 +290,9 @@ export const AdminCategoriesPage: React.FC = () => {
         ) : (
           <div className="p-12 text-center">
             <FolderOpen className="w-12 h-12 text-gray-300 mx-auto mb-4" />
-            <h3 className="text-base font-bold text-gray-700 mb-1">Chưa có danh mục</h3>
+            <h3 className="text-base font-bold text-gray-700 mb-1">
+              Chưa có danh mục
+            </h3>
           </div>
         )}
       </div>
@@ -260,7 +301,20 @@ export const AdminCategoriesPage: React.FC = () => {
 };
 
 const FolderOpen = ({ className }: { className?: string }) => (
-  <svg xmlns="http://www.w3.org/2000/svg" className={className} width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m6 14 1.5-2.9A2 2 0 0 1 9.24 10H20a2 2 0 0 1 1.94 2.5l-1.54 6a2 2 0 0 1-1.95 1.5H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h3.9a2 2 0 0 1 1.69.9l.81 1.2a2 2 0 0 0 1.67.9H18a2 2 0 0 1 2 2v2"/></svg>
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    className={className}
+    width="24"
+    height="24"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <path d="m6 14 1.5-2.9A2 2 0 0 1 9.24 10H20a2 2 0 0 1 1.94 2.5l-1.54 6a2 2 0 0 1-1.95 1.5H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h3.9a2 2 0 0 1 1.69.9l.81 1.2a2 2 0 0 0 1.67.9H18a2 2 0 0 1 2 2v2" />
+  </svg>
 );
 
 export default AdminCategoriesPage;

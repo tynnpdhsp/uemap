@@ -10,7 +10,13 @@ export interface APIResponse<T = unknown> {
   error?: APIErrorDetail;
 }
 
-type RequestBody = Record<string, unknown> | unknown[] | string | number | boolean | null;
+type RequestBody =
+  | Record<string, unknown>
+  | unknown[]
+  | string
+  | number
+  | boolean
+  | null;
 
 const API_BASE_URL = "/api";
 

@@ -19,10 +19,14 @@ async def get_map_config(current_admin: dict = Depends(get_current_admin)):
 
 @router.patch("/map")
 async def update_map_config(
-    payload: AdminMapConfigUpdateRequest, request: Request, current_admin: dict = Depends(get_current_admin),
+    payload: AdminMapConfigUpdateRequest,
+    request: Request,
+    current_admin: dict = Depends(get_current_admin),
 ):
     ip = request.client.host if request.client else "127.0.0.1"
-    data = await config_service.update_map_config(payload.model_dump(exclude_unset=True), current_admin["_id"], ip)
+    data = await config_service.update_map_config(
+        payload.model_dump(exclude_unset=True), current_admin["_id"], ip
+    )
     return {"success": True, "data": data}
 
 
@@ -34,17 +38,25 @@ async def get_email_templates(current_admin: dict = Depends(get_current_admin)):
 
 @router.patch("/email-templates")
 async def update_email_templates(
-    payload: AdminEmailTemplatesUpdateRequest, request: Request, current_admin: dict = Depends(get_current_admin),
+    payload: AdminEmailTemplatesUpdateRequest,
+    request: Request,
+    current_admin: dict = Depends(get_current_admin),
 ):
     ip = request.client.host if request.client else "127.0.0.1"
-    data = await config_service.update_email_templates(payload.model_dump(exclude_unset=True), current_admin["_id"], ip)
+    data = await config_service.update_email_templates(
+        payload.model_dump(exclude_unset=True), current_admin["_id"], ip
+    )
     return {"success": True, "data": data}
 
 
 @router.post("/email-templates/test")
 async def test_email(
-    payload: AdminEmailTestRequest, request: Request, current_admin: dict = Depends(get_current_admin),
+    payload: AdminEmailTestRequest,
+    request: Request,
+    current_admin: dict = Depends(get_current_admin),
 ):
     ip = request.client.host if request.client else "127.0.0.1"
-    data = await config_service.test_email(payload.to_email, payload.template_type, current_admin["_id"], ip)
+    data = await config_service.test_email(
+        payload.to_email, payload.template_type, current_admin["_id"], ip
+    )
     return {"success": True, "data": data}

@@ -65,14 +65,18 @@ async def test_create_category_success(mock_db):
 async def test_create_category_duplicate_name(mock_db):
     await _seed_category(mock_db, name="Thể thao")
     with pytest.raises(HTTPException) as exc:
-        await admin_category_service.create_category({"name": "Thể thao", "color": "#00FF00"}, ADMIN_ID, IP)
+        await admin_category_service.create_category(
+            {"name": "Thể thao", "color": "#00FF00"}, ADMIN_ID, IP
+        )
     assert exc.value.detail["error"]["code"] == "CATEGORY_NAME_EXISTS"
 
 
 @pytest.mark.asyncio
 async def test_update_category_success(mock_db):
     cat = await _seed_category(mock_db, name="Cũ")
-    result = await admin_category_service.update_category(str(cat["_id"]), {"name": "Mới"}, ADMIN_ID, IP)
+    result = await admin_category_service.update_category(
+        str(cat["_id"]), {"name": "Mới"}, ADMIN_ID, IP
+    )
     assert result["name"] == "Mới"
 
 

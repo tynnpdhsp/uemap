@@ -61,10 +61,15 @@ async def test_get_current_student_forbidden_role():
 @pytest.mark.asyncio
 async def test_get_current_admin_success(mock_db):
     admin_id = ObjectId()
-    await mock_db["admins"].insert_one({
-        "_id": admin_id, "username": "sysadmin", "display_name": "Admin",
-        "is_system_admin": True, "status": "active",
-    })
+    await mock_db["admins"].insert_one(
+        {
+            "_id": admin_id,
+            "username": "sysadmin",
+            "display_name": "Admin",
+            "is_system_admin": True,
+            "status": "active",
+        }
+    )
     token = create_access_token({"sub": str(admin_id), "jti": "admin-jti"}, role="admin")
     with patch(
         "app.services.admin_auth_service.verify_admin_session",
@@ -91,9 +96,13 @@ async def test_get_current_admin_invalid_session():
 @pytest.mark.asyncio
 async def test_get_current_admin_disabled_account(mock_db):
     admin_id = ObjectId()
-    await mock_db["admins"].insert_one({
-        "_id": admin_id, "username": "disabled", "status": "disabled",
-    })
+    await mock_db["admins"].insert_one(
+        {
+            "_id": admin_id,
+            "username": "disabled",
+            "status": "disabled",
+        }
+    )
     token = create_access_token({"sub": str(admin_id), "jti": "jti"}, role="admin")
     with patch(
         "app.services.admin_auth_service.verify_admin_session",

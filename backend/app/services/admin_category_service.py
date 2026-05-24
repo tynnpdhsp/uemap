@@ -13,18 +13,7 @@ async def list_categories(admin_id: ObjectId, ip_address: str) -> list:
     result = []
     for cat in categories:
         place_count = await db["places"].count_documents({"category_id": cat["_id"]})
-        result.append({
-            "id": str(cat["_id"]),
-            "name": cat["name"],
-            "color": cat["color"],
-            "order": cat.get("order", 0),
-            "description": cat.get("description"),
-            "icon_url": cat.get("icon_url"),
-            "is_hidden": cat.get("is_hidden", False),
-            "place_count": place_count,
-            "created_at": cat["created_at"],
-            "updated_at": cat["updated_at"],
-        })
+        result.append(_format_category(cat, place_count))
     return result
 
 
@@ -73,7 +62,9 @@ async def create_category(data: dict, admin_id: ObjectId, ip_address: str) -> di
     return _format_category(doc, 0)
 
 
-async def update_category(category_id: str, data: dict, admin_id: ObjectId, ip_address: str) -> dict:
+async def update_category(
+    category_id: str, data: dict, admin_id: ObjectId, ip_address: str
+) -> dict:
     db = get_db()
     oid = ObjectId(category_id)
     cat = await db["categories"].find_one({"_id": oid})
@@ -122,11 +113,25 @@ async def update_category(category_id: str, data: dict, admin_id: ObjectId, ip_a
     )
 
     updated = await db["categories"].find_one({"_id": oid})
+    if not updated:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail={
+                "success": False,
+                "error": {
+                    "code": "CATEGORY_NOT_FOUND",
+                    "message": "Không tìm thấy danh mục.",
+                    "details": [],
+                },
+            },
+        )
     place_count = await db["places"].count_documents({"category_id": oid})
     return _format_category(updated, place_count)
 
 
-async def hide_category(category_id: str, is_hidden: bool, admin_id: ObjectId, ip_address: str) -> dict:
+async def hide_category(
+    category_id: str, is_hidden: bool, admin_id: ObjectId, ip_address: str
+) -> dict:
     db = get_db()
     oid = ObjectId(category_id)
     cat = await db["categories"].find_one({"_id": oid})
@@ -144,7 +149,9 @@ async def hide_category(category_id: str, is_hidden: bool, admin_id: ObjectId, i
         )
 
     now = datetime.utcnow()
-    await db["categories"].update_one({"_id": oid}, {"$set": {"is_hidden": is_hidden, "updated_at": now}})
+    await db["categories"].update_one(
+        {"_id": oid}, {"$set": {"is_hidden": is_hidden, "updated_at": now}}
+    )
 
     if is_hidden:
         await audit_service.log_event(
@@ -159,6 +166,18 @@ async def hide_category(category_id: str, is_hidden: bool, admin_id: ObjectId, i
         )
 
     updated = await db["categories"].find_one({"_id": oid})
+    if not updated:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail={
+                "success": False,
+                "error": {
+                    "code": "CATEGORY_NOT_FOUND",
+                    "message": "Không tìm thấy danh mục.",
+                    "details": [],
+                },
+            },
+        )
     place_count = await db["places"].count_documents({"category_id": oid})
     return _format_category(updated, place_count)
 
@@ -218,6 +237,6 @@ def _format_category(cat: dict, place_count: int) -> dict:
         "icon_url": cat.get("icon_url"),
         "is_hidden": cat.get("is_hidden", False),
         "place_count": place_count,
-        "created_at": cat["created_at"],
-        "updated_at": cat["updated_at"],
+        "created_at": cat.get("created_at"),
+        "updated_at": cat.get("updated_at"),
     }

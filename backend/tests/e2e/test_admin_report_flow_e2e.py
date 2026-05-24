@@ -21,21 +21,23 @@ pytestmark = pytest.mark.e2e
 async def _seed_report(student_id, place_public_id, report_code="E2E-RP-001"):
     db = get_db()
     now = datetime.utcnow()
-    result = await db["reports"].insert_one({
-        "report_code": report_code,
-        "reporter_student_id": student_id,
-        "target_type": "place",
-        "target_place_id": ObjectId(),
-        "target_comment_id": None,
-        "place_public_id": place_public_id,
-        "report_type": "inappropriate",
-        "reason": "E2E nội dung vi phạm quy định cộng đồng",
-        "status": "new",
-        "admin_note": None,
-        "resolved_at": None,
-        "created_at": now,
-        "updated_at": now,
-    })
+    result = await db["reports"].insert_one(
+        {
+            "report_code": report_code,
+            "reporter_student_id": student_id,
+            "target_type": "place",
+            "target_place_id": ObjectId(),
+            "target_comment_id": None,
+            "place_public_id": place_public_id,
+            "report_type": "inappropriate",
+            "reason": "E2E nội dung vi phạm quy định cộng đồng",
+            "status": "new",
+            "admin_note": None,
+            "resolved_at": None,
+            "created_at": now,
+            "updated_at": now,
+        }
+    )
     return result.inserted_id
 
 
@@ -62,21 +64,33 @@ async def test_e2e_report_full_lifecycle():
         assert data["status"] == "new"
         assert data["report_code"] == "E2E-RP-001"
 
-        res = await client.patch(f"/api/admin/reports/{rid}", headers=h, json={
-            "status": "in_progress",
-        })
+        res = await client.patch(
+            f"/api/admin/reports/{rid}",
+            headers=h,
+            json={
+                "status": "in_progress",
+            },
+        )
         assert res.status_code == 200
         assert res.json()["data"]["status"] == "in_progress"
 
-        res = await client.patch(f"/api/admin/reports/{rid}", headers=h, json={
-            "status": "resolved",
-        })
+        res = await client.patch(
+            f"/api/admin/reports/{rid}",
+            headers=h,
+            json={
+                "status": "resolved",
+            },
+        )
         assert_error(res, 400, "ADMIN_NOTE_REQUIRED")
 
-        res = await client.patch(f"/api/admin/reports/{rid}", headers=h, json={
-            "status": "resolved",
-            "admin_note": "Đã xác minh và xử lý vi phạm nội dung",
-        })
+        res = await client.patch(
+            f"/api/admin/reports/{rid}",
+            headers=h,
+            json={
+                "status": "resolved",
+                "admin_note": "Đã xác minh và xử lý vi phạm nội dung",
+            },
+        )
         assert res.status_code == 200
         assert res.json()["data"]["status"] == "resolved"
         assert res.json()["data"]["resolved_at"] is not None
@@ -98,10 +112,14 @@ async def test_e2e_report_invalid_skip_status():
         rid = await _seed_report(sid, pid, report_code="E2E-RP-002")
         token = await admin_login_token(client)
 
-        res = await client.patch(f"/api/admin/reports/{rid}", headers=auth(token), json={
-            "status": "resolved",
-            "admin_note": "Bỏ qua bước xử lý vi phạm nội dung",
-        })
+        res = await client.patch(
+            f"/api/admin/reports/{rid}",
+            headers=auth(token),
+            json={
+                "status": "resolved",
+                "admin_note": "Bỏ qua bước xử lý vi phạm nội dung",
+            },
+        )
         assert_error(res, 400, "REPORT_INVALID_STATUS")
 
 
@@ -118,10 +136,14 @@ async def test_e2e_report_action_hide_place():
         token = await admin_login_token(client)
         h = auth(token)
 
-        res = await client.post(f"/api/admin/reports/{rid}/action", headers=h, json={
-            "action": "hide_place",
-            "reason": "Vi phạm nội quy cộng đồng sử dụng hệ thống",
-        })
+        res = await client.post(
+            f"/api/admin/reports/{rid}/action",
+            headers=h,
+            json={
+                "action": "hide_place",
+                "reason": "Vi phạm nội quy cộng đồng sử dụng hệ thống",
+            },
+        )
         assert res.status_code == 200
 
         db = get_db()
@@ -143,38 +165,46 @@ async def test_e2e_report_action_soft_delete_comment():
 
         db = get_db()
         now = datetime.utcnow()
-        comment_res = await db["comments"].insert_one({
-            "place_public_id": pid,
-            "student_id": sid,
-            "author_display_name": "E2E Student",
-            "content": "E2E_Bình luận vi phạm nghiêm trọng",
-            "status": "visible",
-            "created_at": now,
-            "updated_at": now,
-        })
+        comment_res = await db["comments"].insert_one(
+            {
+                "place_public_id": pid,
+                "student_id": sid,
+                "author_display_name": "E2E Student",
+                "content": "E2E_Bình luận vi phạm nghiêm trọng",
+                "status": "visible",
+                "created_at": now,
+                "updated_at": now,
+            }
+        )
         comment_id = comment_res.inserted_id
 
-        report_res = await db["reports"].insert_one({
-            "report_code": "E2E-RP-COMMENT",
-            "reporter_student_id": sid,
-            "target_type": "comment",
-            "target_place_id": None,
-            "target_comment_id": comment_id,
-            "place_public_id": pid,
-            "report_type": "inappropriate",
-            "reason": "E2E bình luận vi phạm nghiêm trọng",
-            "status": "new",
-            "admin_note": None,
-            "resolved_at": None,
-            "created_at": now,
-            "updated_at": now,
-        })
+        report_res = await db["reports"].insert_one(
+            {
+                "report_code": "E2E-RP-COMMENT",
+                "reporter_student_id": sid,
+                "target_type": "comment",
+                "target_place_id": None,
+                "target_comment_id": comment_id,
+                "place_public_id": pid,
+                "report_type": "inappropriate",
+                "reason": "E2E bình luận vi phạm nghiêm trọng",
+                "status": "new",
+                "admin_note": None,
+                "resolved_at": None,
+                "created_at": now,
+                "updated_at": now,
+            }
+        )
         rid = report_res.inserted_id
 
-        res = await client.post(f"/api/admin/reports/{rid}/action", headers=h, json={
-            "action": "soft_delete_comment",
-            "reason": "Bình luận vi phạm nội quy cộng đồng sử dụng",
-        })
+        res = await client.post(
+            f"/api/admin/reports/{rid}/action",
+            headers=h,
+            json={
+                "action": "soft_delete_comment",
+                "reason": "Bình luận vi phạm nội quy cộng đồng sử dụng",
+            },
+        )
         assert res.status_code == 200
 
         comment = await db["comments"].find_one({"_id": comment_id})

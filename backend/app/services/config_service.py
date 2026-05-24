@@ -34,7 +34,14 @@ async def update_map_config(data: dict, admin_id: ObjectId, ip_address: str) -> 
             if not geofence.get("center") or not geofence.get("radius_meters"):
                 raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST,
-                    detail={"success": False, "error": {"code": "VALIDATION_ERROR", "message": "Geofence radius cần center và radius_meters.", "details": []}},
+                    detail={
+                        "success": False,
+                        "error": {
+                            "code": "VALIDATION_ERROR",
+                            "message": "Geofence radius cần center và radius_meters.",
+                            "details": [],
+                        },
+                    },
                 )
         update_fields["geofence"] = geofence
     if data.get("cluster_zoom_threshold") is not None:
@@ -72,14 +79,25 @@ async def update_email_templates(data: dict, admin_id: ObjectId, ip_address: str
     for key in ("activation", "password_reset"):
         if data.get(key):
             tpl = data[key]
-            if "{full_name}" not in tpl.get("html_body", "") or "{otp_code}" not in tpl.get("html_body", ""):
+            if "{full_name}" not in tpl.get("html_body", "") or "{otp_code}" not in tpl.get(
+                "html_body", ""
+            ):
                 raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST,
-                    detail={"success": False, "error": {"code": "VALIDATION_ERROR", "message": f"Mẫu {key} phải chứa biến {{full_name}} và {{otp_code}}.", "details": []}},
+                    detail={
+                        "success": False,
+                        "error": {
+                            "code": "VALIDATION_ERROR",
+                            "message": f"Mẫu {key} phải chứa biến {{full_name}} và {{otp_code}}.",
+                            "details": [],
+                        },
+                    },
                 )
             update_fields[key] = tpl
 
-    await db["app_config"].update_one({"_id": "email_templates"}, {"$set": update_fields}, upsert=True)
+    await db["app_config"].update_one(
+        {"_id": "email_templates"}, {"$set": update_fields}, upsert=True
+    )
 
     await audit_service.log_event(
         event_code="CONFIG_EMAIL_UPDATE",
@@ -95,7 +113,9 @@ async def update_email_templates(data: dict, admin_id: ObjectId, ip_address: str
     return await get_email_templates()
 
 
-async def test_email(to_email: str, template_type: str, admin_id: ObjectId, ip_address: str) -> dict:
+async def test_email(
+    to_email: str, template_type: str, admin_id: ObjectId, ip_address: str
+) -> dict:
     db = get_db()
     doc = await db["app_config"].find_one({"_id": "email_templates"})
     tpl = doc.get(template_type, {}) if doc else {}
@@ -116,7 +136,9 @@ async def test_email(to_email: str, template_type: str, admin_id: ObjectId, ip_a
     else:
         try:
             message = MIMEMultipart("alternative")
-            message["From"] = f"{settings.SMTP_FROM_NAME} <{settings.SMTP_FROM_EMAIL or settings.SMTP_USER}>"
+            message["From"] = (
+                f"{settings.SMTP_FROM_NAME} <{settings.SMTP_FROM_EMAIL or settings.SMTP_USER}>"
+            )
             message["To"] = to_email
             message["Subject"] = f"[TEST] {subject}"
             message.attach(MIMEText(text_content, "plain", "utf-8"))

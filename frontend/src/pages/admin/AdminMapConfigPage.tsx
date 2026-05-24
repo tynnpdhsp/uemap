@@ -31,28 +31,52 @@ export const AdminMapConfigPage: React.FC = () => {
         setLng(res.data.default_center?.lng?.toString() || "");
         setZoom(res.data.default_zoom?.toString() || "");
         setClusterRadius(res.data.cluster_radius?.toString() || "");
-        const gf = res.data.geofence as any;
-        if (gf) {
-          setGeofenceType(gf.type || "rectangle");
-          if (gf.type === "rectangle" && gf.bounds) {
-            setSwLat(gf.bounds.sw?.lat?.toString() || "");
-            setSwLng(gf.bounds.sw?.lng?.toString() || "");
-            setNeLat(gf.bounds.ne?.lat?.toString() || "");
-            setNeLng(gf.bounds.ne?.lng?.toString() || "");
-          } else if (gf.type === "radius" && gf.center) {
-            setRCenterLat(gf.center.lat?.toString() || "");
-            setRCenterLng(gf.center.lng?.toString() || "");
-            setRadiusMeters(gf.radius_meters?.toString() || "");
+        const gf = res.data.geofence;
+        if (gf && typeof gf === "object") {
+          const type = typeof gf.type === "string" ? gf.type : "rectangle";
+          setGeofenceType(type);
+          if (
+            type === "rectangle" &&
+            gf.bounds &&
+            typeof gf.bounds === "object"
+          ) {
+            const bounds = gf.bounds as {
+              sw?: { lat?: number };
+              ne?: { lat?: number; lng?: number };
+            };
+            setSwLat(bounds.sw?.lat?.toString() || "");
+            setSwLng(
+              (bounds.sw as { lng?: number } | undefined)?.lng?.toString() ||
+                "",
+            );
+            setNeLat(bounds.ne?.lat?.toString() || "");
+            setNeLng(bounds.ne?.lng?.toString() || "");
+          } else if (
+            type === "radius" &&
+            gf.center &&
+            typeof gf.center === "object"
+          ) {
+            const center = gf.center as { lat?: number; lng?: number };
+            setRCenterLat(center.lat?.toString() || "");
+            setRCenterLng(center.lng?.toString() || "");
+            setRadiusMeters(
+              typeof gf.radius_meters === "number"
+                ? gf.radius_meters.toString()
+                : "",
+            );
           }
         }
       }
     } catch {
+      void 0;
     } finally {
       setLoading(false);
     }
   };
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => {
+    load();
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -61,7 +85,8 @@ export const AdminMapConfigPage: React.FC = () => {
     setSuccessMsg(null);
 
     const data: Record<string, unknown> = {};
-    if (lat && lng) data.default_center = { lat: parseFloat(lat), lng: parseFloat(lng) };
+    if (lat && lng)
+      data.default_center = { lat: parseFloat(lat), lng: parseFloat(lng) };
     if (zoom) data.default_zoom = parseInt(zoom);
     if (clusterRadius) data.cluster_radius = parseInt(clusterRadius);
 
@@ -103,44 +128,88 @@ export const AdminMapConfigPage: React.FC = () => {
   return (
     <div className="space-y-6 max-w-3xl">
       <div>
-        <h1 className="text-2xl font-black text-gray-800 tracking-tight">Cấu hình bản đồ</h1>
-        <p className="text-sm text-gray-500 mt-1">Thiết lập tâm mặc định, zoom, geofence và cluster</p>
+        <h1 className="text-2xl font-black text-gray-800 tracking-tight">
+          Cấu hình bản đồ
+        </h1>
+        <p className="text-sm text-gray-500 mt-1">
+          Thiết lập tâm mặc định, zoom, geofence và cluster
+        </p>
       </div>
 
       {successMsg && (
-        <div className="p-3 rounded-lg bg-green-50 text-green-700 text-sm border border-green-100">{successMsg}</div>
+        <div className="p-3 rounded-lg bg-green-50 text-green-700 text-sm border border-green-100">
+          {successMsg}
+        </div>
       )}
       {errorMsg && (
-        <div className="p-3 rounded-lg bg-red-50 text-red-700 text-sm border border-red-100">{errorMsg}</div>
+        <div className="p-3 rounded-lg bg-red-50 text-red-700 text-sm border border-red-100">
+          {errorMsg}
+        </div>
       )}
 
       <form onSubmit={handleSubmit} className="space-y-6">
         <div className="rounded-2xl bg-white p-6 shadow-md border border-gray-100">
-          <h2 className="text-lg font-bold text-gray-800 border-b border-gray-100 pb-3 mb-4">Tâm & Zoom mặc định</h2>
+          <h2 className="text-lg font-bold text-gray-800 border-b border-gray-100 pb-3 mb-4">
+            Tâm & Zoom mặc định
+          </h2>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div>
-              <label className="block text-sm font-semibold text-gray-700">Latitude</label>
-              <input type="number" step="any" className="mt-1 w-full rounded-lg border border-gray-300 px-4 py-2 text-gray-900 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition" value={lat} onChange={(e) => setLat(e.target.value)} />
+              <label className="block text-sm font-semibold text-gray-700">
+                Latitude
+              </label>
+              <input
+                type="number"
+                step="any"
+                className="mt-1 w-full rounded-lg border border-gray-300 px-4 py-2 text-gray-900 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition"
+                value={lat}
+                onChange={(e) => setLat(e.target.value)}
+              />
             </div>
             <div>
-              <label className="block text-sm font-semibold text-gray-700">Longitude</label>
-              <input type="number" step="any" className="mt-1 w-full rounded-lg border border-gray-300 px-4 py-2 text-gray-900 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition" value={lng} onChange={(e) => setLng(e.target.value)} />
+              <label className="block text-sm font-semibold text-gray-700">
+                Longitude
+              </label>
+              <input
+                type="number"
+                step="any"
+                className="mt-1 w-full rounded-lg border border-gray-300 px-4 py-2 text-gray-900 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition"
+                value={lng}
+                onChange={(e) => setLng(e.target.value)}
+              />
             </div>
             <div>
-              <label className="block text-sm font-semibold text-gray-700">Zoom</label>
-              <input type="number" className="mt-1 w-full rounded-lg border border-gray-300 px-4 py-2 text-gray-900 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition" value={zoom} onChange={(e) => setZoom(e.target.value)} />
+              <label className="block text-sm font-semibold text-gray-700">
+                Zoom
+              </label>
+              <input
+                type="number"
+                className="mt-1 w-full rounded-lg border border-gray-300 px-4 py-2 text-gray-900 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition"
+                value={zoom}
+                onChange={(e) => setZoom(e.target.value)}
+              />
             </div>
           </div>
           <div className="mt-4">
-            <label className="block text-sm font-semibold text-gray-700">Cluster Radius</label>
-            <input type="number" className="mt-1 w-40 rounded-lg border border-gray-300 px-4 py-2 text-gray-900 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition" value={clusterRadius} onChange={(e) => setClusterRadius(e.target.value)} />
+            <label className="block text-sm font-semibold text-gray-700">
+              Cluster Radius
+            </label>
+            <input
+              type="number"
+              className="mt-1 w-40 rounded-lg border border-gray-300 px-4 py-2 text-gray-900 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition"
+              value={clusterRadius}
+              onChange={(e) => setClusterRadius(e.target.value)}
+            />
           </div>
         </div>
 
         <div className="rounded-2xl bg-white p-6 shadow-md border border-gray-100">
-          <h2 className="text-lg font-bold text-gray-800 border-b border-gray-100 pb-3 mb-4">Geofence</h2>
+          <h2 className="text-lg font-bold text-gray-800 border-b border-gray-100 pb-3 mb-4">
+            Geofence
+          </h2>
           <div className="mb-4">
-            <label className="block text-sm font-semibold text-gray-700 mb-2">Loại geofence</label>
+            <label className="block text-sm font-semibold text-gray-700 mb-2">
+              Loại geofence
+            </label>
             <select
               value={geofenceType}
               onChange={(e) => setGeofenceType(e.target.value)}
@@ -154,20 +223,52 @@ export const AdminMapConfigPage: React.FC = () => {
           {geofenceType === "rectangle" && (
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">SW Lat</label>
-                <input type="number" step="any" className="w-full rounded-lg border border-gray-300 px-4 py-2 text-gray-900 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition" value={swLat} onChange={(e) => setSwLat(e.target.value)} />
+                <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">
+                  SW Lat
+                </label>
+                <input
+                  type="number"
+                  step="any"
+                  className="w-full rounded-lg border border-gray-300 px-4 py-2 text-gray-900 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition"
+                  value={swLat}
+                  onChange={(e) => setSwLat(e.target.value)}
+                />
               </div>
               <div>
-                <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">SW Lng</label>
-                <input type="number" step="any" className="w-full rounded-lg border border-gray-300 px-4 py-2 text-gray-900 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition" value={swLng} onChange={(e) => setSwLng(e.target.value)} />
+                <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">
+                  SW Lng
+                </label>
+                <input
+                  type="number"
+                  step="any"
+                  className="w-full rounded-lg border border-gray-300 px-4 py-2 text-gray-900 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition"
+                  value={swLng}
+                  onChange={(e) => setSwLng(e.target.value)}
+                />
               </div>
               <div>
-                <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">NE Lat</label>
-                <input type="number" step="any" className="w-full rounded-lg border border-gray-300 px-4 py-2 text-gray-900 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition" value={neLat} onChange={(e) => setNeLat(e.target.value)} />
+                <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">
+                  NE Lat
+                </label>
+                <input
+                  type="number"
+                  step="any"
+                  className="w-full rounded-lg border border-gray-300 px-4 py-2 text-gray-900 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition"
+                  value={neLat}
+                  onChange={(e) => setNeLat(e.target.value)}
+                />
               </div>
               <div>
-                <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">NE Lng</label>
-                <input type="number" step="any" className="w-full rounded-lg border border-gray-300 px-4 py-2 text-gray-900 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition" value={neLng} onChange={(e) => setNeLng(e.target.value)} />
+                <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">
+                  NE Lng
+                </label>
+                <input
+                  type="number"
+                  step="any"
+                  className="w-full rounded-lg border border-gray-300 px-4 py-2 text-gray-900 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition"
+                  value={neLng}
+                  onChange={(e) => setNeLng(e.target.value)}
+                />
               </div>
             </div>
           )}
@@ -175,16 +276,40 @@ export const AdminMapConfigPage: React.FC = () => {
           {geofenceType === "radius" && (
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div>
-                <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">Center Lat</label>
-                <input type="number" step="any" className="w-full rounded-lg border border-gray-300 px-4 py-2 text-gray-900 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition" value={rCenterLat} onChange={(e) => setRCenterLat(e.target.value)} />
+                <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">
+                  Center Lat
+                </label>
+                <input
+                  type="number"
+                  step="any"
+                  className="w-full rounded-lg border border-gray-300 px-4 py-2 text-gray-900 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition"
+                  value={rCenterLat}
+                  onChange={(e) => setRCenterLat(e.target.value)}
+                />
               </div>
               <div>
-                <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">Center Lng</label>
-                <input type="number" step="any" className="w-full rounded-lg border border-gray-300 px-4 py-2 text-gray-900 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition" value={rCenterLng} onChange={(e) => setRCenterLng(e.target.value)} />
+                <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">
+                  Center Lng
+                </label>
+                <input
+                  type="number"
+                  step="any"
+                  className="w-full rounded-lg border border-gray-300 px-4 py-2 text-gray-900 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition"
+                  value={rCenterLng}
+                  onChange={(e) => setRCenterLng(e.target.value)}
+                />
               </div>
               <div>
-                <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">Bán kính (m)</label>
-                <input type="number" step="any" className="w-full rounded-lg border border-gray-300 px-4 py-2 text-gray-900 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition" value={radiusMeters} onChange={(e) => setRadiusMeters(e.target.value)} />
+                <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">
+                  Bán kính (m)
+                </label>
+                <input
+                  type="number"
+                  step="any"
+                  className="w-full rounded-lg border border-gray-300 px-4 py-2 text-gray-900 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition"
+                  value={radiusMeters}
+                  onChange={(e) => setRadiusMeters(e.target.value)}
+                />
               </div>
             </div>
           )}

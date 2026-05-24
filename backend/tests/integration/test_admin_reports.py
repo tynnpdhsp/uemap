@@ -101,22 +101,34 @@ async def test_report_status_transition():
         token = await admin_login(client)
         h = auth(token)
 
-        res = await client.patch(f"/api/admin/reports/{rid}", headers=h, json={
-            "status": "in_progress",
-        })
+        res = await client.patch(
+            f"/api/admin/reports/{rid}",
+            headers=h,
+            json={
+                "status": "in_progress",
+            },
+        )
         assert res.status_code == 200
         assert res.json()["data"]["status"] == "in_progress"
 
-        res = await client.patch(f"/api/admin/reports/{rid}", headers=h, json={
-            "status": "resolved",
-        })
+        res = await client.patch(
+            f"/api/admin/reports/{rid}",
+            headers=h,
+            json={
+                "status": "resolved",
+            },
+        )
         assert res.status_code == 400
         assert res.json()["error"]["code"] == "ADMIN_NOTE_REQUIRED"
 
-        res = await client.patch(f"/api/admin/reports/{rid}", headers=h, json={
-            "status": "resolved",
-            "admin_note": "Đã xử lý xong vi phạm nội dung",
-        })
+        res = await client.patch(
+            f"/api/admin/reports/{rid}",
+            headers=h,
+            json={
+                "status": "resolved",
+                "admin_note": "Đã xử lý xong vi phạm nội dung",
+            },
+        )
         assert res.status_code == 200
         assert res.json()["data"]["status"] == "resolved"
         assert res.json()["data"]["resolved_at"] is not None
@@ -132,9 +144,13 @@ async def test_report_invalid_transition():
         rid = await _seed_report(sid, status="new")
         token = await admin_login(client)
 
-        res = await client.patch(f"/api/admin/reports/{rid}", headers=auth(token), json={
-            "status": "resolved",
-            "admin_note": "Bỏ qua bước đang xử lý",
-        })
+        res = await client.patch(
+            f"/api/admin/reports/{rid}",
+            headers=auth(token),
+            json={
+                "status": "resolved",
+                "admin_note": "Bỏ qua bước đang xử lý",
+            },
+        )
         assert res.status_code == 400
         assert res.json()["error"]["code"] == "REPORT_INVALID_STATUS"

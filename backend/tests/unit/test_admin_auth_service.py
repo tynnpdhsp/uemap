@@ -87,9 +87,13 @@ async def test_login_rate_limit(mock_db):
     await mock_db["admins"].insert_one(admin)
     now = datetime.utcnow()
     for _ in range(10):
-        await mock_db["admin_login_attempts"].insert_one({
-            "username": ADMIN_USER, "ip_address": "127.0.0.1", "failed_at": now,
-        })
+        await mock_db["admin_login_attempts"].insert_one(
+            {
+                "username": ADMIN_USER,
+                "ip_address": "127.0.0.1",
+                "failed_at": now,
+            }
+        )
     with pytest.raises(HTTPException) as exc:
         await admin_auth_service.login(ADMIN_USER, ADMIN_PASS, "127.0.0.1", "UA")
     assert exc.value.status_code == 429
@@ -102,9 +106,13 @@ async def test_login_rate_limit_ip_only(mock_db):
     await mock_db["admins"].insert_one(admin)
     now = datetime.utcnow()
     for _ in range(10):
-        await mock_db["admin_login_attempts"].insert_one({
-            "username": "other_user", "ip_address": "10.0.0.1", "failed_at": now,
-        })
+        await mock_db["admin_login_attempts"].insert_one(
+            {
+                "username": "other_user",
+                "ip_address": "10.0.0.1",
+                "failed_at": now,
+            }
+        )
     with pytest.raises(HTTPException) as exc:
         await admin_auth_service.login(ADMIN_USER, ADMIN_PASS, "10.0.0.1", "UA")
     assert exc.value.status_code == 429
@@ -116,9 +124,13 @@ async def test_login_rate_limit_expired_attempts_ignored(mock_db):
     await mock_db["admins"].insert_one(admin)
     old = datetime.utcnow() - timedelta(minutes=20)
     for _ in range(10):
-        await mock_db["admin_login_attempts"].insert_one({
-            "username": ADMIN_USER, "ip_address": "127.0.0.1", "failed_at": old,
-        })
+        await mock_db["admin_login_attempts"].insert_one(
+            {
+                "username": ADMIN_USER,
+                "ip_address": "127.0.0.1",
+                "failed_at": old,
+            }
+        )
     result = await admin_auth_service.login(ADMIN_USER, ADMIN_PASS, "127.0.0.1", "UA")
     assert "access_token" in result
 
@@ -154,36 +166,42 @@ async def test_verify_session_not_found(mock_db):
 
 @pytest.mark.asyncio
 async def test_verify_session_expired(mock_db):
-    await mock_db["admin_sessions"].insert_one({
-        "jti": "expired-jti",
-        "expires_at": datetime.utcnow() - timedelta(minutes=1),
-        "revoked_at": None,
-    })
+    await mock_db["admin_sessions"].insert_one(
+        {
+            "jti": "expired-jti",
+            "expires_at": datetime.utcnow() - timedelta(minutes=1),
+            "revoked_at": None,
+        }
+    )
     assert await admin_auth_service.verify_admin_session("expired-jti") is False
 
 
 @pytest.mark.asyncio
 async def test_verify_session_revoked(mock_db):
-    await mock_db["admin_sessions"].insert_one({
-        "jti": "revoked-jti",
-        "expires_at": datetime.utcnow() + timedelta(hours=8),
-        "revoked_at": datetime.utcnow(),
-    })
+    await mock_db["admin_sessions"].insert_one(
+        {
+            "jti": "revoked-jti",
+            "expires_at": datetime.utcnow() + timedelta(hours=8),
+            "revoked_at": datetime.utcnow(),
+        }
+    )
     assert await admin_auth_service.verify_admin_session("revoked-jti") is False
 
 
 def test_format_admin_info():
     admin_id = ObjectId()
     now = datetime.utcnow()
-    info = admin_auth_service.format_admin_info({
-        "_id": admin_id,
-        "username": "testadmin",
-        "display_name": "Test",
-        "is_system_admin": False,
-        "status": "active",
-        "last_login_at": now,
-        "created_at": now,
-    })
+    info = admin_auth_service.format_admin_info(
+        {
+            "_id": admin_id,
+            "username": "testadmin",
+            "display_name": "Test",
+            "is_system_admin": False,
+            "status": "active",
+            "last_login_at": now,
+            "created_at": now,
+        }
+    )
     assert info["id"] == str(admin_id)
     assert info["status_label"] == "hoạt động"
     assert info["is_system_admin"] is False

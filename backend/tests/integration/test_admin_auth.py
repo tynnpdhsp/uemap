@@ -24,9 +24,13 @@ async def test_admin_login_success():
         await clean_admin_db()
         await seed_system_admin()
 
-        res = await client.post("/api/admin/auth/login", json={
-            "username": ADMIN_USERNAME, "password": ADMIN_PASSWORD,
-        })
+        res = await client.post(
+            "/api/admin/auth/login",
+            json={
+                "username": ADMIN_USERNAME,
+                "password": ADMIN_PASSWORD,
+            },
+        )
         assert res.status_code == 200
         body = res.json()
         assert body["success"] is True
@@ -42,9 +46,13 @@ async def test_admin_login_wrong_password():
         await clean_admin_db()
         await seed_system_admin()
 
-        res = await client.post("/api/admin/auth/login", json={
-            "username": ADMIN_USERNAME, "password": "wrongpassword1",
-        })
+        res = await client.post(
+            "/api/admin/auth/login",
+            json={
+                "username": ADMIN_USERNAME,
+                "password": "wrongpassword1",
+            },
+        )
         assert res.status_code == 401
         assert res.json()["error"]["code"] == "ADMIN_LOGIN_FAILED"
 
@@ -56,9 +64,13 @@ async def test_admin_login_wrong_username():
         await clean_admin_db()
         await seed_system_admin()
 
-        res = await client.post("/api/admin/auth/login", json={
-            "username": "nonexistent", "password": ADMIN_PASSWORD,
-        })
+        res = await client.post(
+            "/api/admin/auth/login",
+            json={
+                "username": "nonexistent",
+                "password": ADMIN_PASSWORD,
+            },
+        )
         assert res.status_code == 401
         assert res.json()["error"]["code"] == "ADMIN_LOGIN_FAILED"
 
@@ -73,13 +85,21 @@ async def test_admin_login_rate_limit():
         db = get_db()
         now = datetime.utcnow()
         for _ in range(10):
-            await db["admin_login_attempts"].insert_one({
-                "username": ADMIN_USERNAME, "ip_address": "127.0.0.1", "failed_at": now,
-            })
+            await db["admin_login_attempts"].insert_one(
+                {
+                    "username": ADMIN_USERNAME,
+                    "ip_address": "127.0.0.1",
+                    "failed_at": now,
+                }
+            )
 
-        res = await client.post("/api/admin/auth/login", json={
-            "username": ADMIN_USERNAME, "password": ADMIN_PASSWORD,
-        })
+        res = await client.post(
+            "/api/admin/auth/login",
+            json={
+                "username": ADMIN_USERNAME,
+                "password": ADMIN_PASSWORD,
+            },
+        )
         assert res.status_code == 429
         assert res.json()["error"]["code"] == "AUTH_LOGIN_RATE_LIMIT"
 

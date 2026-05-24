@@ -2,7 +2,9 @@ import React from "react";
 import { Navigate } from "react-router-dom";
 import { useAdminAuth } from "../context/AdminAuthContext";
 
-export const AdminProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+export const AdminProtectedRoute: React.FC<{ children: React.ReactNode }> = ({
+  children,
+}) => {
   const { isAuthenticated, loading } = useAdminAuth();
 
   if (loading) {

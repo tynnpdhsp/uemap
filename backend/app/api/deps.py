@@ -7,6 +7,7 @@ from app.core.security import decode_access_token
 from app.services import session_service
 
 security = HTTPBearer()
+admin_security = HTTPBearer(auto_error=False)
 
 
 async def get_current_student(
@@ -62,8 +63,20 @@ async def get_current_student(
 
 # Xác thực token quản trị viên
 async def get_current_admin(
-    credentials: HTTPAuthorizationCredentials = Depends(security),
+    credentials: HTTPAuthorizationCredentials | None = Depends(admin_security),
 ):
+    if credentials is None:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail={
+                "success": False,
+                "error": {
+                    "code": "ADMIN_FORBIDDEN",
+                    "message": "Chưa đăng nhập quản trị.",
+                    "details": [],
+                },
+            },
+        )
     try:
         payload = decode_access_token(credentials.credentials)
         if payload.get("role") != "admin":
@@ -85,6 +98,7 @@ async def get_current_admin(
             raise ValueError()
 
         from app.services import admin_auth_service
+
         is_active = await admin_auth_service.verify_admin_session(jti)
         if not is_active:
             raise ValueError()

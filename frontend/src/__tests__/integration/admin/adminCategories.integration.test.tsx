@@ -59,13 +59,32 @@ describe("integration: admin quản lý danh mục", () => {
       }
       if (method === "GET" && url.includes("/api/admin/categories")) {
         const cats = created
-          ? [...sampleCategories, { id: "cat003", name: "Phòng học", color: "#22C55E", order: 3, is_hidden: false, place_count: 0, created_at_display: "25/05/2025" }]
+          ? [
+              ...sampleCategories,
+              {
+                id: "cat003",
+                name: "Phòng học",
+                color: "#22C55E",
+                order: 3,
+                is_hidden: false,
+                place_count: 0,
+                created_at_display: "25/05/2025",
+              },
+            ]
           : sampleCategories;
         return jsonOk(cats);
       }
       if (method === "POST" && url.includes("/api/admin/categories")) {
         created = true;
-        return jsonOk({ id: "cat003", name: "Phòng học", color: "#22C55E", order: 3, is_hidden: false, place_count: 0, created_at_display: "25/05/2025" });
+        return jsonOk({
+          id: "cat003",
+          name: "Phòng học",
+          color: "#22C55E",
+          order: 3,
+          is_hidden: false,
+          place_count: 0,
+          created_at_display: "25/05/2025",
+        });
       }
       return null;
     });
@@ -79,9 +98,13 @@ describe("integration: admin quản lý danh mục", () => {
     const nameInput = inputs.find((el) => el.closest("form"));
     await user.type(nameInput!, "Phòng học");
 
-    fireEvent.submit(screen.getByRole("button", { name: "Tạo mới" }).closest("form")!);
+    fireEvent.submit(
+      screen.getByRole("button", { name: "Tạo mới" }).closest("form")!,
+    );
 
-    expect(await screen.findByText("Tạo danh mục thành công.")).toBeInTheDocument();
+    expect(
+      await screen.findByText("Tạo danh mục thành công."),
+    ).toBeInTheDocument();
     expect(await screen.findByText("Phòng học")).toBeInTheDocument();
   });
 
@@ -127,11 +150,16 @@ describe("integration: admin quản lý danh mục", () => {
       }
       if (method === "GET" && url.includes("/api/admin/categories")) {
         const cats = toggledHidden
-          ? sampleCategories.map((c) => c.id === "cat001" ? { ...c, is_hidden: true } : c)
+          ? sampleCategories.map((c) =>
+              c.id === "cat001" ? { ...c, is_hidden: true } : c,
+            )
           : sampleCategories;
         return jsonOk(cats);
       }
-      if (method === "PATCH" && url.includes("/api/admin/categories/cat001/hide")) {
+      if (
+        method === "PATCH" &&
+        url.includes("/api/admin/categories/cat001/hide")
+      ) {
         toggledHidden = true;
         return jsonOk({ ...sampleCategories[0], is_hidden: true });
       }

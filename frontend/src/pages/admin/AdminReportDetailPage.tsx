@@ -1,8 +1,18 @@
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { adminReportsApi, type AdminReportDetail } from "../../api/admin/reports";
+import {
+  adminReportsApi,
+  type AdminReportDetail,
+} from "../../api/admin/reports";
 import { getErrorMessage } from "../../utils/errorMessage";
-import { ArrowLeft, Loader, EyeOff, Trash2, Play, CheckCircle } from "lucide-react";
+import {
+  ArrowLeft,
+  Loader,
+  EyeOff,
+  Trash2,
+  Play,
+  CheckCircle,
+} from "lucide-react";
 
 export const AdminReportDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -16,19 +26,22 @@ export const AdminReportDetailPage: React.FC = () => {
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
 
-  const load = async () => {
+  const load = useCallback(async () => {
+    if (!id) return;
     setLoading(true);
     try {
-      const res = await adminReportsApi.detail(id!);
+      const res = await adminReportsApi.detail(id);
       if (res.success) setReport(res.data);
     } catch {
       setErrorMsg("Không tìm thấy báo cáo.");
     } finally {
       setLoading(false);
     }
-  };
+  }, [id]);
 
-  useEffect(() => { load(); }, [id]);
+  useEffect(() => {
+    load();
+  }, [load]);
 
   const handleStatusUpdate = async (status: string) => {
     setActionLoading(true);
@@ -38,7 +51,9 @@ export const AdminReportDetailPage: React.FC = () => {
       const data: { status: string; admin_note?: string } = { status };
       if (status === "resolved") data.admin_note = adminNote;
       await adminReportsApi.updateStatus(id!, data);
-      setSuccessMsg(`Đã cập nhật trạng thái thành ${status === "in_progress" ? "đang xử lý" : "đã giải quyết"}.`);
+      setSuccessMsg(
+        `Đã cập nhật trạng thái thành ${status === "in_progress" ? "đang xử lý" : "đã giải quyết"}.`,
+      );
       load();
     } catch (err: unknown) {
       setErrorMsg(getErrorMessage(err, "Cập nhật thất bại."));
@@ -79,8 +94,13 @@ export const AdminReportDetailPage: React.FC = () => {
   if (!report) {
     return (
       <div className="text-center py-20">
-        <h2 className="text-xl font-bold text-gray-700">Không tìm thấy báo cáo</h2>
-        <button onClick={() => navigate("/admin/reports")} className="mt-4 text-blue-600 font-semibold hover:underline">
+        <h2 className="text-xl font-bold text-gray-700">
+          Không tìm thấy báo cáo
+        </h2>
+        <button
+          onClick={() => navigate("/admin/reports")}
+          className="mt-4 text-blue-600 font-semibold hover:underline"
+        >
           Quay lại danh sách
         </button>
       </div>
@@ -94,7 +114,9 @@ export const AdminReportDetailPage: React.FC = () => {
       resolved: "bg-green-50 text-green-700 border-green-100",
     };
     return (
-      <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-bold border ${map[status] || map.new}`}>
+      <span
+        className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-bold border ${map[status] || map.new}`}
+      >
         {label}
       </span>
     );
@@ -110,52 +132,86 @@ export const AdminReportDetailPage: React.FC = () => {
       </button>
 
       {successMsg && (
-        <div className="p-3 rounded-lg bg-green-50 text-green-700 text-sm border border-green-100">{successMsg}</div>
+        <div className="p-3 rounded-lg bg-green-50 text-green-700 text-sm border border-green-100">
+          {successMsg}
+        </div>
       )}
       {errorMsg && (
-        <div className="p-3 rounded-lg bg-red-50 text-red-700 text-sm border border-red-100">{errorMsg}</div>
+        <div className="p-3 rounded-lg bg-red-50 text-red-700 text-sm border border-red-100">
+          {errorMsg}
+        </div>
       )}
 
       <div className="rounded-2xl bg-white p-6 shadow-md border border-gray-100">
         <div className="flex items-center justify-between border-b border-gray-100 pb-4 mb-4">
-          <h1 className="text-xl font-black text-gray-800">{report.report_code}</h1>
+          <h1 className="text-xl font-black text-gray-800">
+            {report.report_code}
+          </h1>
           {statusBadge(report.status, report.status_label)}
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-sm">
           <div className="space-y-3">
             <div>
-              <span className="block text-xs font-semibold text-gray-400 uppercase">Loại đối tượng</span>
-              <span className="text-gray-900 font-medium">{report.target_type === "place" ? "Địa điểm" : "Bình luận"}</span>
+              <span className="block text-xs font-semibold text-gray-400 uppercase">
+                Loại đối tượng
+              </span>
+              <span className="text-gray-900 font-medium">
+                {report.target_type === "place" ? "Địa điểm" : "Bình luận"}
+              </span>
             </div>
             <div>
-              <span className="block text-xs font-semibold text-gray-400 uppercase">Loại vi phạm</span>
-              <span className="text-gray-900 font-medium">{report.report_type}</span>
+              <span className="block text-xs font-semibold text-gray-400 uppercase">
+                Loại vi phạm
+              </span>
+              <span className="text-gray-900 font-medium">
+                {report.report_type}
+              </span>
             </div>
             <div>
-              <span className="block text-xs font-semibold text-gray-400 uppercase">Người báo cáo</span>
-              <span className="text-gray-900 font-medium">{report.reporter_email}</span>
+              <span className="block text-xs font-semibold text-gray-400 uppercase">
+                Người báo cáo
+              </span>
+              <span className="text-gray-900 font-medium">
+                {report.reporter_email}
+              </span>
             </div>
             <div>
-              <span className="block text-xs font-semibold text-gray-400 uppercase">Ngày tạo</span>
-              <span className="text-gray-900 font-medium">{report.created_at_display}</span>
+              <span className="block text-xs font-semibold text-gray-400 uppercase">
+                Ngày tạo
+              </span>
+              <span className="text-gray-900 font-medium">
+                {report.created_at_display}
+              </span>
             </div>
           </div>
           <div className="space-y-3">
             <div>
-              <span className="block text-xs font-semibold text-gray-400 uppercase">Lý do báo cáo</span>
-              <p className="text-gray-700 whitespace-pre-line">{report.reason}</p>
+              <span className="block text-xs font-semibold text-gray-400 uppercase">
+                Lý do báo cáo
+              </span>
+              <p className="text-gray-700 whitespace-pre-line">
+                {report.reason}
+              </p>
             </div>
             {report.admin_note && (
               <div>
-                <span className="block text-xs font-semibold text-gray-400 uppercase">Ghi chú admin</span>
-                <p className="text-gray-700 whitespace-pre-line">{report.admin_note}</p>
+                <span className="block text-xs font-semibold text-gray-400 uppercase">
+                  Ghi chú admin
+                </span>
+                <p className="text-gray-700 whitespace-pre-line">
+                  {report.admin_note}
+                </p>
               </div>
             )}
             {report.resolved_at && (
               <div>
-                <span className="block text-xs font-semibold text-gray-400 uppercase">Ngày giải quyết</span>
-                <span className="text-gray-900 font-medium">{report.resolved_at}</span>
+                <span className="block text-xs font-semibold text-gray-400 uppercase">
+                  Ngày giải quyết
+                </span>
+                <span className="text-gray-900 font-medium">
+                  {report.resolved_at}
+                </span>
               </div>
             )}
           </div>
@@ -164,7 +220,9 @@ export const AdminReportDetailPage: React.FC = () => {
 
       {report.status !== "resolved" && (
         <div className="rounded-2xl bg-white p-6 shadow-md border border-gray-100">
-          <h2 className="text-lg font-bold text-gray-800 border-b border-gray-100 pb-3 mb-4">Cập nhật trạng thái</h2>
+          <h2 className="text-lg font-bold text-gray-800 border-b border-gray-100 pb-3 mb-4">
+            Cập nhật trạng thái
+          </h2>
           <div className="flex flex-wrap gap-3">
             {report.status === "new" && (
               <button
@@ -177,7 +235,9 @@ export const AdminReportDetailPage: React.FC = () => {
             )}
             {report.status === "in_progress" && (
               <div className="w-full space-y-3">
-                <label className="block text-sm font-semibold text-gray-700">Ghi chú giải quyết (bắt buộc)</label>
+                <label className="block text-sm font-semibold text-gray-700">
+                  Ghi chú giải quyết (bắt buộc)
+                </label>
                 <textarea
                   className="w-full rounded-lg border border-gray-300 px-4 py-2 text-gray-900 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition text-sm"
                   rows={3}
@@ -199,7 +259,9 @@ export const AdminReportDetailPage: React.FC = () => {
       )}
 
       <div className="rounded-2xl bg-white p-6 shadow-md border border-gray-100">
-        <h2 className="text-lg font-bold text-gray-800 border-b border-gray-100 pb-3 mb-4">Hành động nhanh</h2>
+        <h2 className="text-lg font-bold text-gray-800 border-b border-gray-100 pb-3 mb-4">
+          Hành động nhanh
+        </h2>
         <div className="flex flex-wrap gap-3">
           {report.target_type === "place" && (
             <>
@@ -229,7 +291,9 @@ export const AdminReportDetailPage: React.FC = () => {
 
         {showActionForm && (
           <div className="mt-4 p-4 rounded-xl bg-gray-50 border border-gray-200">
-            <label className="block text-sm font-semibold text-gray-700 mb-2">Lý do (tối thiểu 10 ký tự)</label>
+            <label className="block text-sm font-semibold text-gray-700 mb-2">
+              Lý do (tối thiểu 10 ký tự)
+            </label>
             <textarea
               className="w-full rounded-lg border border-gray-300 px-4 py-2 text-gray-900 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition text-sm"
               rows={3}
@@ -245,7 +309,10 @@ export const AdminReportDetailPage: React.FC = () => {
                 {actionLoading ? "Đang xử lý..." : "Xác nhận"}
               </button>
               <button
-                onClick={() => { setShowActionForm(null); setActionReason(""); }}
+                onClick={() => {
+                  setShowActionForm(null);
+                  setActionReason("");
+                }}
                 className="rounded-lg border border-gray-300 px-4 py-2 text-gray-700 font-bold hover:bg-gray-50 transition text-sm"
               >
                 Hủy

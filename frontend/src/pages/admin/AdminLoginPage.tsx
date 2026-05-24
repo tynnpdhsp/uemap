@@ -23,7 +23,9 @@ export const AdminLoginPage: React.FC = () => {
         navigate("/admin");
       }
     } catch (err: unknown) {
-      setErrorMsg(getErrorMessage(err, "Đăng nhập thất bại. Vui lòng thử lại."));
+      setErrorMsg(
+        getErrorMessage(err, "Đăng nhập thất bại. Vui lòng thử lại."),
+      );
     } finally {
       setLoading(false);
     }

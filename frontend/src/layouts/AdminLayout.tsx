@@ -24,7 +24,12 @@ const NAV_ITEMS = [
   { to: "/admin/comments", label: "Bình luận", icon: MessageSquare },
   { to: "/admin/reports", label: "Báo cáo", icon: AlertTriangle },
   { to: "/admin/students", label: "Sinh viên", icon: Users },
-  { to: "/admin/admins", label: "Quản trị viên", icon: Shield, systemOnly: true },
+  {
+    to: "/admin/admins",
+    label: "Quản trị viên",
+    icon: Shield,
+    systemOnly: true,
+  },
   { to: "/admin/audit-logs", label: "Nhật ký", icon: ScrollText },
   { to: "/admin/config/map", label: "Cấu hình bản đồ", icon: Settings },
   { to: "/admin/config/email", label: "Cấu hình email", icon: Mail },
@@ -61,7 +66,10 @@ export const AdminLayout: React.FC = () => {
             Admin
           </span>
         </Link>
-        <button onClick={() => setSidebarOpen(false)} className="lg:hidden text-gray-400 hover:text-white">
+        <button
+          onClick={() => setSidebarOpen(false)}
+          className="lg:hidden text-gray-400 hover:text-white"
+        >
           <X className="w-5 h-5" />
         </button>
       </div>
@@ -89,8 +97,12 @@ export const AdminLayout: React.FC = () => {
 
       <div className="p-4 border-t border-gray-700/50">
         <div className="mb-3 px-1">
-          <p className="text-xs font-bold text-gray-400 truncate">{admin?.display_name}</p>
-          <p className="text-[10px] text-gray-500 truncate">@{admin?.username}</p>
+          <p className="text-xs font-bold text-gray-400 truncate">
+            {admin?.display_name}
+          </p>
+          <p className="text-[10px] text-gray-500 truncate">
+            @{admin?.username}
+          </p>
         </div>
         <button
           onClick={handleLogout}
@@ -111,7 +123,10 @@ export const AdminLayout: React.FC = () => {
 
       {sidebarOpen && (
         <div className="fixed inset-0 z-50 lg:hidden">
-          <div className="absolute inset-0 bg-black/50" onClick={() => setSidebarOpen(false)} />
+          <div
+            className="absolute inset-0 bg-black/50"
+            onClick={() => setSidebarOpen(false)}
+          />
           <aside className="relative w-64 h-full bg-gray-900">
             {sidebarContent}
           </aside>
@@ -120,7 +135,10 @@ export const AdminLayout: React.FC = () => {
 
       <div className="flex-1 lg:pl-64">
         <header className="sticky top-0 z-40 flex items-center h-16 bg-white border-b border-gray-100 px-4 lg:px-8 shadow-sm">
-          <button onClick={() => setSidebarOpen(true)} className="lg:hidden mr-4 text-gray-500 hover:text-gray-700">
+          <button
+            onClick={() => setSidebarOpen(true)}
+            className="lg:hidden mr-4 text-gray-500 hover:text-gray-700"
+          >
             <Menu className="w-6 h-6" />
           </button>
           <div className="flex-1" />

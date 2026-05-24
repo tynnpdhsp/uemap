@@ -47,7 +47,9 @@ async def test_list_admins(mock_db):
 @pytest.mark.asyncio
 async def test_create_admin_success(mock_db):
     sys_admin_id = ObjectId()
-    result = await admin_account_service.create_admin("newadmin", "newpass1234", "Admin Mới", sys_admin_id, IP)
+    result = await admin_account_service.create_admin(
+        "newadmin", "newpass1234", "Admin Mới", sys_admin_id, IP
+    )
     assert result["username"] == "newadmin"
     assert result["display_name"] == "Admin Mới"
     assert result["is_system_admin"] is False
@@ -74,7 +76,10 @@ async def test_update_admin_display_name(mock_db):
     admin = await _seed_admin(mock_db)
     sys_admin_id = ObjectId()
     result = await admin_account_service.update_admin(
-        str(admin["_id"]), {"display_name": "Tên mới"}, sys_admin_id, IP,
+        str(admin["_id"]),
+        {"display_name": "Tên mới"},
+        sys_admin_id,
+        IP,
     )
     assert result["display_name"] == "Tên mới"
 
@@ -87,7 +92,10 @@ async def test_update_admin_password(mock_db):
     admin = await _seed_admin(mock_db)
     sys_admin_id = ObjectId()
     await admin_account_service.update_admin(
-        str(admin["_id"]), {"password": "newpassword99"}, sys_admin_id, IP,
+        str(admin["_id"]),
+        {"password": "newpassword99"},
+        sys_admin_id,
+        IP,
     )
     updated = await mock_db["admins"].find_one({"_id": admin["_id"]})
     assert verify_password("newpassword99", updated["password_hash"])
@@ -96,7 +104,9 @@ async def test_update_admin_password(mock_db):
 @pytest.mark.asyncio
 async def test_update_admin_not_found(mock_db):
     with pytest.raises(HTTPException) as exc:
-        await admin_account_service.update_admin(str(ObjectId()), {"display_name": "X"}, ObjectId(), IP)
+        await admin_account_service.update_admin(
+            str(ObjectId()), {"display_name": "X"}, ObjectId(), IP
+        )
     assert exc.value.detail["error"]["code"] == "ADMIN_NOT_FOUND"
 
 
@@ -105,9 +115,13 @@ async def test_disable_admin_success(mock_db):
     target = await _seed_admin(mock_db, username="victim", is_system_admin=False)
     sys_admin_id = ObjectId()
 
-    await mock_db["admin_sessions"].insert_one({
-        "admin_id": target["_id"], "jti": "ses1", "revoked_at": None,
-    })
+    await mock_db["admin_sessions"].insert_one(
+        {
+            "admin_id": target["_id"],
+            "jti": "ses1",
+            "revoked_at": None,
+        }
+    )
 
     await admin_account_service.disable_admin(str(target["_id"]), sys_admin_id, IP)
 
@@ -134,7 +148,9 @@ async def test_disable_admin_cannot_self_disable(mock_db):
 async def test_disable_admin_last_system_admin_blocked(mock_db):
     sys_id = ObjectId()
     actor_id = ObjectId()
-    await _seed_admin(mock_db, _id=sys_id, username="only_sys", is_system_admin=True, status="active")
+    await _seed_admin(
+        mock_db, _id=sys_id, username="only_sys", is_system_admin=True, status="active"
+    )
 
     with pytest.raises(HTTPException) as exc:
         await admin_account_service.disable_admin(str(sys_id), actor_id, IP)

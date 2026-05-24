@@ -171,7 +171,9 @@ class MockCollection:
         self.docs.append(doc)
         return InsertOneResult(doc["_id"])
 
-    async def update_one(self, query: dict[str, Any], update: dict[str, Any], upsert: bool = False) -> UpdateResult:
+    async def update_one(
+        self, query: dict[str, Any], update: dict[str, Any], upsert: bool = False
+    ) -> UpdateResult:
         modified = 0
         for doc in self.docs:
             if _doc_matches(doc, query):

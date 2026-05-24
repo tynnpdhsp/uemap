@@ -29,8 +29,13 @@ async def list_audit_logs(
         from_date = _default_from_date()
 
     params = {
-        "page": page, "page_size": page_size, "from_date": from_date, "to_date": to_date,
-        "event_code": event_code, "actor_id": actor_id, "result": result,
+        "page": page,
+        "page_size": page_size,
+        "from_date": from_date,
+        "to_date": to_date,
+        "event_code": event_code,
+        "actor_id": actor_id,
+        "result": result,
     }
     data = await audit_export_service.list_audit_logs(params)
     return {"success": True, "data": data["items"], "meta": data["meta"]}
@@ -50,7 +55,10 @@ async def export_audit_logs(
         from_date = _default_from_date()
 
     params = {
-        "from_date": from_date, "to_date": to_date,
-        "event_code": event_code, "actor_id": actor_id, "result": result,
+        "from_date": from_date,
+        "to_date": to_date,
+        "event_code": event_code,
+        "actor_id": actor_id,
+        "result": result,
     }
     return await audit_export_service.export_csv(params)

@@ -32,7 +32,9 @@ describe("integration: đăng nhập admin", () => {
 
     renderAdminApp(["/admin/login"]);
 
-    expect(screen.getByRole("heading", { name: "Quản Trị" })).toBeInTheDocument();
+    expect(
+      screen.getByRole("heading", { name: "Quản Trị" }),
+    ).toBeInTheDocument();
 
     await user.type(screen.getByPlaceholderText("admin"), ADMIN_USERNAME);
     await user.type(screen.getByPlaceholderText("••••••••"), ADMIN_PASSWORD);
@@ -41,7 +43,9 @@ describe("integration: đăng nhập admin", () => {
     );
 
     await waitFor(() => {
-      expect(sessionStorage.getItem("admin_access_token")).toBe("admin-token-123");
+      expect(sessionStorage.getItem("admin_access_token")).toBe(
+        "admin-token-123",
+      );
     });
     expect(await screen.findByText("Dashboard")).toBeInTheDocument();
   });
