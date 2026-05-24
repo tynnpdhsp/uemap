@@ -23,9 +23,19 @@ from app.services.auth_service import (
 from app.services.auth_service import (
     verify_forgot_password_otp as verify_forgot_password_otp,
 )
+from app.services.comment_service import create_comment as create_comment
+from app.services.comment_service import delete_comment as delete_comment
+from app.services.comment_service import update_comment as update_comment
 from app.services.email_service import send_otp_email as send_otp_email
+from app.services.geofence_service import validate_point as validate_point
+from app.services.media_service import get_media_stream as get_media_stream
 from app.services.otp_service import create_otp as create_otp
 from app.services.otp_service import verify_otp as verify_otp
+from app.services.place_service import create_place as create_place
+from app.services.place_service import delete_place as delete_place
+from app.services.place_service import update_place as update_place
+from app.services.report_service import create_report as create_report
+from app.services.search_service import search_places as search_places
 from app.services.session_service import (
     create_session as create_session,
 )
@@ -41,3 +51,6 @@ from app.services.session_service import (
 from app.services.session_service import (
     verify_session as verify_session,
 )
+from app.services.upload_service import confirm_media_keys as confirm_media_keys
+from app.services.upload_service import upload_image as upload_image
+from app.services.upload_service import upload_video as upload_video

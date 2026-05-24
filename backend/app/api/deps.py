@@ -93,3 +93,34 @@ async def get_current_admin(
                 },
             },
         )
+
+
+async def require_active_student(
+    current_student: dict = Depends(get_current_student),
+) -> dict:
+    if current_student.get("status") != "active":
+        if current_student.get("status") == "pending_activation":
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail={
+                    "success": False,
+                    "error": {
+                        "code": "AUTH_FORBIDDEN",
+                        "message": "Tài khoản chưa được kích hoạt.",
+                        "details": [],
+                    },
+                },
+            )
+        elif current_student.get("status") == "locked":
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail={
+                    "success": False,
+                    "error": {
+                        "code": "AUTH_LOGIN_LOCKED",
+                        "message": "Tài khoản đã bị khóa. Vui lòng liên hệ quản trị.",
+                        "details": [],
+                    },
+                },
+            )
+    return current_student

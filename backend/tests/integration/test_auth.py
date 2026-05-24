@@ -7,7 +7,7 @@ from httpx import ASGITransport, AsyncClient
 from app.core.database import get_db
 from app.core.security import hash_password
 from app.main import app
-from tests.auth_integration_helpers import (
+from tests.integration.auth_integration_helpers import (
     TEST_EMAIL,
     TEST_NAME,
     TEST_PASSWORD,

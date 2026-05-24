@@ -23,6 +23,19 @@ describe("integration: đăng nhập và đăng xuất", () => {
       if (method === "GET" && url.includes("/api/me")) {
         return jsonOk(activeProfile);
       }
+      if (method === "GET" && url.includes("/api/config/map")) {
+        return jsonOk({
+          default_center: { lat: 10.7628, lng: 106.6824 },
+          default_zoom: 16,
+          geofence: null,
+        });
+      }
+      if (method === "GET" && url.includes("/api/categories")) {
+        return jsonOk([]);
+      }
+      if (method === "GET" && url.includes("/api/places/markers")) {
+        return jsonOk([]);
+      }
       return null;
     });
 
@@ -35,11 +48,12 @@ describe("integration: đăng nhập và đăng xuất", () => {
     );
 
     await waitFor(() => {
-      expect(sessionStorage.getItem("sv_access_token")).toBe("integration-token");
+      expect(sessionStorage.getItem("sv_access_token")).toBe(
+        "integration-token",
+      );
     });
-    expect(
-      await screen.findByText(`Chào mừng quay trở lại, ${TEST_NAME}!`),
-    ).toBeInTheDocument();
+    expect(await screen.findByText(TEST_NAME)).toBeInTheDocument();
+    expect(await screen.findByText(/Sinh viên:/i)).toBeInTheDocument();
   });
 
   it("đăng xuất từ layout chuyển về trang login", async () => {
@@ -53,12 +67,25 @@ describe("integration: đăng nhập và đăng xuất", () => {
       if (method === "POST" && url.includes("/api/auth/logout")) {
         return jsonOk(null);
       }
+      if (method === "GET" && url.includes("/api/config/map")) {
+        return jsonOk({
+          default_center: { lat: 10.7628, lng: 106.6824 },
+          default_zoom: 16,
+          geofence: null,
+        });
+      }
+      if (method === "GET" && url.includes("/api/categories")) {
+        return jsonOk([]);
+      }
+      if (method === "GET" && url.includes("/api/places/markers")) {
+        return jsonOk([]);
+      }
       return null;
     });
 
     renderApp(["/"]);
 
-    expect(await screen.findByText(/Chào mừng quay trở lại/i)).toBeInTheDocument();
+    expect(await screen.findByText(TEST_NAME)).toBeInTheDocument();
 
     await user.click(screen.getByRole("button", { name: "Đăng Xuất" }));
 

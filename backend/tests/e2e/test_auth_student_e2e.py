@@ -86,6 +86,10 @@ async def test_e2e_pending_activation_cannot_login():
 async def test_e2e_duplicate_registration_rejected():
     async with api_client() as client:
         await clean_auth_db()
+        db = get_db()
+        assert await db["students"].count_documents({"email": TEST_EMAIL}) == 0
+        assert await db["otp_tokens"].count_documents({"email": TEST_EMAIL}) == 0
+
         with mock_auth_otp_and_email():
             await register_student(client)
             res = await client.post(

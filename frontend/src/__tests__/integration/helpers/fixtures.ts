@@ -6,6 +6,7 @@ export const TEST_OTP = "111111";
 export const TEST_RESET_TOKEN = "reset-token-integration";
 
 export const activeProfile = {
+  id: "student-test-id",
   email: TEST_EMAIL,
   full_name: TEST_NAME,
   status: "active",
