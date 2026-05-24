@@ -97,6 +97,41 @@ Sau khi khởi chạy thành công, toàn bộ tài nguyên của hệ thống c
 | `fix/<tên>` | Sửa lỗi |
 | `hotfix/<tên>` | Sửa khẩn trên main |
 
+## Kiểm thử
+
+Tóm tắt các lớp kiểm thử trong dự án. Chi tiết lệnh xem README từng phần.
+
+| Loại | Phạm vi | Trạng thái | Tài liệu |
+|------|---------|------------|----------|
+| Unit / component | Frontend React (Jest) | Có — `frontend/src/__tests__/` | [frontend/README.md](frontend/README.md#kiểm-thử) |
+| Integration | Frontend (router + mock API), Backend API + MongoDB | Có | [frontend/README.md](frontend/README.md#kiểm-thử), [backend/README.md](backend/README.md#kiểm-thử) |
+| E2E (API) | Backend FastAPI + MongoDB (`httpx`) | Có — `backend/tests/e2e/` | [backend/README.md](backend/README.md#kiểm-thử) |
+
+### Frontend (Jest)
+
+```bash
+cd frontend
+npm install
+npm run test              # unit + integration
+npm run test:unit
+npm run test:integration
+npm run test:coverage
+```
+
+### Backend (pytest)
+
+Integration và E2E API cần MongoDB (từ thư mục `source/`):
+
+```bash
+docker compose -f docker/docker-compose.dev.yml up -d mongodb
+conda activate devops
+cd backend
+pytest tests/ -v
+pytest tests/ --cov=app --cov-report=term-missing
+```
+
+Jenkins chạy `pytest` (backend, kèm service MongoDB) và `npm run test` (frontend) — xem [jenkins/README.md](jenkins/README.md).
+
 ## Commit message
 
 Theo chuẩn Conventional Commits:

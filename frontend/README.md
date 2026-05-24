@@ -82,7 +82,7 @@ npm run test:coverage
 | Unit | `src/__tests__/` (trừ `integration/`) | Component, context, API client |
 | Integration | `src/__tests__/integration/` | Router + AuthProvider + mock `fetch`, luồng auth đầy đủ |
 
-API + MongoDB: [backend/README.md](../backend/README.md#kiểm-thử). E2E trình duyệt: [README gốc](../README.md#kiểm-thử-e2e).
+Kiểm thử API (pytest): [backend/README.md](../backend/README.md#kiểm-thử). Tổng quan: [README gốc](../README.md#kiểm-thử).
 
 ## Quy chuẩn phát triển
 

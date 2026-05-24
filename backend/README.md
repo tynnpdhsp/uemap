@@ -78,10 +78,10 @@ docker compose -f docker/docker-compose.dev.yml up -d mongodb
 |------|---------|------|
 | Unit | `tests/unit/` | `pytest tests/unit -m unit` |
 | Integration | `tests/test_*.py` | `pytest tests/ -m integration` |
-| E2E | `tests/e2e/` | `pytest tests/e2e -m e2e` |
+| E2E (API) | `tests/e2e/` | `pytest tests/e2e -m e2e` |
 | Tất cả | `tests/` | `pytest tests/` |
 
-E2E trình duyệt (React): [README gốc](../README.md#kiểm-thử-e2e).
+Frontend (Jest): [frontend/README.md](../frontend/README.md#kiểm-thử). Tổng quan: [README gốc](../README.md#kiểm-thử).
 
 ## Linter và Format Code
 
