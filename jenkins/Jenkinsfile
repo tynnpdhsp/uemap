@@ -58,7 +58,7 @@ pipeline {
             steps {
                 echo "Running Backend Tests..."
                 script {
-                    sh "docker run -d --name mongo_test_db -p 27017:27017 mongo:6.0"
+                    sh "docker run -d --name mongo_test_db_${BUILD_TAG} -p 27017:27017 mongo:6.0"
 
                     try {
                         docker.image('python:3.11-slim').inside('--network=host') {
@@ -72,7 +72,7 @@ pipeline {
                             """
                         }
                     } finally {
-                        sh "docker rm -f mongo_test_db"
+                        sh "docker rm -f mongo_test_db_${BUILD_TAG}"
                     }
                 }
             }
