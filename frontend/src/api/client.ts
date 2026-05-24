@@ -1,21 +1,25 @@
-export interface APIResponse<T = any> {
+export interface APIErrorDetail {
+  code: string;
+  message: string;
+  details: unknown[];
+}
+
+export interface APIResponse<T = unknown> {
   success: boolean;
   data: T;
-  error?: {
-    code: string;
-    message: string;
-    details: any[];
-  };
+  error?: APIErrorDetail;
 }
+
+type RequestBody = Record<string, unknown>;
 
 const API_BASE_URL = "/api";
 
-async function request<T = any>(
+async function request<T = unknown>(
   endpoint: string,
-  options: RequestInit = {}
+  options: RequestInit = {},
 ): Promise<APIResponse<T>> {
   const token = sessionStorage.getItem("sv_access_token");
-  
+
   const headers = new Headers(options.headers || {});
   if (token) {
     headers.set("Authorization", `Bearer ${token}`);
@@ -38,10 +42,12 @@ async function request<T = any>(
     }
   }
 
-  let result: any;
+  let result: APIResponse<T> | Record<string, unknown>;
   try {
-    result = await response.json();
-  } catch (err) {
+    result = (await response.json()) as
+      | APIResponse<T>
+      | Record<string, unknown>;
+  } catch {
     result = {
       success: false,
       error: {
@@ -53,35 +59,44 @@ async function request<T = any>(
   }
 
   if (!response.ok) {
-    const errorDetail = result?.error || {
+    const payload = result as APIResponse<T> & { detail?: string };
+    const errorDetail = payload.error || {
       code: "HTTP_ERROR",
-      message: result?.detail || "Đã xảy ra lỗi kết nối.",
+      message: payload.detail || "Đã xảy ra lỗi kết nối.",
       details: [],
     };
     throw new Error(errorDetail.message || "Đã xảy ra lỗi.");
   }
 
-  return result;
+  return result as APIResponse<T>;
 }
 
 export const api = {
-  get: <T = any>(endpoint: string, options?: RequestInit) =>
+  get: <T = unknown>(endpoint: string, options?: RequestInit) =>
     request<T>(endpoint, { ...options, method: "GET" }),
-    
-  post: <T = any>(endpoint: string, body?: any, options?: RequestInit) =>
+
+  post: <T = unknown>(
+    endpoint: string,
+    body?: RequestBody,
+    options?: RequestInit,
+  ) =>
     request<T>(endpoint, {
       ...options,
       method: "POST",
       body: body ? JSON.stringify(body) : undefined,
     }),
-    
-  patch: <T = any>(endpoint: string, body?: any, options?: RequestInit) =>
+
+  patch: <T = unknown>(
+    endpoint: string,
+    body?: RequestBody,
+    options?: RequestInit,
+  ) =>
     request<T>(endpoint, {
       ...options,
       method: "PATCH",
       body: body ? JSON.stringify(body) : undefined,
     }),
-    
-  delete: <T = any>(endpoint: string, options?: RequestInit) =>
+
+  delete: <T = unknown>(endpoint: string, options?: RequestInit) =>
     request<T>(endpoint, { ...options, method: "DELETE" }),
 };

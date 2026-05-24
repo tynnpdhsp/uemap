@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { api } from "../../api/client";
+import { getErrorMessage } from "../../utils/errorMessage";
 
 export const ForgotPasswordPage: React.FC = () => {
   const navigate = useNavigate();
@@ -14,19 +15,25 @@ export const ForgotPasswordPage: React.FC = () => {
 
     const emailRegex = /^[0-9]{10}@student\.hcmue\.edu\.vn$/;
     if (!emailRegex.test(email.trim().toLowerCase())) {
-      setErrorMsg("Email phải đúng định dạng mã số sinh viên 10 chữ số @student.hcmue.edu.vn");
+      setErrorMsg(
+        "Email phải đúng định dạng mã số sinh viên 10 chữ số @student.hcmue.edu.vn",
+      );
       return;
     }
 
     setLoading(true);
 
     try {
-      const res = await api.post("/auth/forgot-password", { email: email.trim() });
+      const res = await api.post("/auth/forgot-password", {
+        email: email.trim(),
+      });
       if (res.success) {
-        navigate(`/forgot-password/verify-otp?email=${encodeURIComponent(email.trim())}`);
+        navigate(
+          `/forgot-password/verify-otp?email=${encodeURIComponent(email.trim())}`,
+        );
       }
-    } catch (err: any) {
-      setErrorMsg(err.message || "Đã xảy ra lỗi. Vui lòng thử lại.");
+    } catch (err: unknown) {
+      setErrorMsg(getErrorMessage(err, "Đã xảy ra lỗi. Vui lòng thử lại."));
     } finally {
       setLoading(false);
     }
@@ -36,8 +43,12 @@ export const ForgotPasswordPage: React.FC = () => {
     <div className="flex min-h-screen items-center justify-center bg-gradient-to-tr from-blue-100 via-white to-blue-50 px-4">
       <div className="w-full max-w-md rounded-2xl bg-white p-8 shadow-xl border border-gray-100">
         <div className="text-center">
-          <h2 className="text-3xl font-extrabold text-gray-900 tracking-tight">Quên Mật Khẩu</h2>
-          <p className="mt-2 text-sm text-gray-500">Nhập email của bạn để nhận mã OTP khôi phục mật khẩu</p>
+          <h2 className="text-3xl font-extrabold text-gray-900 tracking-tight">
+            Quên Mật Khẩu
+          </h2>
+          <p className="mt-2 text-sm text-gray-500">
+            Nhập email của bạn để nhận mã OTP khôi phục mật khẩu
+          </p>
         </div>
 
         {errorMsg && (
@@ -48,7 +59,9 @@ export const ForgotPasswordPage: React.FC = () => {
 
         <form className="mt-6 space-y-4" onSubmit={handleSubmit}>
           <div>
-            <label className="block text-sm font-semibold text-gray-700">Email Sinh Viên</label>
+            <label className="block text-sm font-semibold text-gray-700">
+              Email Sinh Viên
+            </label>
             <input
               type="email"
               required
@@ -69,7 +82,10 @@ export const ForgotPasswordPage: React.FC = () => {
         </form>
 
         <div className="mt-6 text-center text-sm">
-          <Link to="/login" className="font-semibold text-blue-600 hover:text-blue-800 transition">
+          <Link
+            to="/login"
+            className="font-semibold text-blue-600 hover:text-blue-800 transition"
+          >
             Quay lại đăng nhập
           </Link>
         </div>

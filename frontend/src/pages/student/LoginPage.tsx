@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
+import { getErrorMessage } from "../../utils/errorMessage";
 
 export const LoginPage: React.FC = () => {
   const { login } = useAuth();
@@ -22,8 +23,8 @@ export const LoginPage: React.FC = () => {
       if (res.success) {
         navigate("/");
       }
-    } catch (err: any) {
-      const msg = err.message || "Đăng nhập thất bại. Vui lòng thử lại.";
+    } catch (err: unknown) {
+      const msg = getErrorMessage(err, "Đăng nhập thất bại. Vui lòng thử lại.");
       setErrorMsg(msg);
       if (msg.includes("chưa được kích hoạt") || msg.includes("OTP")) {
         setIsNotActivated(true);
@@ -37,8 +38,12 @@ export const LoginPage: React.FC = () => {
     <div className="flex min-h-screen items-center justify-center bg-gradient-to-tr from-blue-100 via-white to-blue-50 px-4">
       <div className="w-full max-w-md rounded-2xl bg-white p-8 shadow-xl border border-gray-100 transition-all hover:shadow-2xl">
         <div className="text-center">
-          <h2 className="text-3xl font-extrabold text-gray-900 tracking-tight">Đăng Nhập</h2>
-          <p className="mt-2 text-sm text-gray-500">Cổng thông tin Bản đồ Sinh viên Sư phạm</p>
+          <h2 className="text-3xl font-extrabold text-gray-900 tracking-tight">
+            Đăng Nhập
+          </h2>
+          <p className="mt-2 text-sm text-gray-500">
+            Cổng thông tin Bản đồ Sinh viên Sư phạm
+          </p>
         </div>
 
         {errorMsg && (
@@ -59,7 +64,9 @@ export const LoginPage: React.FC = () => {
 
         <form className="mt-6 space-y-4" onSubmit={handleSubmit}>
           <div>
-            <label className="block text-sm font-semibold text-gray-700">Email Sinh Viên</label>
+            <label className="block text-sm font-semibold text-gray-700">
+              Email Sinh Viên
+            </label>
             <input
               type="email"
               required
@@ -71,7 +78,9 @@ export const LoginPage: React.FC = () => {
           </div>
 
           <div>
-            <label className="block text-sm font-semibold text-gray-700">Mật Khẩu</label>
+            <label className="block text-sm font-semibold text-gray-700">
+              Mật Khẩu
+            </label>
             <input
               type="password"
               required
@@ -83,7 +92,10 @@ export const LoginPage: React.FC = () => {
           </div>
 
           <div className="flex items-center justify-between text-sm">
-            <Link to="/forgot-password" className="font-medium text-blue-600 hover:text-blue-800 transition">
+            <Link
+              to="/forgot-password"
+              className="font-medium text-blue-600 hover:text-blue-800 transition"
+            >
               Quên mật khẩu?
             </Link>
           </div>
@@ -99,7 +111,10 @@ export const LoginPage: React.FC = () => {
 
         <p className="mt-6 text-center text-sm text-gray-500">
           Chưa có tài khoản?{" "}
-          <Link to="/register" className="font-semibold text-blue-600 hover:text-blue-800 transition">
+          <Link
+            to="/register"
+            className="font-semibold text-blue-600 hover:text-blue-800 transition"
+          >
             Đăng ký ngay
           </Link>
         </p>

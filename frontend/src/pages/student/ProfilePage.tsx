@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { api } from "../../api/client";
 import { useAuth } from "../../context/AuthContext";
+import { getErrorMessage } from "../../utils/errorMessage";
 
 interface StudentProfile {
   email: string;
@@ -36,7 +37,7 @@ export const ProfilePage: React.FC = () => {
         setProfile(res.data);
         setFullName(res.data.full_name);
       }
-    } catch (err: any) {
+    } catch {
       setProfileError("Không thể tải thông tin cá nhân. Vui lòng thử lại.");
     } finally {
       setLoading(false);
@@ -64,8 +65,8 @@ export const ProfilePage: React.FC = () => {
         setProfile(res.data);
         setProfileSuccess("Cập nhật thông tin cá nhân thành công.");
       }
-    } catch (err: any) {
-      setProfileError(err.message || "Cập nhật thất bại.");
+    } catch (err: unknown) {
+      setProfileError(getErrorMessage(err, "Cập nhật thất bại."));
     } finally {
       setUpdateLoading(false);
     }
@@ -94,17 +95,19 @@ export const ProfilePage: React.FC = () => {
       const res = await api.post("/me/change-password", {
         current_password: currentPassword,
         password: newPassword,
-        password_confirm: confirmPassword
+        password_confirm: confirmPassword,
       });
 
       if (res.success) {
-        setPwdSuccess("Đổi mật khẩu thành công! Các phiên đăng nhập khác của bạn đã bị đăng xuất.");
+        setPwdSuccess(
+          "Đổi mật khẩu thành công! Các phiên đăng nhập khác của bạn đã bị đăng xuất.",
+        );
         setCurrentPassword("");
         setNewPassword("");
         setConfirmPassword("");
       }
-    } catch (err: any) {
-      setPwdError(err.message || "Đổi mật khẩu thất bại.");
+    } catch (err: unknown) {
+      setPwdError(getErrorMessage(err, "Đổi mật khẩu thất bại."));
     } finally {
       setChangePwdLoading(false);
     }
@@ -121,32 +124,52 @@ export const ProfilePage: React.FC = () => {
   return (
     <div className="max-w-4xl mx-auto px-4 py-8">
       <div className="mb-8">
-        <h1 className="text-3xl font-extrabold text-gray-900 tracking-tight">Trang Cá Nhân</h1>
-        <p className="mt-2 text-sm text-gray-500">Quản lý thông tin tài khoản và mật khẩu của bạn</p>
+        <h1 className="text-3xl font-extrabold text-gray-900 tracking-tight">
+          Trang Cá Nhân
+        </h1>
+        <p className="mt-2 text-sm text-gray-500">
+          Quản lý thông tin tài khoản và mật khẩu của bạn
+        </p>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
         <div className="md:col-span-1 space-y-6">
           {/* Card thông tin tài khoản */}
           <div className="rounded-2xl bg-white p-6 shadow-md border border-gray-100">
-            <h2 className="text-lg font-bold text-gray-800 border-b border-gray-100 pb-3">Tài Khoản</h2>
+            <h2 className="text-lg font-bold text-gray-800 border-b border-gray-100 pb-3">
+              Tài Khoản
+            </h2>
             <div className="mt-4 space-y-4 text-sm">
               <div>
-                <span className="block text-xs font-semibold text-gray-400 uppercase">Email</span>
-                <span className="text-gray-900 font-medium break-all">{profile?.email}</span>
+                <span className="block text-xs font-semibold text-gray-400 uppercase">
+                  Email
+                </span>
+                <span className="text-gray-900 font-medium break-all">
+                  {profile?.email}
+                </span>
               </div>
               <div>
-                <span className="block text-xs font-semibold text-gray-400 uppercase">Trạng Thái</span>
-                <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium mt-1 ${
-                  profile?.status === "active" ? "bg-green-100 text-green-800" : "bg-yellow-100 text-yellow-800"
-                }`}>
+                <span className="block text-xs font-semibold text-gray-400 uppercase">
+                  Trạng Thái
+                </span>
+                <span
+                  className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium mt-1 ${
+                    profile?.status === "active"
+                      ? "bg-green-100 text-green-800"
+                      : "bg-yellow-100 text-yellow-800"
+                  }`}
+                >
                   {profile?.status_label}
                 </span>
               </div>
               {profile?.activated_at_display && (
                 <div>
-                  <span className="block text-xs font-semibold text-gray-400 uppercase">Ngày kích hoạt</span>
-                  <span className="text-gray-900 font-medium">{profile?.activated_at_display}</span>
+                  <span className="block text-xs font-semibold text-gray-400 uppercase">
+                    Ngày kích hoạt
+                  </span>
+                  <span className="text-gray-900 font-medium">
+                    {profile?.activated_at_display}
+                  </span>
                 </div>
               )}
             </div>
@@ -164,7 +187,9 @@ export const ProfilePage: React.FC = () => {
         <div className="md:col-span-2 space-y-8">
           {/* Card cập nhật thông tin */}
           <div className="rounded-2xl bg-white p-6 shadow-md border border-gray-100">
-            <h2 className="text-lg font-bold text-gray-800 border-b border-gray-100 pb-3">Thông Tin Cá Nhân</h2>
+            <h2 className="text-lg font-bold text-gray-800 border-b border-gray-100 pb-3">
+              Thông Tin Cá Nhân
+            </h2>
 
             {profileError && (
               <div className="mt-4 p-3 rounded-lg bg-red-50 text-red-700 text-sm border border-red-100">
@@ -180,7 +205,9 @@ export const ProfilePage: React.FC = () => {
 
             <form onSubmit={handleUpdateProfile} className="mt-4 space-y-4">
               <div>
-                <label className="block text-sm font-semibold text-gray-700">Họ và Tên Hiển Thị</label>
+                <label className="block text-sm font-semibold text-gray-700">
+                  Họ và Tên Hiển Thị
+                </label>
                 <input
                   type="text"
                   required
@@ -202,7 +229,9 @@ export const ProfilePage: React.FC = () => {
 
           {/* Card đổi mật khẩu */}
           <div className="rounded-2xl bg-white p-6 shadow-md border border-gray-100">
-            <h2 className="text-lg font-bold text-gray-800 border-b border-gray-100 pb-3">Đổi Mật Khẩu</h2>
+            <h2 className="text-lg font-bold text-gray-800 border-b border-gray-100 pb-3">
+              Đổi Mật Khẩu
+            </h2>
 
             {pwdError && (
               <div className="mt-4 p-3 rounded-lg bg-red-50 text-red-700 text-sm border border-red-100">
@@ -218,7 +247,9 @@ export const ProfilePage: React.FC = () => {
 
             <form onSubmit={handleChangePassword} className="mt-4 space-y-4">
               <div>
-                <label className="block text-sm font-semibold text-gray-700">Mật Khẩu Hiện Tại</label>
+                <label className="block text-sm font-semibold text-gray-700">
+                  Mật Khẩu Hiện Tại
+                </label>
                 <input
                   type="password"
                   required
@@ -230,7 +261,9 @@ export const ProfilePage: React.FC = () => {
               </div>
 
               <div>
-                <label className="block text-sm font-semibold text-gray-700">Mật Khẩu Mới</label>
+                <label className="block text-sm font-semibold text-gray-700">
+                  Mật Khẩu Mới
+                </label>
                 <input
                   type="password"
                   required
@@ -242,7 +275,9 @@ export const ProfilePage: React.FC = () => {
               </div>
 
               <div>
-                <label className="block text-sm font-semibold text-gray-700">Xác Nhận Mật Khẩu Mới</label>
+                <label className="block text-sm font-semibold text-gray-700">
+                  Xác Nhận Mật Khẩu Mới
+                </label>
                 <input
                   type="password"
                   required
