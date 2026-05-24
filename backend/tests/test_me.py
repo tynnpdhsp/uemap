@@ -8,6 +8,8 @@ from app.core.security import hash_password
 from app.main import app
 from app.services import session_service
 
+pytestmark = pytest.mark.integration
+
 TEST_EMAIL = "4901104172@student.hcmue.edu.vn"
 TEST_PASSWORD = "testpassword123"
 TEST_NAME = "Nguyễn Văn A"
@@ -26,18 +28,17 @@ async def test_profile_view_and_update():
         await clean_db()
 
         db = get_db()
-        await db["students"].insert_one({
-            "email": TEST_EMAIL,
-            "password_hash": hash_password(TEST_PASSWORD),
-            "full_name": TEST_NAME,
-            "status": "active",
-            "created_at": datetime.utcnow()
-        })
+        await db["students"].insert_one(
+            {
+                "email": TEST_EMAIL,
+                "password_hash": hash_password(TEST_PASSWORD),
+                "full_name": TEST_NAME,
+                "status": "active",
+                "created_at": datetime.utcnow(),
+            }
+        )
 
-        login_payload = {
-            "email": TEST_EMAIL,
-            "password": TEST_PASSWORD
-        }
+        login_payload = {"email": TEST_EMAIL, "password": TEST_PASSWORD}
         res = await client.post("/api/auth/login", json=login_payload)
         token = res.json()["data"]["access_token"]
         headers = {"Authorization": f"Bearer {token}"}
@@ -64,18 +65,17 @@ async def test_change_password_scenarios():
         await clean_db()
 
         db = get_db()
-        await db["students"].insert_one({
-            "email": TEST_EMAIL,
-            "password_hash": hash_password(TEST_PASSWORD),
-            "full_name": TEST_NAME,
-            "status": "active",
-            "created_at": datetime.utcnow()
-        })
+        await db["students"].insert_one(
+            {
+                "email": TEST_EMAIL,
+                "password_hash": hash_password(TEST_PASSWORD),
+                "full_name": TEST_NAME,
+                "status": "active",
+                "created_at": datetime.utcnow(),
+            }
+        )
 
-        login_payload = {
-            "email": TEST_EMAIL,
-            "password": TEST_PASSWORD
-        }
+        login_payload = {"email": TEST_EMAIL, "password": TEST_PASSWORD}
         res = await client.post("/api/auth/login", json=login_payload)
         token = res.json()["data"]["access_token"]
         headers = {"Authorization": f"Bearer {token}"}
@@ -83,7 +83,7 @@ async def test_change_password_scenarios():
         payload = {
             "current_password": "wrongcurrentpassword",
             "password": "newsecurepassword123",
-            "password_confirm": "newsecurepassword123"
+            "password_confirm": "newsecurepassword123",
         }
         res = await client.post("/api/me/change-password", headers=headers, json=payload)
         assert res.status_code == 400
@@ -102,14 +102,16 @@ async def test_locked_student_profile_access():
         await clean_db()
 
         db = get_db()
-        student_res = await db["students"].insert_one({
-            "email": TEST_EMAIL,
-            "password_hash": hash_password(TEST_PASSWORD),
-            "full_name": TEST_NAME,
-            "status": "locked",
-            "locked_reason": "Vi phạm quy chế hệ thống",
-            "created_at": datetime.utcnow()
-        })
+        student_res = await db["students"].insert_one(
+            {
+                "email": TEST_EMAIL,
+                "password_hash": hash_password(TEST_PASSWORD),
+                "full_name": TEST_NAME,
+                "status": "locked",
+                "locked_reason": "Vi phạm quy chế hệ thống",
+                "created_at": datetime.utcnow(),
+            }
+        )
         student_id = student_res.inserted_id
 
         token = await session_service.create_session(student_id, "127.0.0.1", "Mozilla/5.0")

@@ -79,6 +79,8 @@ async def get_current_admin(
                 },
             )
         return payload
+    except HTTPException:
+        raise
     except Exception:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
