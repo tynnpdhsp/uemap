@@ -1,7 +1,9 @@
 import os
+
 import pytest_asyncio
+
 from app.core.config import settings
-from app.core.database import connect_db, close_db
+from app.core.database import close_db, connect_db
 
 if not os.getenv("MONGODB_URI"):
     settings.MONGODB_URI = "mongodb://localhost:27017"
