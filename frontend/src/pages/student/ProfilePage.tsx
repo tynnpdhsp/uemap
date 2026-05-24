@@ -32,7 +32,7 @@ export const ProfilePage: React.FC = () => {
   const fetchProfile = async () => {
     try {
       setLoading(true);
-      const res = await api.get("/me");
+      const res = await api.get<StudentProfile>("/me");
       if (res.success && res.data) {
         setProfile(res.data);
         setFullName(res.data.full_name);
@@ -60,7 +60,7 @@ export const ProfilePage: React.FC = () => {
 
     setUpdateLoading(true);
     try {
-      const res = await api.patch("/me", { full_name: fullName.trim() });
+      const res = await api.patch<StudentProfile>("/me", { full_name: fullName.trim() });
       if (res.success && res.data) {
         setProfile(res.data);
         setProfileSuccess("Cập nhật thông tin cá nhân thành công.");

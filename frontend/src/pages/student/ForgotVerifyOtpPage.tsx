@@ -41,7 +41,7 @@ export const ForgotVerifyOtpPage: React.FC = () => {
     setSuccessMsg(null);
 
     try {
-      const res = await api.post("/auth/forgot-password/verify", {
+      const res = await api.post<{ reset_token: string }>("/auth/forgot-password/verify", {
         email,
         otp,
       });

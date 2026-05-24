@@ -38,7 +38,7 @@ export function installFetchMock(handler: MockFetchHandler) {
     };
   });
 
-  global.fetch = mock as typeof fetch;
+  global.fetch = mock as unknown as typeof fetch;
   return mock;
 }
 
