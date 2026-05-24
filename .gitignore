@@ -23,6 +23,9 @@ venv/
 .ruff_cache/
 htmlcov/
 .coverage
+coverage/
+**/playwright-report/
+**/test-results/
 
 # IDE
 .idea/

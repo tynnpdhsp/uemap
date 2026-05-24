@@ -1,9 +1,11 @@
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 
 from app.api.routes.public.health import router as health_router
+from app.api.routes.student import auth_router, me_router
 from app.core.config import settings
 from app.core.database import close_db, connect_db
 from app.core.minio_client import connect_minio
@@ -40,12 +42,29 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+
+@app.exception_handler(HTTPException)
+async def http_exception_handler(request, exc: HTTPException):
+    if isinstance(exc.detail, dict) and ("success" in exc.detail or "error" in exc.detail):
+        return JSONResponse(status_code=exc.status_code, content=exc.detail)
+    return JSONResponse(
+        status_code=exc.status_code,
+        content={
+            "success": False,
+            "error": {"code": "HTTP_ERROR", "message": str(exc.detail), "details": []},
+        },
+    )
+
+
 # --- Routes ---
 # Public
 app.include_router(health_router, prefix="/api", tags=["Health"])
 
+# Student Auth & Profile
+app.include_router(auth_router, prefix="/api/auth", tags=["Auth"])
+app.include_router(me_router, prefix="/api/me", tags=["Profile"])
+
 # Các route sẽ được thêm trong các sprint tiếp theo:
-# app.include_router(auth_router, prefix="/api/auth", tags=["Auth"])
 # app.include_router(places_router, prefix="/api/places", tags=["Places"])
 # app.include_router(categories_router, prefix="/api/categories", tags=["Categories"])
 # app.include_router(student_router, prefix="/api/my", tags=["Student"])
