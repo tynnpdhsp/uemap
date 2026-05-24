@@ -34,8 +34,18 @@ const placeDetail = {
 
 const commentsPage1 = {
   data: [
-    { id: "cmt-1", author_display_name: "Trần Văn C", content: "Quán phở ở đây rất ngon, giá cả phải chăng!", created_at_display: "24/05/2026 10:00" },
-    { id: "cmt-2", author_display_name: "Lê Thị D", content: "Không gian sạch sẽ, phục vụ nhanh.", created_at_display: "23/05/2026 14:30" },
+    {
+      id: "cmt-1",
+      author_display_name: "Trần Văn C",
+      content: "Quán phở ở đây rất ngon, giá cả phải chăng!",
+      created_at_display: "24/05/2026 10:00",
+    },
+    {
+      id: "cmt-2",
+      author_display_name: "Lê Thị D",
+      content: "Không gian sạch sẽ, phục vụ nhanh.",
+      created_at_display: "23/05/2026 14:30",
+    },
   ],
   meta: { page: 1, page_size: 20, total: 2 },
 };
@@ -47,7 +57,12 @@ describe("integration: xem chi tiết địa điểm", () => {
 
   it("hiển thị chi tiết địa điểm với đầy đủ thông tin", async () => {
     installFetchMock((url, method) => {
-      if (method === "GET" && url.includes("/api/places/1") && !url.includes("markers") && !url.includes("comments")) {
+      if (
+        method === "GET" &&
+        url.includes("/api/places/1") &&
+        !url.includes("markers") &&
+        !url.includes("comments")
+      ) {
         return jsonOk(placeDetail);
       }
       if (method === "GET" && url.includes("/api/places/1/comments")) {
@@ -67,18 +82,29 @@ describe("integration: xem chi tiết địa điểm", () => {
 
     renderApp(["/places/1"]);
 
-    expect(await screen.findByText("Quán Phở 24h Ngon Nhất")).toBeInTheDocument();
+    expect(
+      await screen.findByText("Quán Phở 24h Ngon Nhất"),
+    ).toBeInTheDocument();
     expect(screen.getByText("Ăn uống")).toBeInTheDocument();
     expect(screen.getByText("Nội bộ trường")).toBeInTheDocument();
-    expect(screen.getByText("Quán phở mở cửa 24/7 phục vụ sinh viên.")).toBeInTheDocument();
-    expect(screen.getByText("12 Nguyễn Tri Phương, Quận 5, TP.HCM")).toBeInTheDocument();
+    expect(
+      screen.getByText("Quán phở mở cửa 24/7 phục vụ sinh viên."),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText("12 Nguyễn Tri Phương, Quận 5, TP.HCM"),
+    ).toBeInTheDocument();
     expect(screen.getByText("00:00 - 23:59")).toBeInTheDocument();
     expect(screen.getByText("0901234567")).toBeInTheDocument();
   });
 
   it("hiển thị danh sách bình luận công khai", async () => {
     installFetchMock((url, method) => {
-      if (method === "GET" && url.includes("/api/places/1") && !url.includes("markers") && !url.includes("comments")) {
+      if (
+        method === "GET" &&
+        url.includes("/api/places/1") &&
+        !url.includes("markers") &&
+        !url.includes("comments")
+      ) {
         return jsonOk(placeDetail);
       }
       if (method === "GET" && url.includes("/api/places/1/comments")) {
@@ -90,14 +116,23 @@ describe("integration: xem chi tiết địa điểm", () => {
     renderApp(["/places/1"]);
 
     expect(await screen.findByText("Trần Văn C")).toBeInTheDocument();
-    expect(screen.getByText("Quán phở ở đây rất ngon, giá cả phải chăng!")).toBeInTheDocument();
+    expect(
+      screen.getByText("Quán phở ở đây rất ngon, giá cả phải chăng!"),
+    ).toBeInTheDocument();
     expect(screen.getByText("Lê Thị D")).toBeInTheDocument();
-    expect(screen.getByText("Không gian sạch sẽ, phục vụ nhanh.")).toBeInTheDocument();
+    expect(
+      screen.getByText("Không gian sạch sẽ, phục vụ nhanh."),
+    ).toBeInTheDocument();
   });
 
   it("chưa đăng nhập hiển thị lời mời đăng nhập thay vì form bình luận", async () => {
     installFetchMock((url, method) => {
-      if (method === "GET" && url.includes("/api/places/1") && !url.includes("markers") && !url.includes("comments")) {
+      if (
+        method === "GET" &&
+        url.includes("/api/places/1") &&
+        !url.includes("markers") &&
+        !url.includes("comments")
+      ) {
         return jsonOk(placeDetail);
       }
       if (method === "GET" && url.includes("/api/places/1/comments")) {
@@ -109,7 +144,9 @@ describe("integration: xem chi tiết địa điểm", () => {
     renderApp(["/places/1"]);
 
     expect(await screen.findByText(/Đăng nhập/i)).toBeInTheDocument();
-    expect(screen.queryByPlaceholderText(/Chia sẻ nhận xét/i)).not.toBeInTheDocument();
+    expect(
+      screen.queryByPlaceholderText(/Chia sẻ nhận xét/i),
+    ).not.toBeInTheDocument();
   });
 
   it("đã đăng nhập hiển thị form gửi bình luận và gửi thành công", async () => {
@@ -122,14 +159,24 @@ describe("integration: xem chi tiết địa điểm", () => {
       if (method === "GET" && url.includes("/api/me")) {
         return jsonOk(activeProfile);
       }
-      if (method === "GET" && url.includes("/api/places/1") && !url.includes("markers") && !url.includes("comments")) {
+      if (
+        method === "GET" &&
+        url.includes("/api/places/1") &&
+        !url.includes("markers") &&
+        !url.includes("comments")
+      ) {
         return jsonOk(placeDetail);
       }
       if (method === "GET" && url.includes("/api/places/1/comments")) {
         if (commentSubmitted) {
           return jsonOk({
             data: [
-              { id: "cmt-new", author_display_name: "Nguyễn Văn A", content: "Bình luận mới từ integration test", created_at_display: "25/05/2026 12:00" },
+              {
+                id: "cmt-new",
+                author_display_name: "Nguyễn Văn A",
+                content: "Bình luận mới từ integration test",
+                created_at_display: "25/05/2026 12:00",
+              },
               ...commentsPage1.data,
             ],
             meta: { page: 1, page_size: 20, total: 3 },
@@ -142,7 +189,7 @@ describe("integration: xem chi tiết địa điểm", () => {
         return jsonOk({
           id: "cmt-new",
           author_display_name: "Nguyễn Văn A",
-          content: (body as any).content,
+          content: (body as { content: string }).content,
           created_at_display: "25/05/2026 12:00",
         });
       }
@@ -157,12 +204,17 @@ describe("integration: xem chi tiết địa điểm", () => {
     await user.type(textarea, "Bình luận mới từ integration test");
 
     const submitButtons = screen.getAllByRole("button");
-    const sendButton = submitButtons.find(btn => btn.querySelector("svg") && btn.getAttribute("type") === "submit");
+    const sendButton = submitButtons.find(
+      (btn) =>
+        btn.querySelector("svg") && btn.getAttribute("type") === "submit",
+    );
     if (sendButton) {
       await user.click(sendButton);
     }
 
-    expect(await screen.findByText("Bình luận mới từ integration test")).toBeInTheDocument();
+    expect(
+      await screen.findByText("Bình luận mới từ integration test"),
+    ).toBeInTheDocument();
   });
 
   it("đã đăng nhập hiển thị nút báo cáo vi phạm địa điểm", async () => {
@@ -172,7 +224,12 @@ describe("integration: xem chi tiết địa điểm", () => {
       if (method === "GET" && url.includes("/api/me")) {
         return jsonOk(activeProfile);
       }
-      if (method === "GET" && url.includes("/api/places/1") && !url.includes("markers") && !url.includes("comments")) {
+      if (
+        method === "GET" &&
+        url.includes("/api/places/1") &&
+        !url.includes("markers") &&
+        !url.includes("comments")
+      ) {
         return jsonOk(placeDetail);
       }
       if (method === "GET" && url.includes("/api/places/1/comments")) {
@@ -194,7 +251,12 @@ describe("integration: xem chi tiết địa điểm", () => {
       if (method === "GET" && url.includes("/api/me")) {
         return jsonOk(activeProfile);
       }
-      if (method === "GET" && url.includes("/api/places/1") && !url.includes("markers") && !url.includes("comments")) {
+      if (
+        method === "GET" &&
+        url.includes("/api/places/1") &&
+        !url.includes("markers") &&
+        !url.includes("comments")
+      ) {
         return jsonOk(placeDetail);
       }
       if (method === "GET" && url.includes("/api/places/1/comments")) {
@@ -218,19 +280,31 @@ describe("integration: xem chi tiết địa điểm", () => {
 
     expect(await screen.findByText(/Lý do chính/i)).toBeInTheDocument();
 
-    const reasonTextarea = screen.getByPlaceholderText(/Mô tả chi tiết vi phạm/i);
-    await user.type(reasonTextarea, "Thông tin địa chỉ sai lệch, quán đã đóng cửa vĩnh viễn");
+    const reasonTextarea = screen.getByPlaceholderText(
+      /Mô tả chi tiết vi phạm/i,
+    );
+    await user.type(
+      reasonTextarea,
+      "Thông tin địa chỉ sai lệch, quán đã đóng cửa vĩnh viễn",
+    );
 
     const submitButton = screen.getByRole("button", { name: /Gửi Báo cáo/i });
     await user.click(submitButton);
 
-    expect(await screen.findByText("Gửi báo cáo thành công")).toBeInTheDocument();
+    expect(
+      await screen.findByText("Gửi báo cáo thành công"),
+    ).toBeInTheDocument();
     expect(screen.getByText("RP-20260525-0001")).toBeInTheDocument();
   });
 
   it("hiển thị lỗi khi địa điểm không tồn tại", async () => {
     installFetchMock((url, method) => {
-      if (method === "GET" && url.includes("/api/places/999") && !url.includes("markers") && !url.includes("comments")) {
+      if (
+        method === "GET" &&
+        url.includes("/api/places/999") &&
+        !url.includes("markers") &&
+        !url.includes("comments")
+      ) {
         return jsonError("Không tìm thấy địa điểm.", 404);
       }
       if (method === "GET" && url.includes("/api/places/999/comments")) {

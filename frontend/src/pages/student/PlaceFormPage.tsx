@@ -1,10 +1,18 @@
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { MapContainer, TileLayer, Marker, useMapEvents, Circle, Rectangle } from "react-leaflet";
+import {
+  MapContainer,
+  TileLayer,
+  Marker,
+  useMapEvents,
+  Circle,
+  Rectangle,
+} from "react-leaflet";
 import L from "leaflet";
 import { mapApi, MapConfig, Category } from "../../api/map";
 import { placesApi, PlaceCreatePayload } from "../../api/places";
 import { uploadsApi } from "../../api/uploads";
+import { getErrorMessage } from "../../utils/errorMessage";
 import {
   MapPin,
   Image as ImageIcon,
@@ -33,7 +41,9 @@ const getMarkerIcon = () => {
   });
 };
 
-const MapEventsHandler: React.FC<{ onClick: (lat: number, lng: number) => void }> = ({ onClick }) => {
+const MapEventsHandler: React.FC<{
+  onClick: (lat: number, lng: number) => void;
+}> = ({ onClick }) => {
   useMapEvents({
     click(e) {
       onClick(e.latlng.lat, e.latlng.lng);
@@ -60,7 +70,14 @@ export const PlaceFormPage: React.FC = () => {
   const [hours, setHours] = useState("");
   const [contact, setContact] = useState("");
 
-  const [imageFiles, setImageFiles] = useState<{ file?: File; objectKey?: string; previewUrl: string; uploading: boolean }[]>([]);
+  const [imageFiles, setImageFiles] = useState<
+    {
+      file?: File;
+      objectKey?: string;
+      previewUrl: string;
+      uploading: boolean;
+    }[]
+  >([]);
   const [videoKind, setVideoKind] = useState<"file" | "embed">("file");
   const [videoFile, setVideoFile] = useState<File | null>(null);
   const [videoObjectKey, setVideoObjectKey] = useState<string | null>(null);
@@ -120,7 +137,7 @@ export const PlaceFormPage: React.FC = () => {
                 objectKey: key,
                 previewUrl: `/api/media/${key}`,
                 uploading: false,
-              }))
+              })),
             );
           }
 
@@ -151,7 +168,7 @@ export const PlaceFormPage: React.FC = () => {
   const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!e.target.files) return;
     const files = Array.from(e.target.files);
-    
+
     if (imageFiles.length + files.length > 10) {
       alert("Bạn chỉ được phép tải lên tối đa 10 ảnh.");
       return;
@@ -170,17 +187,25 @@ export const PlaceFormPage: React.FC = () => {
         const res = await uploadsApi.uploadImages([target.file]);
         if (res.success && res.data.object_keys.length > 0) {
           const key = res.data.object_keys[0];
+          const previewFromApi = res.data.preview_urls?.[0];
           setImageFiles((prev) =>
             prev.map((item) =>
               item.previewUrl === target.previewUrl
-                ? { ...item, objectKey: key, uploading: false }
-                : item
-            )
+                ? {
+                    ...item,
+                    objectKey: key,
+                    previewUrl: previewFromApi || item.previewUrl,
+                    uploading: false,
+                  }
+                : item,
+            ),
           );
         }
-      } catch (err: any) {
-        alert(err.message || `Lỗi tải lên ảnh ${target.file.name}`);
-        setImageFiles((prev) => prev.filter((item) => item.previewUrl !== target.previewUrl));
+      } catch (err: unknown) {
+        alert(getErrorMessage(err, `Lỗi tải lên ảnh ${target.file.name}`));
+        setImageFiles((prev) =>
+          prev.filter((item) => item.previewUrl !== target.previewUrl),
+        );
       }
     }
   };
@@ -202,8 +227,8 @@ export const PlaceFormPage: React.FC = () => {
       if (res.success && res.data.object_key) {
         setVideoObjectKey(res.data.object_key);
       }
-    } catch (err: any) {
-      alert(err.message || "Lỗi tải lên video.");
+    } catch (err: unknown) {
+      alert(getErrorMessage(err, "Lỗi tải lên video."));
       setVideoFile(null);
     } finally {
       setVideoUploadProgress(false);
@@ -245,14 +270,22 @@ export const PlaceFormPage: React.FC = () => {
       scope_type: scopeType,
       description: description.trim(),
       address: address.trim(),
-      lat: lat || 10.7628,
-      lng: lng || 106.6824,
+      lat: lat ?? 10.7628,
+      lng: lng ?? 106.6824,
       hours: hours.trim() || null,
       contact: contact.trim() || null,
-      image_object_keys: imageFiles.map((img) => img.objectKey!).filter(Boolean),
+      image_object_keys: imageFiles
+        .map((img) => img.objectKey!)
+        .filter(Boolean),
       video: null,
       status,
+      ...(status === "published" ? { publish: true } : {}),
     };
+
+    if (status === "draft") {
+      payload.description = description.trim() || "";
+      payload.address = address.trim() || "";
+    }
 
     if (videoKind === "file" && videoObjectKey) {
       payload.video = {
@@ -279,8 +312,8 @@ export const PlaceFormPage: React.FC = () => {
           navigate("/my/places");
         }
       }
-    } catch (err: any) {
-      setSubmitError(err.message || "Đã xảy ra lỗi khi lưu thông tin.");
+    } catch (err: unknown) {
+      setSubmitError(getErrorMessage(err, "Đã xảy ra lỗi khi lưu thông tin."));
     } finally {
       setLoading(false);
     }
@@ -291,7 +324,9 @@ export const PlaceFormPage: React.FC = () => {
       <div className="min-h-screen bg-gray-50 flex items-center justify-center p-8">
         <div className="text-center animate-pulse">
           <Loader className="w-10 h-10 text-blue-600 animate-spin mx-auto mb-4" />
-          <p className="text-gray-500 font-medium">Đang tải thông tin địa điểm...</p>
+          <p className="text-gray-500 font-medium">
+            Đang tải thông tin địa điểm...
+          </p>
         </div>
       </div>
     );
@@ -315,7 +350,8 @@ export const PlaceFormPage: React.FC = () => {
               {isEditMode ? "Chỉnh sửa Địa điểm" : "Đăng ký Địa điểm mới"}
             </h1>
             <p className="text-sm text-gray-500 mt-1">
-              Điền các thông tin địa điểm của bạn. Lưu nháp nếu chưa sẵn sàng đăng công khai.
+              Điền các thông tin địa điểm của bạn. Lưu nháp nếu chưa sẵn sàng
+              đăng công khai.
             </p>
           </div>
 
@@ -324,7 +360,8 @@ export const PlaceFormPage: React.FC = () => {
               <div className="p-4 bg-red-50 border border-red-100 text-red-700 text-sm rounded-2xl flex items-start gap-3 animate-shake">
                 <AlertTriangle className="w-5 h-5 flex-shrink-0 mt-0.5" />
                 <div>
-                  <span className="font-extrabold">Có lỗi xảy ra:</span> {submitError}
+                  <span className="font-extrabold">Có lỗi xảy ra:</span>{" "}
+                  {submitError}
                 </div>
               </div>
             )}
@@ -332,7 +369,9 @@ export const PlaceFormPage: React.FC = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-4">
                 <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Tên địa điểm *</label>
+                  <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">
+                    Tên địa điểm *
+                  </label>
                   <input
                     type="text"
                     placeholder="Ví dụ: Quán cơm tấm HCMUE ngon..."
@@ -345,7 +384,9 @@ export const PlaceFormPage: React.FC = () => {
 
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Danh mục *</label>
+                    <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">
+                      Danh mục *
+                    </label>
                     <select
                       value={categoryId}
                       onChange={(e) => setCategoryId(e.target.value)}
@@ -360,20 +401,26 @@ export const PlaceFormPage: React.FC = () => {
                   </div>
 
                   <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Phạm vi *</label>
+                    <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">
+                      Phạm vi *
+                    </label>
                     <select
                       value={scopeType}
                       onChange={(e) => setScopeType(e.target.value)}
                       className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     >
                       <option value="on_campus">Trong trường (Campus)</option>
-                      <option value="near_campus">Gần trường (Near Campus)</option>
+                      <option value="near_campus">
+                        Gần trường (Near Campus)
+                      </option>
                     </select>
                   </div>
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Địa chỉ chi tiết *</label>
+                  <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">
+                    Địa chỉ chi tiết *
+                  </label>
                   <input
                     type="text"
                     placeholder="Số 280 An Dương Vương, Phường 4, Quận 5..."
@@ -385,7 +432,9 @@ export const PlaceFormPage: React.FC = () => {
 
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Giờ mở cửa (tùy chọn)</label>
+                    <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">
+                      Giờ mở cửa (tùy chọn)
+                    </label>
                     <input
                       type="text"
                       placeholder="Ví dụ: 07:00 - 22:00"
@@ -396,7 +445,9 @@ export const PlaceFormPage: React.FC = () => {
                   </div>
 
                   <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Liên hệ (tùy chọn)</label>
+                    <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">
+                      Liên hệ (tùy chọn)
+                    </label>
                     <input
                       type="text"
                       placeholder="SĐT, Facebook Link..."
@@ -419,30 +470,60 @@ export const PlaceFormPage: React.FC = () => {
                 </label>
                 <div className="flex-grow aspect-square rounded-2xl overflow-hidden border border-gray-200 relative min-h-[300px] shadow-sm">
                   {lat !== null && lng !== null ? (
-                    <MapContainer center={[lat, lng]} zoom={16} className="w-full h-full">
+                    <MapContainer
+                      center={[lat, lng]}
+                      zoom={16}
+                      className="w-full h-full"
+                    >
                       <TileLayer
                         attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
                         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                       />
                       <Marker position={[lat, lng]} icon={getMarkerIcon()} />
-                      
-                      {config && config.geofence && config.geofence.type === "rectangle" && config.geofence.bounds && (
-                        <Rectangle
-                          bounds={[
-                            [config.geofence.bounds.sw.lat, config.geofence.bounds.sw.lng],
-                            [config.geofence.bounds.ne.lat, config.geofence.bounds.ne.lng],
-                          ]}
-                          pathOptions={{ color: "#3b82f6", weight: 1.5, fillOpacity: 0.05, dashArray: "5, 5" }}
-                        />
-                      )}
 
-                      {config && config.geofence && config.geofence.type === "radius" && config.geofence.center && config.geofence.radius_meters && (
-                        <Circle
-                          center={[config.geofence.center.lat, config.geofence.center.lng]}
-                          radius={config.geofence.radius_meters}
-                          pathOptions={{ color: "#3b82f6", weight: 1.5, fillOpacity: 0.05, dashArray: "5, 5" }}
-                        />
-                      )}
+                      {config &&
+                        config.geofence &&
+                        config.geofence.type === "rectangle" &&
+                        config.geofence.bounds && (
+                          <Rectangle
+                            bounds={[
+                              [
+                                config.geofence.bounds.sw.lat,
+                                config.geofence.bounds.sw.lng,
+                              ],
+                              [
+                                config.geofence.bounds.ne.lat,
+                                config.geofence.bounds.ne.lng,
+                              ],
+                            ]}
+                            pathOptions={{
+                              color: "#3b82f6",
+                              weight: 1.5,
+                              fillOpacity: 0.05,
+                              dashArray: "5, 5",
+                            }}
+                          />
+                        )}
+
+                      {config &&
+                        config.geofence &&
+                        config.geofence.type === "radius" &&
+                        config.geofence.center &&
+                        config.geofence.radius_meters && (
+                          <Circle
+                            center={[
+                              config.geofence.center.lat,
+                              config.geofence.center.lng,
+                            ]}
+                            radius={config.geofence.radius_meters}
+                            pathOptions={{
+                              color: "#3b82f6",
+                              weight: 1.5,
+                              fillOpacity: 0.05,
+                              dashArray: "5, 5",
+                            }}
+                          />
+                        )}
 
                       <MapEventsHandler onClick={handleMapClick} />
                     </MapContainer>
@@ -456,7 +537,9 @@ export const PlaceFormPage: React.FC = () => {
             </div>
 
             <div className="space-y-1.5">
-              <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Mô tả chi tiết *</label>
+              <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">
+                Mô tả chi tiết *
+              </label>
               <textarea
                 placeholder="Giới thiệu về địa điểm, giá cả, đánh giá cá nhân (tối thiểu 20 ký tự khi đăng)..."
                 value={description}
@@ -482,7 +565,11 @@ export const PlaceFormPage: React.FC = () => {
                       </div>
                     ) : (
                       <>
-                        <img src={img.previewUrl} alt="" className="w-full h-full object-cover" />
+                        <img
+                          src={img.previewUrl}
+                          alt=""
+                          className="w-full h-full object-cover"
+                        />
                         <button
                           type="button"
                           onClick={() => removeImage(idx)}
@@ -524,7 +611,9 @@ export const PlaceFormPage: React.FC = () => {
                     onChange={() => setVideoKind("file")}
                     className="w-4 h-4 text-blue-600"
                   />
-                  <span className="text-sm font-medium text-gray-700">Tải tệp video lên</span>
+                  <span className="text-sm font-medium text-gray-700">
+                    Tải tệp video lên
+                  </span>
                 </label>
                 <label className="flex items-center gap-2 cursor-pointer">
                   <input
@@ -533,7 +622,9 @@ export const PlaceFormPage: React.FC = () => {
                     onChange={() => setVideoKind("embed")}
                     className="w-4 h-4 text-blue-600"
                   />
-                  <span className="text-sm font-medium text-gray-700">Liên kết video nhúng</span>
+                  <span className="text-sm font-medium text-gray-700">
+                    Liên kết video nhúng
+                  </span>
                 </label>
               </div>
 
@@ -541,7 +632,9 @@ export const PlaceFormPage: React.FC = () => {
                 <div className="flex items-center gap-4">
                   {videoFile ? (
                     <div className="flex items-center gap-3 bg-white px-4 py-2 border border-gray-200 rounded-xl shadow-sm text-sm">
-                      <span className="font-medium text-gray-700 line-clamp-1">{videoFile.name}</span>
+                      <span className="font-medium text-gray-700 line-clamp-1">
+                        {videoFile.name}
+                      </span>
                       {videoUploadProgress ? (
                         <Loader className="w-4 h-4 text-blue-600 animate-spin" />
                       ) : (
@@ -591,7 +684,11 @@ export const PlaceFormPage: React.FC = () => {
               disabled={loading}
               className="px-6 py-3 bg-white border border-gray-200 text-gray-700 font-bold rounded-xl shadow-sm hover:bg-gray-50 disabled:bg-gray-100 disabled:text-gray-400 flex items-center gap-2 text-sm transition-all"
             >
-              {loading ? <Loader className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+              {loading ? (
+                <Loader className="w-4 h-4 animate-spin" />
+              ) : (
+                <Save className="w-4 h-4" />
+              )}
               Lưu bản nháp
             </button>
 
@@ -600,7 +697,11 @@ export const PlaceFormPage: React.FC = () => {
               disabled={loading}
               className="px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-bold rounded-xl shadow-lg shadow-blue-500/20 hover:opacity-95 disabled:opacity-50 flex items-center gap-2 text-sm transition-all"
             >
-              {loading ? <Loader className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+              {loading ? (
+                <Loader className="w-4 h-4 animate-spin" />
+              ) : (
+                <Send className="w-4 h-4" />
+              )}
               Đăng công khai
             </button>
           </div>

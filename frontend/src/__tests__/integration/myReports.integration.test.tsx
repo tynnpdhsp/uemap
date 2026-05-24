@@ -93,9 +93,15 @@ describe("integration: báo cáo vi phạm của tôi", () => {
 
     renderApp(["/my/reports"]);
 
-    expect(await screen.findByText("Quán Cơm Sinh Viên - thông tin sai")).toBeInTheDocument();
-    expect(screen.getByText("Bình luận spam quảng cáo trên quán phở")).toBeInTheDocument();
-    expect(screen.getByText("Địa điểm không phù hợp nội quy")).toBeInTheDocument();
+    expect(
+      await screen.findByText("Quán Cơm Sinh Viên - thông tin sai"),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText("Bình luận spam quảng cáo trên quán phở"),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText("Địa điểm không phù hợp nội quy"),
+    ).toBeInTheDocument();
   });
 
   it("hiển thị trạng thái xử lý khác nhau", async () => {
@@ -152,7 +158,9 @@ describe("integration: báo cáo vi phạm của tôi", () => {
     renderApp(["/my/reports"]);
 
     expect(await screen.findByText("Chưa gửi báo cáo nào")).toBeInTheDocument();
-    expect(screen.getByText("Lịch sử gửi báo cáo của bạn trống.")).toBeInTheDocument();
+    expect(
+      screen.getByText("Lịch sử gửi báo cáo của bạn trống."),
+    ).toBeInTheDocument();
   });
 
   it("chưa đăng nhập truy cập /my/reports chuyển hướng về /login", async () => {
@@ -160,7 +168,11 @@ describe("integration: báo cáo vi phạm của tôi", () => {
 
     installFetchMock((url, method) => {
       if (method === "GET" && url.includes("/api/config/map")) {
-        return jsonOk({ default_center: { lat: 10.7628, lng: 106.6824 }, default_zoom: 16, geofence: null });
+        return jsonOk({
+          default_center: { lat: 10.7628, lng: 106.6824 },
+          default_zoom: 16,
+          geofence: null,
+        });
       }
       if (method === "GET" && url.includes("/api/categories")) {
         return jsonOk([]);
@@ -173,7 +185,9 @@ describe("integration: báo cáo vi phạm của tôi", () => {
 
     renderApp(["/my/reports"]);
 
-    expect(await screen.findByRole("heading", { name: "Đăng Nhập" })).toBeInTheDocument();
+    expect(
+      await screen.findByRole("heading", { name: "Đăng Nhập" }),
+    ).toBeInTheDocument();
   });
 
   it("hiển thị ngày tạo báo cáo", async () => {

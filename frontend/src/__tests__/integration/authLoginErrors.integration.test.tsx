@@ -29,9 +29,7 @@ describe("integration: lỗi đăng nhập", () => {
       screen.getByRole("button", { name: "Đăng Nhập" }).closest("form")!,
     );
 
-    expect(
-      await screen.findByText(/chưa được kích hoạt/i),
-    ).toBeInTheDocument();
+    expect(await screen.findByText(/chưa được kích hoạt/i)).toBeInTheDocument();
     expect(
       screen.getByRole("link", { name: /kích hoạt tài khoản/i }),
     ).toHaveAttribute(

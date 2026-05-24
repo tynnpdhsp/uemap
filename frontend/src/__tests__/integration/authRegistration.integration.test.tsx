@@ -37,12 +37,23 @@ describe("integration: đăng ký và kích hoạt OTP", () => {
       screen.getByPlaceholderText("4901104172@student.hcmue.edu.vn"),
       TEST_EMAIL,
     );
-    await user.type(screen.getByPlaceholderText("e.g. Nguyễn Văn A"), TEST_NAME);
-    await user.type(screen.getByPlaceholderText("Tối thiểu 8 ký tự"), TEST_PASSWORD);
-    await user.type(screen.getByPlaceholderText("Nhập lại mật khẩu"), TEST_PASSWORD);
+    await user.type(
+      screen.getByPlaceholderText("e.g. Nguyễn Văn A"),
+      TEST_NAME,
+    );
+    await user.type(
+      screen.getByPlaceholderText("Tối thiểu 8 ký tự"),
+      TEST_PASSWORD,
+    );
+    await user.type(
+      screen.getByPlaceholderText("Nhập lại mật khẩu"),
+      TEST_PASSWORD,
+    );
     await user.click(screen.getByRole("checkbox"));
 
-    const form = screen.getByRole("button", { name: "Đăng Ký" }).closest("form");
+    const form = screen
+      .getByRole("button", { name: "Đăng Ký" })
+      .closest("form");
     expect(form).not.toBeNull();
     fireEvent.submit(form!);
 
@@ -53,7 +64,9 @@ describe("integration: đăng ký và kích hoạt OTP", () => {
 
     await user.type(screen.getByPlaceholderText("000000"), TEST_OTP);
     fireEvent.submit(
-      screen.getByRole("button", { name: /Kích Hoạt Tài Khoản/i }).closest("form")!,
+      screen
+        .getByRole("button", { name: /Kích Hoạt Tài Khoản/i })
+        .closest("form")!,
     );
 
     expect(

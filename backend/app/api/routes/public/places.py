@@ -2,13 +2,16 @@ from datetime import timedelta
 from typing import Any, List, Optional
 
 from bson import ObjectId
-from fastapi import APIRouter, HTTPException, Query, status
+from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
+from app.api.deps import get_current_student
 from app.core.database import get_db
 from app.services import search_service
 from app.utils.place_format import format_place_images, format_place_list_items, format_place_video
 
 router = APIRouter()
+optional_bearer = HTTPBearer(auto_error=False)
 
 
 def _merge_category_ids(
@@ -187,9 +190,19 @@ async def get_place_detail(public_id: int):
 
 @router.get("/{public_id}/comments", response_model=dict)
 async def get_place_comments(
-    public_id: int, page: int = Query(1, ge=1), page_size: int = Query(20, ge=1, le=100)
+    public_id: int,
+    page: int = Query(1, ge=1),
+    page_size: int = Query(20, ge=1, le=100),
+    credentials: HTTPAuthorizationCredentials | None = Depends(optional_bearer),
 ):
     db = get_db()
+    viewer_id = None
+    if credentials:
+        try:
+            viewer = await get_current_student(credentials)
+            viewer_id = viewer["_id"]
+        except HTTPException:
+            viewer_id = None
     place = await db["places"].find_one({"public_id": public_id, "status": "published"})
     if not place:
         raise HTTPException(
@@ -222,6 +235,7 @@ async def get_place_comments(
                 "author_display_name": c["author_display_name"],
                 "content": c["content"],
                 "created_at_display": created_at_display,
+                "is_mine": viewer_id is not None and c["student_id"] == viewer_id,
             }
         )
 

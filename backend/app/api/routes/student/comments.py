@@ -87,6 +87,7 @@ async def get_my_comments(
         formatted.append(
             {
                 "id": str(c["_id"]),
+                "content": c["content"],
                 "content_preview": content_preview,
                 "place_name": place_name,
                 "place_public_id": place_pub_id,
