@@ -2,7 +2,13 @@ import { screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { installFetchMock, jsonOk } from "./helpers/fetchMock";
 import { renderApp } from "./helpers/renderApp";
-import { activeProfile, TEST_NAME } from "./helpers/fixtures";
+import {
+  activeProfile,
+  defaultPlaceListItems,
+  isPlacesListRequest,
+  jsonPlacesList,
+  TEST_NAME,
+} from "./helpers/fixtures";
 
 const mapConfig = {
   default_center: { lat: 10.7628, lng: 106.6824 },
@@ -77,24 +83,39 @@ const markers = [
   },
 ];
 
+function installMapHomeFetchMock(
+  overrides?: Partial<{
+    placeList: typeof defaultPlaceListItems;
+    placeListMeta: { page: number; page_size: number; total: number };
+  }>,
+) {
+  return installFetchMock((url, method) => {
+    if (method === "GET" && url.includes("/api/config/map")) {
+      return jsonOk(mapConfig);
+    }
+    if (method === "GET" && url.includes("/api/categories")) {
+      return jsonOk(categories);
+    }
+    if (method === "GET" && url.includes("/api/places/markers")) {
+      return jsonOk(markers);
+    }
+    if (isPlacesListRequest(url, method)) {
+      return jsonPlacesList(
+        overrides?.placeList ?? defaultPlaceListItems,
+        overrides?.placeListMeta,
+      );
+    }
+    return null;
+  });
+}
+
 describe("integration: trang chủ bản đồ", () => {
   beforeEach(() => {
     sessionStorage.clear();
   });
 
   it("tải cấu hình bản đồ, danh mục và markers khi truy cập trang chủ", async () => {
-    installFetchMock((url, method) => {
-      if (method === "GET" && url.includes("/api/config/map")) {
-        return jsonOk(mapConfig);
-      }
-      if (method === "GET" && url.includes("/api/categories")) {
-        return jsonOk(categories);
-      }
-      if (method === "GET" && url.includes("/api/places/markers")) {
-        return jsonOk(markers);
-      }
-      return null;
-    });
+    installMapHomeFetchMock();
 
     renderApp(["/"]);
 
@@ -102,6 +123,19 @@ describe("integration: trang chủ bản đồ", () => {
     expect(await screen.findByText("Ăn uống")).toBeInTheDocument();
     expect(screen.getByText("Học tập")).toBeInTheDocument();
     expect(screen.getByText("Tiện ích")).toBeInTheDocument();
+  });
+
+  it("hiển thị danh sách địa điểm phân trang khi tải trang", async () => {
+    installMapHomeFetchMock();
+
+    renderApp(["/"]);
+
+    expect(
+      await screen.findByText(/Danh sách địa điểm \(3\)/i),
+    ).toBeInTheDocument();
+    expect(await screen.findByText("Quán Phở 24h")).toBeInTheDocument();
+    expect(screen.getByText("Thư viện Trường")).toBeInTheDocument();
+    expect(screen.getByLabelText("Sắp xếp danh sách")).toBeInTheDocument();
   });
 
   it("hiển thị liên kết đăng nhập khi chưa xác thực", () => {
@@ -114,6 +148,9 @@ describe("integration: trang chủ bản đồ", () => {
       }
       if (method === "GET" && url.includes("/api/places/markers")) {
         return jsonOk([]);
+      }
+      if (isPlacesListRequest(url, method)) {
+        return jsonPlacesList([]);
       }
       return null;
     });
@@ -141,6 +178,9 @@ describe("integration: trang chủ bản đồ", () => {
       if (method === "GET" && url.includes("/api/places/markers")) {
         return jsonOk(markers);
       }
+      if (isPlacesListRequest(url, method)) {
+        return jsonPlacesList();
+      }
       return null;
     });
 
@@ -153,19 +193,7 @@ describe("integration: trang chủ bản đồ", () => {
 
   it("bộ lọc danh mục hiển thị checkbox và có thể toggle", async () => {
     const user = userEvent.setup();
-
-    installFetchMock((url, method) => {
-      if (method === "GET" && url.includes("/api/config/map")) {
-        return jsonOk(mapConfig);
-      }
-      if (method === "GET" && url.includes("/api/categories")) {
-        return jsonOk(categories);
-      }
-      if (method === "GET" && url.includes("/api/places/markers")) {
-        return jsonOk(markers);
-      }
-      return null;
-    });
+    installMapHomeFetchMock();
 
     renderApp(["/"]);
 
@@ -179,7 +207,7 @@ describe("integration: trang chủ bản đồ", () => {
     });
   });
 
-  it("thanh tìm kiếm chấp nhận đầu vào", async () => {
+  it("tìm kiếm hiển thị kết quả và nút hiện trên bản đồ", async () => {
     const user = userEvent.setup();
 
     installFetchMock((url, method) => {
@@ -192,23 +220,15 @@ describe("integration: trang chủ bản đồ", () => {
       if (method === "GET" && url.includes("/api/places/markers")) {
         return jsonOk(markers);
       }
-      if (method === "GET" && url.includes("/api/search")) {
-        return {
-          status: 200,
-          body: {
-            success: true,
-            data: [
-              {
-                public_id: 1,
-                name: "Quán Phở 24h",
-                category_name: "Ăn uống",
-                address_short: "12 Nguyễn Tri Phương",
-                updated_at_display: "25/05/2026",
-              },
-            ],
-            meta: { page: 1, page_size: 50, total: 1 },
-          },
-        };
+      if (isPlacesListRequest(url, method)) {
+        if (url.includes("q=Ph%E1%BB%9F") || url.includes("q=Pho")) {
+          return jsonPlacesList([defaultPlaceListItems[0]], {
+            page: 1,
+            page_size: 20,
+            total: 1,
+          });
+        }
+        return jsonPlacesList();
       }
       return null;
     });
@@ -219,9 +239,109 @@ describe("integration: trang chủ bản đồ", () => {
       await screen.findByPlaceholderText(/Tìm kiếm địa điểm/i);
     await user.type(searchInput, "Phở");
 
-    expect(searchInput).toHaveValue("Phở");
-    expect(await screen.findByText(/Kết quả tìm kiếm/i)).toBeInTheDocument();
+    expect(
+      await screen.findByText(/Kết quả tìm kiếm \(1\)/i),
+    ).toBeInTheDocument();
     expect(await screen.findByText("Quán Phở 24h")).toBeInTheDocument();
+    expect(
+      await screen.findByRole("button", { name: "Hiện trên bản đồ" }),
+    ).toBeInTheDocument();
+  });
+
+  it("nút hiện trên bản đồ mở popup tóm tắt địa điểm", async () => {
+    const user = userEvent.setup();
+    const fetchMock = installMapHomeFetchMock();
+
+    renderApp(["/"]);
+
+    await screen.findByText("Quán Phở 24h");
+    await waitFor(() => {
+      expect(
+        fetchMock.mock.calls.some(([input]) => {
+          const url = typeof input === "string" ? input : input.toString();
+          return url.includes("/api/places/markers");
+        }),
+      ).toBe(true);
+    });
+
+    const showButtons = await screen.findAllByRole("button", {
+      name: "Hiện trên bản đồ",
+    });
+    await user.click(showButtons[0]);
+
+    await waitFor(() => {
+      expect(screen.getAllByText("Quán Phở 24h").length).toBeGreaterThanOrEqual(
+        2,
+      );
+    });
+  });
+
+  it("phân trang danh sách chuyển trang", async () => {
+    const user = userEvent.setup();
+
+    installFetchMock((url, method) => {
+      if (method === "GET" && url.includes("/api/config/map")) {
+        return jsonOk(mapConfig);
+      }
+      if (method === "GET" && url.includes("/api/categories")) {
+        return jsonOk(categories);
+      }
+      if (method === "GET" && url.includes("/api/places/markers")) {
+        return jsonOk(markers);
+      }
+      if (isPlacesListRequest(url, method)) {
+        if (url.includes("page=2")) {
+          return jsonPlacesList(
+            [
+              {
+                public_id: 21,
+                name: "Địa điểm trang 2",
+                category_name: "Ăn uống",
+                address_short: "99 Test Street",
+                updated_at_display: "20/05/2026 08:00",
+              },
+            ],
+            { page: 2, page_size: 20, total: 21 },
+          );
+        }
+        return jsonPlacesList(defaultPlaceListItems, {
+          page: 1,
+          page_size: 20,
+          total: 21,
+        });
+      }
+      return null;
+    });
+
+    renderApp(["/"]);
+
+    expect(await screen.findByText(/Trang 1 \/ 2/i)).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: /Sau/i }));
+    expect(await screen.findByText("Địa điểm trang 2")).toBeInTheDocument();
+    expect(await screen.findByText(/Trang 2 \/ 2/i)).toBeInTheDocument();
+  });
+
+  it("đổi sắp xếp danh sách gọi API với tham số sort", async () => {
+    const user = userEvent.setup();
+    const fetchMock = installMapHomeFetchMock();
+
+    renderApp(["/"]);
+
+    await screen.findByText("Quán Phở 24h");
+    const sortSelect = screen.getByLabelText("Sắp xếp danh sách");
+    await user.selectOptions(sortSelect, "updated_desc");
+
+    await waitFor(() => {
+      const listCalls = fetchMock.mock.calls.filter(([input, init]) => {
+        const url = typeof input === "string" ? input : input.toString();
+        return (
+          (init?.method || "GET").toUpperCase() === "GET" &&
+          isPlacesListRequest(url, "GET") &&
+          url.includes("sort=updated_desc")
+        );
+      });
+      expect(listCalls.length).toBeGreaterThanOrEqual(1);
+    });
   });
 
   it("đăng nhập rồi quay về trang chủ hiển thị đầy đủ bản đồ", async () => {
@@ -242,6 +362,9 @@ describe("integration: trang chủ bản đồ", () => {
       }
       if (method === "GET" && url.includes("/api/places/markers")) {
         return jsonOk(markers);
+      }
+      if (isPlacesListRequest(url, method)) {
+        return jsonPlacesList();
       }
       return null;
     });

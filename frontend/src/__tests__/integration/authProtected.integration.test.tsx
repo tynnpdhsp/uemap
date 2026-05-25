@@ -1,6 +1,7 @@
 import { screen } from "@testing-library/react";
 import { installFetchMock, jsonOk } from "./helpers/fetchMock";
 import { renderApp } from "./helpers/renderApp";
+import { isPlacesListRequest, jsonPlacesList } from "./helpers/fixtures";
 
 describe("integration: route bảo vệ", () => {
   beforeEach(() => {
@@ -18,6 +19,9 @@ describe("integration: route bảo vệ", () => {
       }
       if (url.includes("/api/places/markers")) {
         return jsonOk([]);
+      }
+      if (isPlacesListRequest(url, "GET")) {
+        return jsonPlacesList([]);
       }
       return null;
     });

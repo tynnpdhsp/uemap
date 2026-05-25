@@ -7,6 +7,8 @@ import {
   TEST_NAME,
   TEST_PASSWORD,
   activeProfile,
+  isPlacesListRequest,
+  jsonPlacesList,
 } from "./helpers/fixtures";
 
 describe("integration: đăng nhập và đăng xuất", () => {
@@ -35,6 +37,9 @@ describe("integration: đăng nhập và đăng xuất", () => {
       }
       if (method === "GET" && url.includes("/api/places/markers")) {
         return jsonOk([]);
+      }
+      if (isPlacesListRequest(url, method)) {
+        return jsonPlacesList([]);
       }
       return null;
     });
@@ -79,6 +84,9 @@ describe("integration: đăng nhập và đăng xuất", () => {
       }
       if (method === "GET" && url.includes("/api/places/markers")) {
         return jsonOk([]);
+      }
+      if (isPlacesListRequest(url, method)) {
+        return jsonPlacesList([]);
       }
       return null;
     });

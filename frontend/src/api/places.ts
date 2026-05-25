@@ -112,6 +112,17 @@ export const placesApi = {
 
   getDetail: (publicId: number) => api.get<PlaceDetail>(`/places/${publicId}`),
 
+  list: (filters: {
+    page?: number;
+    page_size?: number;
+    category_ids?: string[];
+    q?: string;
+    sort?: "name_asc" | "updated_desc";
+  }) =>
+    api.get<PlaceListItem[]>(`/places${buildQuery(filters)}`) as Promise<
+      PaginatedAPIResponse<PlaceListItem[]>
+    >,
+
   search: (filters: {
     q: string;
     category_ids?: string[];

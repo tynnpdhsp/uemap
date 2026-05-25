@@ -12,14 +12,19 @@ import "leaflet.markercluster";
 import { useAuth } from "../../context/AuthContext";
 import { mapApi, MapConfig, Category } from "../../api/map";
 import { placesApi, PlaceListItem, PlaceMarker } from "../../api/places";
+import { readPaginatedList } from "../../api/types";
 import {
   Search,
   MapPin,
   Layers,
   Plus,
   ChevronRight,
+  ChevronLeft,
   Compass,
+  List,
 } from "lucide-react";
+
+const LIST_PAGE_SIZE = 20;
 
 interface ClusterMarkersProps {
   markers: PlaceMarker[];
@@ -102,10 +107,14 @@ export const HomePage: React.FC = () => {
   const [selectedCategoryIds, setSelectedCategoryIds] = useState<string[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [debouncedQuery, setDebouncedQuery] = useState("");
-  const [markers, setMarkers] = useState<PlaceMarker[]>([]);
-  const [searchResults, setSearchResults] = useState<PlaceListItem[]>([]);
-  const [searchTotal, setSearchTotal] = useState(0);
-  const [searchLoading, setSearchLoading] = useState(false);
+  const [allMarkers, setAllMarkers] = useState<PlaceMarker[]>([]);
+  const [placeList, setPlaceList] = useState<PlaceListItem[]>([]);
+  const [listPage, setListPage] = useState(1);
+  const [listTotal, setListTotal] = useState(0);
+  const [listSort, setListSort] = useState<"name_asc" | "updated_desc">(
+    "name_asc",
+  );
+  const [listLoading, setListLoading] = useState(false);
   const [selectedPlace, setSelectedPlace] = useState<PlaceMarker | null>(null);
   const [userLocation, setUserLocation] = useState<[number, number] | null>(
     null,
@@ -114,6 +123,10 @@ export const HomePage: React.FC = () => {
     10.7628, 106.6824,
   ]);
   const [mapZoom, setMapZoom] = useState(16);
+  const [flyTarget, setFlyTarget] = useState<{
+    center: [number, number];
+    zoom: number;
+  } | null>(null);
 
   const debounceTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -157,65 +170,71 @@ export const HomePage: React.FC = () => {
     };
   }, [searchQuery]);
 
+  useEffect(() => {
+    setListPage(1);
+  }, [debouncedQuery, listSort, selectedCategoryIds]);
+
   const categoryFilter =
     selectedCategoryIds.length > 0 &&
     selectedCategoryIds.length < categories.length
       ? selectedCategoryIds
       : undefined;
 
+  const isSearchActive = debouncedQuery.trim().length >= 2;
+
+  const displayedMarkers = React.useMemo(() => {
+    const q = debouncedQuery.trim().toLowerCase();
+    if (q.length >= 2) {
+      return allMarkers.filter(
+        (m) =>
+          m.name.toLowerCase().includes(q) ||
+          m.address_short.toLowerCase().includes(q),
+      );
+    }
+    return allMarkers;
+  }, [allMarkers, debouncedQuery]);
+
   const loadMarkers = useCallback(async () => {
     try {
       const res = await placesApi.getMarkers({ category_ids: categoryFilter });
-      if (!res.success || !res.data) return;
-
-      let list = res.data;
-      const q = debouncedQuery.trim();
-      if (q.length >= 2 && searchResults.length > 0) {
-        const ids = new Set(searchResults.map((p) => p.public_id));
-        list = list.filter((m) => ids.has(m.public_id));
-      } else if (q.length >= 2 && searchResults.length === 0) {
-        list = [];
+      if (res.success && res.data) {
+        setAllMarkers(res.data);
       }
-      setMarkers(list);
     } catch (err) {
       console.error("Error loading markers", err);
     }
-  }, [categoryFilter, debouncedQuery, searchResults]);
+  }, [categoryFilter]);
 
-  const loadSearch = useCallback(async () => {
-    const q = debouncedQuery.trim();
-    if (q.length < 2) {
-      setSearchResults([]);
-      setSearchTotal(0);
-      return;
-    }
-    setSearchLoading(true);
+  const loadPlaceList = useCallback(async () => {
+    setListLoading(true);
     try {
-      const res = await placesApi.search({
-        q,
+      const q = debouncedQuery.trim();
+      const params: Parameters<typeof placesApi.list>[0] = {
+        page: listPage,
+        page_size: LIST_PAGE_SIZE,
         category_ids: categoryFilter,
-        page: 1,
-        page_size: 50,
-      });
-      if (res.success && Array.isArray(res.data)) {
-        setSearchResults(res.data);
-        setSearchTotal(res.meta?.total ?? res.data.length);
-      } else {
-        setSearchResults([]);
-        setSearchTotal(0);
+        sort: listSort,
+      };
+      if (q.length >= 2) {
+        params.q = q;
       }
+
+      const res = await placesApi.list(params);
+      const { items, meta } = readPaginatedList<PlaceListItem>(res);
+      setPlaceList(items);
+      setListTotal(meta?.total ?? items.length);
     } catch (err) {
-      console.error("Error searching places", err);
-      setSearchResults([]);
-      setSearchTotal(0);
+      console.error("Error loading place list", err);
+      setPlaceList([]);
+      setListTotal(0);
     } finally {
-      setSearchLoading(false);
+      setListLoading(false);
     }
-  }, [debouncedQuery, categoryFilter]);
+  }, [debouncedQuery, categoryFilter, listPage, listSort]);
 
   useEffect(() => {
-    loadSearch();
-  }, [loadSearch]);
+    loadPlaceList();
+  }, [loadPlaceList]);
 
   useEffect(() => {
     loadMarkers();
@@ -240,8 +259,7 @@ export const HomePage: React.FC = () => {
             position.coords.longitude,
           ];
           setUserLocation(loc);
-          setMapCenter(loc);
-          setMapZoom(17);
+          setFlyTarget({ center: loc, zoom: 17 });
         },
         (err) => {
           console.error("Error obtaining geolocation", err);
@@ -253,6 +271,15 @@ export const HomePage: React.FC = () => {
   const handleMarkerClick = (place: PlaceMarker) => {
     setSelectedPlace(place);
   };
+
+  const showOnMap = (publicId: number) => {
+    const marker = allMarkers.find((m) => m.public_id === publicId);
+    if (!marker) return;
+    setFlyTarget({ center: [marker.lat, marker.lng], zoom: 17 });
+    setSelectedPlace(marker);
+  };
+
+  const listTotalPages = Math.max(1, Math.ceil(listTotal / LIST_PAGE_SIZE));
 
   return (
     <div className="flex-grow flex flex-col lg:flex-row h-[calc(100vh-64px)] relative overflow-hidden bg-gray-50">
@@ -279,21 +306,41 @@ export const HomePage: React.FC = () => {
         </div>
 
         <div className="flex-grow overflow-y-auto p-6 space-y-6">
-          {debouncedQuery.trim().length >= 2 && (
-            <div>
-              <h2 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">
-                Kết quả tìm kiếm ({searchTotal})
+          <div>
+            <div className="flex items-center justify-between gap-2 mb-3">
+              <h2 className="text-xs font-bold text-gray-400 uppercase tracking-wider flex items-center gap-1.5">
+                <List className="w-3.5 h-3.5" />
+                {isSearchActive
+                  ? `Kết quả tìm kiếm (${listTotal})`
+                  : `Danh sách địa điểm (${listTotal})`}
               </h2>
-              {searchLoading ? (
-                <p className="text-sm text-gray-500">Đang tìm...</p>
-              ) : searchResults.length > 0 ? (
-                <ul className="space-y-2 max-h-48 overflow-y-auto">
-                  {searchResults.map((item) => (
-                    <li key={item.public_id}>
+              <select
+                value={listSort}
+                onChange={(e) =>
+                  setListSort(e.target.value as "name_asc" | "updated_desc")
+                }
+                className="text-xs border border-gray-200 rounded-lg px-2 py-1 bg-white text-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                aria-label="Sắp xếp danh sách"
+              >
+                <option value="name_asc">Tên A-Z</option>
+                <option value="updated_desc">Mới cập nhật</option>
+              </select>
+            </div>
+
+            {listLoading ? (
+              <p className="text-sm text-gray-500">Đang tải...</p>
+            ) : placeList.length > 0 ? (
+              <>
+                <ul className="space-y-2">
+                  {placeList.map((item) => (
+                    <li
+                      key={item.public_id}
+                      className="p-3 rounded-xl border border-gray-100 bg-white hover:border-blue-200 hover:bg-blue-50/30 transition"
+                    >
                       <button
                         type="button"
                         onClick={() => navigate(`/places/${item.public_id}`)}
-                        className="w-full text-left p-3 rounded-xl border border-gray-100 bg-white hover:border-blue-200 hover:bg-blue-50/30 transition"
+                        className="w-full text-left"
                       >
                         <p className="text-sm font-semibold text-gray-800 line-clamp-1">
                           {item.name}
@@ -302,19 +349,65 @@ export const HomePage: React.FC = () => {
                           {item.address_short}
                         </p>
                         <p className="text-[10px] text-gray-400 mt-1">
-                          {item.category_name}
+                          {item.category_name} · {item.updated_at_display}
                         </p>
                       </button>
+                      <div className="mt-2 flex gap-2">
+                        <button
+                          type="button"
+                          onClick={() => navigate(`/places/${item.public_id}`)}
+                          className="flex-1 py-1.5 px-2 text-[11px] font-bold text-blue-600 bg-blue-50 rounded-lg hover:bg-blue-100 transition"
+                        >
+                          Xem chi tiết
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => showOnMap(item.public_id)}
+                          className="flex-1 py-1.5 px-2 text-[11px] font-bold text-emerald-700 bg-emerald-50 rounded-lg hover:bg-emerald-100 transition"
+                        >
+                          Hiện trên bản đồ
+                        </button>
+                      </div>
                     </li>
                   ))}
                 </ul>
-              ) : (
-                <p className="text-sm text-gray-500">
-                  Không tìm thấy địa điểm phù hợp.
-                </p>
-              )}
-            </div>
-          )}
+
+                {listTotalPages > 1 && (
+                  <div className="mt-3 flex items-center justify-between gap-2">
+                    <button
+                      type="button"
+                      disabled={listPage <= 1}
+                      onClick={() => setListPage((p) => Math.max(1, p - 1))}
+                      className="flex items-center gap-1 px-2 py-1.5 text-xs font-semibold text-gray-600 border border-gray-200 rounded-lg disabled:opacity-40 hover:bg-gray-50"
+                    >
+                      <ChevronLeft className="w-3.5 h-3.5" />
+                      Trước
+                    </button>
+                    <span className="text-xs text-gray-500">
+                      Trang {listPage} / {listTotalPages}
+                    </span>
+                    <button
+                      type="button"
+                      disabled={listPage >= listTotalPages}
+                      onClick={() =>
+                        setListPage((p) => Math.min(listTotalPages, p + 1))
+                      }
+                      className="flex items-center gap-1 px-2 py-1.5 text-xs font-semibold text-gray-600 border border-gray-200 rounded-lg disabled:opacity-40 hover:bg-gray-50"
+                    >
+                      Sau
+                      <ChevronRight className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                )}
+              </>
+            ) : (
+              <p className="text-sm text-gray-500">
+                {isSearchActive
+                  ? "Không tìm thấy địa điểm phù hợp."
+                  : "Chưa có địa điểm nào trong bộ lọc hiện tại."}
+              </p>
+            )}
+          </div>
 
           <div>
             <h2 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3 flex items-center gap-1.5">
@@ -399,7 +492,6 @@ export const HomePage: React.FC = () => {
 
       <div className="flex-grow h-full relative z-10">
         <MapContainer
-          key={`${mapCenter[0]}-${mapCenter[1]}`}
           center={mapCenter}
           zoom={mapZoom}
           className="w-full h-full"
@@ -410,7 +502,10 @@ export const HomePage: React.FC = () => {
             url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
           />
 
-          <ClusterMarkers markers={markers} onMarkerClick={handleMarkerClick} />
+          <ClusterMarkers
+            markers={displayedMarkers}
+            onMarkerClick={handleMarkerClick}
+          />
 
           {config &&
             config.geofence &&
@@ -468,7 +563,10 @@ export const HomePage: React.FC = () => {
             />
           )}
 
-          <FlyToLocation center={mapCenter} zoom={mapZoom} />
+          <FlyToLocation
+            center={flyTarget?.center ?? null}
+            zoom={flyTarget?.zoom ?? 16}
+          />
         </MapContainer>
 
         <button
