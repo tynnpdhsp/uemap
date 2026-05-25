@@ -10,14 +10,6 @@ export interface APIResponse<T = unknown> {
   error?: APIErrorDetail;
 }
 
-type RequestBody =
-  | Record<string, unknown>
-  | unknown[]
-  | string
-  | number
-  | boolean
-  | null;
-
 const API_BASE_URL = "/api";
 
 async function request<T = unknown>(
@@ -83,7 +75,7 @@ export const api = {
 
   post: <T = unknown>(
     endpoint: string,
-    body?: RequestBody,
+    body?: unknown,
     options?: RequestInit,
   ) =>
     request<T>(endpoint, {
@@ -105,7 +97,7 @@ export const api = {
 
   patch: <T = unknown>(
     endpoint: string,
-    body?: RequestBody,
+    body?: unknown,
     options?: RequestInit,
   ) =>
     request<T>(endpoint, {

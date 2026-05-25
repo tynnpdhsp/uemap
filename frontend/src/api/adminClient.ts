@@ -1,13 +1,5 @@
 import type { APIErrorDetail, APIResponse } from "./client";
 
-type RequestBody =
-  | Record<string, unknown>
-  | unknown[]
-  | string
-  | number
-  | boolean
-  | null;
-
 interface PaginatedListMeta {
   page: number;
   page_size: number;
@@ -141,7 +133,7 @@ export const adminApi = {
 
   post: <T = unknown>(
     endpoint: string,
-    body?: RequestBody,
+    body?: unknown,
     options?: RequestInit,
   ) =>
     request<T>(endpoint, {
@@ -152,7 +144,7 @@ export const adminApi = {
 
   patch: <T = unknown>(
     endpoint: string,
-    body?: RequestBody,
+    body?: unknown,
     options?: RequestInit,
   ) =>
     request<T>(endpoint, {
@@ -163,7 +155,7 @@ export const adminApi = {
 
   delete: <T = unknown>(
     endpoint: string,
-    body?: RequestBody,
+    body?: unknown,
     options?: RequestInit,
   ) =>
     request<T>(endpoint, {
