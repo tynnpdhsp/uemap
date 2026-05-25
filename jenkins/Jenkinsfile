@@ -67,7 +67,7 @@ pipeline {
                                 pip install --break-system-packages -r requirements.txt
                                 export MONGO_URI=mongodb://127.0.0.1:27017/test_db
                                 pytest tests/unit
-                                pytest tests/test_integration_auth_flows.py
+                                pytest tests/integration
                                 pytest tests/e2e
                             """
                         }
