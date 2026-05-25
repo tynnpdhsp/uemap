@@ -102,6 +102,67 @@ describe("integration: xem chi tiết địa điểm", () => {
     ).toBeInTheDocument();
     expect(screen.getByText("00:00 - 23:59")).toBeInTheDocument();
     expect(screen.getByText("0901234567")).toBeInTheDocument();
+    expect(screen.getByText("Vị trí trên bản đồ")).toBeInTheDocument();
+  });
+
+  it("mở lightbox ảnh khi nhấp vào album", async () => {
+    const user = userEvent.setup();
+    installFetchMock((url, method) => {
+      if (
+        method === "GET" &&
+        url.includes("/api/places/1") &&
+        !url.includes("markers") &&
+        !url.includes("comments")
+      ) {
+        return jsonOk(placeDetail);
+      }
+      if (method === "GET" && url.includes("/api/places/1/comments")) {
+        return jsonOk(commentsPage1);
+      }
+      return null;
+    });
+
+    renderApp(["/places/1"]);
+    await screen.findByText("Quán Phở 24h Ngon Nhất");
+    await user.click(screen.getByRole("button", { name: "Xem ảnh phóng to" }));
+
+    expect(
+      screen.getByRole("dialog", { name: "Xem ảnh phóng to" }),
+    ).toBeInTheDocument();
+    expect(screen.getByText("1 / 2")).toBeInTheDocument();
+  });
+
+  it("nhúng video Facebook Watch khi URL hợp lệ", async () => {
+    const fbDetail = {
+      ...placeDetail,
+      video: {
+        kind: "embed",
+        url: "https://www.facebook.com/watch?v=987654321",
+      },
+    };
+
+    installFetchMock((url, method) => {
+      if (
+        method === "GET" &&
+        url.includes("/api/places/1") &&
+        !url.includes("markers") &&
+        !url.includes("comments")
+      ) {
+        return jsonOk(fbDetail);
+      }
+      if (method === "GET" && url.includes("/api/places/1/comments")) {
+        return jsonOk(commentsPage1);
+      }
+      return null;
+    });
+
+    renderApp(["/places/1"]);
+    await screen.findByText("Quán Phở 24h Ngon Nhất");
+
+    const iframe = document.querySelector("iframe");
+    expect(iframe?.getAttribute("src")).toContain(
+      "facebook.com/plugins/video.php",
+    );
   });
 
   it("hiển thị danh sách bình luận công khai", async () => {
