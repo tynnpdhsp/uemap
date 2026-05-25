@@ -30,6 +30,11 @@ jest.mock("../../api/places", () => ({
       success: true,
       data: [],
     }),
+    list: jest.fn().mockResolvedValue({
+      success: true,
+      data: [],
+      meta: { page: 1, page_size: 20, total: 0 },
+    }),
   },
 }));
 

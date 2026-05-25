@@ -1,7 +1,11 @@
 import { screen } from "@testing-library/react";
 import { installFetchMock, jsonOk } from "./helpers/fetchMock";
 import { renderApp } from "./helpers/renderApp";
-import { activeProfile } from "./helpers/fixtures";
+import {
+  activeProfile,
+  isPlacesListRequest,
+  jsonPlacesList,
+} from "./helpers/fixtures";
 
 const myReportsList = {
   data: [
@@ -179,6 +183,9 @@ describe("integration: báo cáo vi phạm của tôi", () => {
       }
       if (method === "GET" && url.includes("/api/places/markers")) {
         return jsonOk([]);
+      }
+      if (isPlacesListRequest(url, method)) {
+        return jsonPlacesList([]);
       }
       return null;
     });

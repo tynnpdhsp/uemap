@@ -2,7 +2,11 @@ import { screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { installFetchMock, jsonOk } from "./helpers/fetchMock";
 import { renderApp } from "./helpers/renderApp";
-import { activeProfile } from "./helpers/fixtures";
+import {
+  activeProfile,
+  isPlacesListRequest,
+  jsonPlacesList,
+} from "./helpers/fixtures";
 
 const myCommentsList = {
   data: [
@@ -181,6 +185,9 @@ describe("integration: quản lý bình luận của tôi", () => {
       }
       if (method === "GET" && url.includes("/api/places/markers")) {
         return jsonOk([]);
+      }
+      if (isPlacesListRequest(url, method)) {
+        return jsonPlacesList([]);
       }
       return null;
     });

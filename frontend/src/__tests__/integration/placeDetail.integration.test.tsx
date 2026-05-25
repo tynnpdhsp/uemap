@@ -2,7 +2,11 @@ import { screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { installFetchMock, jsonOk, jsonError } from "./helpers/fetchMock";
 import { renderApp } from "./helpers/renderApp";
-import { activeProfile } from "./helpers/fixtures";
+import {
+  activeProfile,
+  isPlacesListRequest,
+  jsonPlacesList,
+} from "./helpers/fixtures";
 
 const mapConfig = {
   default_center: { lat: 10.7628, lng: 106.6824 },
@@ -76,6 +80,9 @@ describe("integration: xem chi tiết địa điểm", () => {
       }
       if (method === "GET" && url.includes("/api/places/markers")) {
         return jsonOk([]);
+      }
+      if (isPlacesListRequest(url, method)) {
+        return jsonPlacesList([]);
       }
       return null;
     });
