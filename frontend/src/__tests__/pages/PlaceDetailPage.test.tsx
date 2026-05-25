@@ -100,9 +100,69 @@ describe("PlaceDetailPage", () => {
     expect(screen.getByText("123 An Dương Vương, Q5")).toBeInTheDocument();
     expect(screen.getByText("07:00 - 22:00")).toBeInTheDocument();
     expect(screen.getByText("0901234567")).toBeInTheDocument();
+    expect(screen.getByText("Vị trí trên bản đồ")).toBeInTheDocument();
     expect(screen.getByText("Lê Văn B")).toBeInTheDocument();
     expect(
       screen.getByText("Chất lượng tốt, phục vụ nhanh chóng."),
+    ).toBeInTheDocument();
+  });
+
+  it("mở lightbox khi nhấp ảnh", async () => {
+    const user = userEvent.setup();
+    renderWithRouter(<PlaceDetailPage />, {
+      route: "/places/123",
+      routes: [{ path: "/places/:publicId", element: <PlaceDetailPage /> }],
+    });
+
+    await screen.findByText("Cơm tấm Cali");
+    await user.click(screen.getByRole("button", { name: "Xem ảnh phóng to" }));
+
+    expect(
+      screen.getByRole("dialog", { name: "Xem ảnh phóng to" }),
+    ).toBeInTheDocument();
+  });
+
+  it("hiển thị iframe Facebook Watch khi video embed hợp lệ", async () => {
+    mockGetDetail.mockResolvedValue({
+      success: true,
+      data: {
+        ...mockPlace,
+        video: {
+          kind: "embed",
+          url: "https://www.facebook.com/watch?v=123456789",
+        },
+      },
+    });
+
+    renderWithRouter(<PlaceDetailPage />, {
+      route: "/places/123",
+      routes: [{ path: "/places/:publicId", element: <PlaceDetailPage /> }],
+    });
+
+    await screen.findByText("Cơm tấm Cali");
+    const iframe = document.querySelector("iframe");
+    expect(iframe).toBeTruthy();
+    expect(iframe?.getAttribute("src")).toContain(
+      "facebook.com/plugins/video.php",
+    );
+  });
+
+  it("hiển thị thông báo khi không thể phát video", async () => {
+    mockGetDetail.mockResolvedValue({
+      success: true,
+      data: {
+        ...mockPlace,
+        video: { kind: "embed", url: "https://example.com/not-a-video" },
+      },
+    });
+
+    renderWithRouter(<PlaceDetailPage />, {
+      route: "/places/123",
+      routes: [{ path: "/places/:publicId", element: <PlaceDetailPage /> }],
+    });
+
+    expect(
+      await screen.findByText("Không thể phát video."),
     ).toBeInTheDocument();
   });
 

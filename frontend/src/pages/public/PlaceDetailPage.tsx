@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import { MapContainer, TileLayer, Marker } from "react-leaflet";
 import { useAuth } from "../../context/AuthContext";
 import { placesApi, PlaceDetail } from "../../api/places";
 import { readPaginatedList } from "../../api/types";
@@ -7,6 +8,7 @@ import { commentsApi, CommentItem } from "../../api/comments";
 import { reportsApi, ReportCreatePayload } from "../../api/reports";
 import { placeImageSrc, placeVideoFileSrc } from "../../utils/mediaUrl";
 import { getErrorMessage } from "../../utils/errorMessage";
+import { getVideoEmbedUrl } from "../../utils/videoEmbed";
 import {
   MapPin,
   Clock,
@@ -20,6 +22,8 @@ import {
   Play,
   Copy,
   Check,
+  X,
+  ZoomIn,
 } from "lucide-react";
 
 export const PlaceDetailPage: React.FC = () => {
@@ -55,6 +59,7 @@ export const PlaceDetailPage: React.FC = () => {
   );
 
   const [activeImageIndex, setActiveImageIndex] = useState(0);
+  const [lightboxOpen, setLightboxOpen] = useState(false);
   const [editingCommentId, setEditingCommentId] = useState<string | null>(null);
   const [editingCommentContent, setEditingCommentContent] = useState("");
   const [savingCommentEdit, setSavingCommentEdit] = useState(false);
@@ -207,21 +212,14 @@ export const PlaceDetailPage: React.FC = () => {
     }
   };
 
-  const getYoutubeEmbedUrl = (url: string) => {
-    try {
-      let videoId = "";
-      if (url.includes("youtu.be/")) {
-        videoId = url.split("youtu.be/")[1].split(/[?#]/)[0];
-      } else if (url.includes("youtube.com/watch")) {
-        const urlParams = new URLSearchParams(new URL(url).search);
-        videoId = urlParams.get("v") || "";
-      } else if (url.includes("youtube.com/embed/")) {
-        videoId = url.split("youtube.com/embed/")[1].split(/[?#]/)[0];
+  const goToImage = (direction: "prev" | "next") => {
+    if (!place) return;
+    setActiveImageIndex((prev) => {
+      if (direction === "prev") {
+        return prev === 0 ? place.images.length - 1 : prev - 1;
       }
-      return videoId ? `https://www.youtube.com/embed/${videoId}` : null;
-    } catch {
-      return null;
-    }
+      return prev === place.images.length - 1 ? 0 : prev + 1;
+    });
   };
 
   if (loading) {
@@ -259,6 +257,12 @@ export const PlaceDetailPage: React.FC = () => {
     );
   }
 
+  const [placeLng, placeLat] = place.location.coordinates;
+  const embedVideoUrl =
+    place.video?.kind === "embed" && place.video.url
+      ? getVideoEmbedUrl(place.video.url)
+      : null;
+
   return (
     <div className="min-h-screen bg-gray-50/50 py-8 px-4 sm:px-6 lg:px-8">
       <div className="max-w-5xl mx-auto space-y-6">
@@ -276,32 +280,43 @@ export const PlaceDetailPage: React.FC = () => {
               {place.images.length > 0 ? (
                 <div className="space-y-4">
                   <div className="relative aspect-video bg-gray-100 rounded-2xl overflow-hidden border border-gray-100 group shadow-inner">
-                    <img
-                      src={placeImageSrc(place.images[activeImageIndex])}
-                      alt={place.name}
-                      className="w-full h-full object-cover group-hover:scale-[1.02] transition duration-500"
-                    />
+                    <button
+                      type="button"
+                      onClick={() => setLightboxOpen(true)}
+                      className="relative w-full h-full block group/img"
+                      aria-label="Xem ảnh phóng to"
+                    >
+                      <img
+                        src={placeImageSrc(place.images[activeImageIndex])}
+                        alt={place.name}
+                        className="w-full h-full object-cover group-hover/img:scale-[1.02] transition duration-500 cursor-zoom-in"
+                      />
+                      <span className="absolute bottom-3 right-3 flex items-center gap-1 px-2 py-1 bg-black/50 text-white text-[10px] font-bold rounded-lg opacity-0 group-hover/img:opacity-100 transition">
+                        <ZoomIn className="w-3 h-3" />
+                        Phóng to
+                      </span>
+                    </button>
                     {place.images.length > 1 && (
                       <div className="absolute inset-x-4 bottom-4 flex justify-between pointer-events-none">
                         <button
+                          type="button"
                           onClick={(e) => {
                             e.stopPropagation();
-                            setActiveImageIndex((prev) =>
-                              prev === 0 ? place.images.length - 1 : prev - 1,
-                            );
+                            goToImage("prev");
                           }}
                           className="p-2 bg-white/90 backdrop-blur rounded-xl text-gray-800 pointer-events-auto hover:bg-white shadow"
+                          aria-label="Ảnh trước"
                         >
                           <ChevronLeft className="w-4 h-4" />
                         </button>
                         <button
+                          type="button"
                           onClick={(e) => {
                             e.stopPropagation();
-                            setActiveImageIndex((prev) =>
-                              prev === place.images.length - 1 ? 0 : prev + 1,
-                            );
+                            goToImage("next");
                           }}
                           className="p-2 bg-white/90 backdrop-blur rounded-xl text-gray-800 pointer-events-auto hover:bg-white shadow"
+                          aria-label="Ảnh sau"
                         >
                           <ChevronRight className="w-4 h-4" />
                         </button>
@@ -342,12 +357,10 @@ export const PlaceDetailPage: React.FC = () => {
                     <Play className="w-4 h-4 text-blue-600" />
                     Video giới thiệu
                   </h3>
-                  {place.video.kind === "embed" &&
-                  place.video.url &&
-                  getYoutubeEmbedUrl(place.video.url) ? (
+                  {place.video.kind === "embed" && embedVideoUrl ? (
                     <div className="aspect-video rounded-xl overflow-hidden shadow">
                       <iframe
-                        src={getYoutubeEmbedUrl(place.video.url)!}
+                        src={embedVideoUrl}
                         title="Video giới thiệu"
                         className="w-full h-full"
                         allowFullScreen
@@ -364,7 +377,7 @@ export const PlaceDetailPage: React.FC = () => {
                     </div>
                   ) : (
                     <p className="text-xs text-gray-500">
-                      Đường dẫn video không hợp lệ.
+                      Không thể phát video.
                     </p>
                   )}
                 </div>
@@ -407,6 +420,29 @@ export const PlaceDetailPage: React.FC = () => {
                       <span>{place.contact}</span>
                     </div>
                   )}
+                </div>
+
+                <div className="space-y-2">
+                  <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider">
+                    Vị trí trên bản đồ
+                  </h3>
+                  <div className="h-52 rounded-2xl overflow-hidden border border-gray-200 shadow-inner">
+                    <MapContainer
+                      center={[placeLat, placeLng]}
+                      zoom={16}
+                      className="w-full h-full"
+                      scrollWheelZoom={false}
+                      dragging={false}
+                      doubleClickZoom={false}
+                      zoomControl={false}
+                    >
+                      <TileLayer
+                        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+                        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                      />
+                      <Marker position={[placeLat, placeLng]} />
+                    </MapContainer>
+                  </div>
                 </div>
               </div>
 
@@ -611,6 +647,57 @@ export const PlaceDetailPage: React.FC = () => {
           )}
         </div>
       </div>
+
+      {lightboxOpen && place.images.length > 0 && (
+        <div
+          className="fixed inset-0 z-50 bg-black/90 backdrop-blur-sm flex items-center justify-center p-4"
+          role="dialog"
+          aria-modal="true"
+          aria-label="Xem ảnh phóng to"
+        >
+          <button
+            type="button"
+            onClick={() => setLightboxOpen(false)}
+            className="absolute top-4 right-4 p-2 bg-white/10 hover:bg-white/20 text-white rounded-full transition"
+            aria-label="Đóng"
+          >
+            <X className="w-6 h-6" />
+          </button>
+
+          {place.images.length > 1 && (
+            <>
+              <button
+                type="button"
+                onClick={() => goToImage("prev")}
+                className="absolute left-4 top-1/2 -translate-y-1/2 p-3 bg-white/10 hover:bg-white/20 text-white rounded-full transition"
+                aria-label="Ảnh trước"
+              >
+                <ChevronLeft className="w-6 h-6" />
+              </button>
+              <button
+                type="button"
+                onClick={() => goToImage("next")}
+                className="absolute right-4 top-1/2 -translate-y-1/2 p-3 bg-white/10 hover:bg-white/20 text-white rounded-full transition"
+                aria-label="Ảnh sau"
+              >
+                <ChevronRight className="w-6 h-6" />
+              </button>
+            </>
+          )}
+
+          <img
+            src={placeImageSrc(place.images[activeImageIndex])}
+            alt={place.name}
+            className="max-h-[85vh] max-w-full object-contain rounded-lg shadow-2xl"
+          />
+
+          {place.images.length > 1 && (
+            <p className="absolute bottom-6 left-1/2 -translate-x-1/2 text-white/80 text-sm font-medium">
+              {activeImageIndex + 1} / {place.images.length}
+            </p>
+          )}
+        </div>
+      )}
 
       {reportModalOpen && reportTarget && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-fade-in">
