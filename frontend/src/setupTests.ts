@@ -31,6 +31,7 @@ jest.mock("react-leaflet", () => ({
   Marker: () => null,
   useMap: () => ({
     setView: jest.fn(),
+    getZoom: jest.fn().mockReturnValue(16),
     on: jest.fn(),
     off: jest.fn(),
     addLayer: jest.fn(),
