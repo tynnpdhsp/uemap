@@ -5,7 +5,7 @@ import pytest
 from app.core.database import get_db
 from app.core.security import hash_password
 from app.services import session_service
-from tests.auth_integration_helpers import (
+from tests.integration.auth_integration_helpers import (
     FIXED_OTP,
     TEST_EMAIL,
     TEST_NAME,

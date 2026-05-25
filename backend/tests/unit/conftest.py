@@ -13,6 +13,33 @@ GET_DB_TARGETS = [
     "app.api.deps.get_db",
     "app.api.routes.student.auth.get_db",
     "app.api.routes.student.me.get_db",
+    "app.services.place_service.get_db",
+    "app.services.place_payload.get_db",
+    "app.utils.place_format.get_db",
+    "app.services.comment_service.get_db",
+    "app.services.report_service.get_db",
+    "app.services.search_service.get_db",
+    "app.services.geofence_service.get_db",
+    "app.api.routes.public.config.get_db",
+    "app.api.routes.public.categories.get_db",
+    "app.api.routes.public.places.get_db",
+    "app.api.routes.public.search.get_db",
+    "app.api.routes.student.uploads.get_db",
+    "app.api.routes.student.my_places.get_db",
+    "app.api.routes.student.comments.get_db",
+    "app.api.routes.student.reports.get_db",
+    "app.services.media_service.get_db",
+    "app.api.routes.public.media.get_db",
+    "app.services.admin_auth_service.get_db",
+    "app.services.admin_category_service.get_db",
+    "app.services.admin_place_service.get_db",
+    "app.services.admin_report_service.get_db",
+    "app.services.admin_student_service.get_db",
+    "app.services.admin_account_service.get_db",
+    "app.services.audit_export_service.get_db",
+    "app.services.config_service.get_db",
+    "app.api.routes.admin.dashboard.get_db",
+    "app.api.routes.admin.comments.get_db",
 ]
 
 TEST_EMAIL = "4901104172@student.hcmue.edu.vn"
@@ -27,7 +54,7 @@ def mock_db() -> MockDatabase:
 
 @contextmanager
 def use_mock_db(mock_db: MockDatabase):
-    patches = [patch(target, return_value=mock_db) for target in GET_DB_TARGETS]
+    patches = [patch(target, return_value=mock_db, create=True) for target in GET_DB_TARGETS]
     for p in patches:
         p.start()
     try:

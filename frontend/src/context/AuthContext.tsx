@@ -6,6 +6,7 @@ interface LoginResponseData {
 }
 
 export interface StudentProfile {
+  id: string;
   email: string;
   full_name: string;
   status: string;

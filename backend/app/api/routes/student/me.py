@@ -24,6 +24,7 @@ def format_student_profile(student: dict) -> dict:
         activated_at_display = vn_time.strftime("%d/%m/%Y %H:%M")
 
     return {
+        "id": str(student["_id"]),
         "email": student["email"],
         "full_name": student["full_name"],
         "status": student["status"],

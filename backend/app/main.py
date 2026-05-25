@@ -4,8 +4,34 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
-from app.api.routes.public.health import router as health_router
-from app.api.routes.student import auth_router, me_router
+from app.api.routes.admin import (
+    admin_admins_router,
+    admin_audit_logs_router,
+    admin_auth_router,
+    admin_categories_router,
+    admin_comments_router,
+    admin_config_router,
+    admin_dashboard_router,
+    admin_places_router,
+    admin_reports_router,
+    admin_students_router,
+)
+from app.api.routes.public import (
+    categories_router,
+    config_router,
+    health_router,
+    media_router,
+    places_router,
+    search_router,
+)
+from app.api.routes.student import (
+    auth_router,
+    comments_router,
+    me_router,
+    my_places_router,
+    reports_router,
+    uploads_router,
+)
 from app.core.config import settings
 from app.core.database import close_db, connect_db
 from app.core.minio_client import connect_minio
@@ -59,13 +85,31 @@ async def http_exception_handler(request, exc: HTTPException):
 # --- Routes ---
 # Public
 app.include_router(health_router, prefix="/api", tags=["Health"])
+app.include_router(config_router, prefix="/api/config", tags=["Map Config"])
+app.include_router(categories_router, prefix="/api/categories", tags=["Categories"])
+app.include_router(places_router, prefix="/api/places", tags=["Places"])
+app.include_router(search_router, prefix="/api/search", tags=["Search"])
+app.include_router(media_router, prefix="/api/media", tags=["Media"])
 
-# Student Auth & Profile
 app.include_router(auth_router, prefix="/api/auth", tags=["Auth"])
 app.include_router(me_router, prefix="/api/me", tags=["Profile"])
+app.include_router(my_places_router, prefix="/api/my/places", tags=["Student Places"])
+app.include_router(uploads_router, prefix="/api/uploads", tags=["Student Uploads"])
+app.include_router(comments_router, prefix="/api", tags=["Student Comments"])
+app.include_router(reports_router, prefix="/api", tags=["Student Reports"])
 
-# Các route sẽ được thêm trong các sprint tiếp theo:
-# app.include_router(places_router, prefix="/api/places", tags=["Places"])
-# app.include_router(categories_router, prefix="/api/categories", tags=["Categories"])
-# app.include_router(student_router, prefix="/api/my", tags=["Student"])
-# app.include_router(admin_router, prefix="/api/admin", tags=["Admin"])
+# Admin
+app.include_router(admin_auth_router, prefix="/api/admin/auth", tags=["Admin Auth"])
+app.include_router(admin_dashboard_router, prefix="/api/admin/dashboard", tags=["Admin Dashboard"])
+app.include_router(
+    admin_categories_router, prefix="/api/admin/categories", tags=["Admin Categories"]
+)
+app.include_router(admin_places_router, prefix="/api/admin/places", tags=["Admin Places"])
+app.include_router(admin_comments_router, prefix="/api/admin/comments", tags=["Admin Comments"])
+app.include_router(admin_reports_router, prefix="/api/admin/reports", tags=["Admin Reports"])
+app.include_router(admin_students_router, prefix="/api/admin/students", tags=["Admin Students"])
+app.include_router(admin_admins_router, prefix="/api/admin/admins", tags=["Admin Accounts"])
+app.include_router(
+    admin_audit_logs_router, prefix="/api/admin/audit-logs", tags=["Admin Audit Logs"]
+)
+app.include_router(admin_config_router, prefix="/api/admin/config", tags=["Admin Config"])

@@ -17,10 +17,18 @@ describe("integration: quên mật khẩu", () => {
   it("luồng quên MK → OTP → đặt lại mật khẩu", async () => {
     const user = userEvent.setup();
     installFetchMock((url, method, body) => {
-      if (method === "POST" && url.includes("/api/auth/forgot-password") && !url.includes("verify") && !url.includes("reset")) {
+      if (
+        method === "POST" &&
+        url.includes("/api/auth/forgot-password") &&
+        !url.includes("verify") &&
+        !url.includes("reset")
+      ) {
         return jsonOk({ message: "ok" });
       }
-      if (method === "POST" && url.includes("/api/auth/forgot-password/verify")) {
+      if (
+        method === "POST" &&
+        url.includes("/api/auth/forgot-password/verify")
+      ) {
         return jsonOk({ reset_token: TEST_RESET_TOKEN });
       }
       if (method === "POST" && url.includes("/api/auth/otp/resend")) {
@@ -30,7 +38,10 @@ describe("integration: quên mật khẩu", () => {
         });
         return jsonOk({ otp_resend_available_at: "2025-01-01T00:00:00.000Z" });
       }
-      if (method === "POST" && url.includes("/api/auth/forgot-password/reset")) {
+      if (
+        method === "POST" &&
+        url.includes("/api/auth/forgot-password/reset")
+      ) {
         expect(body).toMatchObject({
           email: TEST_EMAIL,
           reset_token: TEST_RESET_TOKEN,
@@ -49,7 +60,9 @@ describe("integration: quên mật khẩu", () => {
     );
 
     expect(
-      await screen.findByRole("heading", { name: /Xác Thực OTP Quên Mật Khẩu/i }),
+      await screen.findByRole("heading", {
+        name: /Xác Thực OTP Quên Mật Khẩu/i,
+      }),
     ).toBeInTheDocument();
 
     await user.type(screen.getByPlaceholderText("000000"), TEST_OTP);
@@ -66,10 +79,18 @@ describe("integration: quên mật khẩu", () => {
       { timeout: 3000 },
     );
 
-    await user.type(screen.getByPlaceholderText("Tối thiểu 8 ký tự"), TEST_NEW_PASSWORD);
-    await user.type(screen.getByPlaceholderText("Nhập lại mật khẩu mới"), TEST_NEW_PASSWORD);
+    await user.type(
+      screen.getByPlaceholderText("Tối thiểu 8 ký tự"),
+      TEST_NEW_PASSWORD,
+    );
+    await user.type(
+      screen.getByPlaceholderText("Nhập lại mật khẩu mới"),
+      TEST_NEW_PASSWORD,
+    );
     fireEvent.submit(
-      screen.getByRole("button", { name: /Đặt Lại Mật Khẩu/i }).closest("form")!,
+      screen
+        .getByRole("button", { name: /Đặt Lại Mật Khẩu/i })
+        .closest("form")!,
     );
 
     expect(

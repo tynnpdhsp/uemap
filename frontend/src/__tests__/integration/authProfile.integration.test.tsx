@@ -46,16 +46,26 @@ describe("integration: trang cá nhân", () => {
     const nameInput = screen.getByDisplayValue(TEST_NAME);
     await user.clear(nameInput);
     await user.type(nameInput, updatedName);
-    await user.click(screen.getByRole("button", { name: /Cập Nhật Thông Tin/i }));
+    await user.click(
+      screen.getByRole("button", { name: /Cập Nhật Thông Tin/i }),
+    );
 
     expect(
       await screen.findByText(/Cập nhật thông tin cá nhân thành công/i),
     ).toBeInTheDocument();
 
     await user.type(screen.getByPlaceholderText("••••••••"), TEST_PASSWORD);
-    await user.type(screen.getByPlaceholderText("Tối thiểu 8 ký tự"), TEST_NEW_PASSWORD);
-    await user.type(screen.getByPlaceholderText("Nhập lại mật khẩu mới"), TEST_NEW_PASSWORD);
-    await user.click(screen.getByRole("button", { name: /Thay Đổi Mật Khẩu/i }));
+    await user.type(
+      screen.getByPlaceholderText("Tối thiểu 8 ký tự"),
+      TEST_NEW_PASSWORD,
+    );
+    await user.type(
+      screen.getByPlaceholderText("Nhập lại mật khẩu mới"),
+      TEST_NEW_PASSWORD,
+    );
+    await user.click(
+      screen.getByRole("button", { name: /Thay Đổi Mật Khẩu/i }),
+    );
 
     expect(
       await screen.findByText(/Đổi mật khẩu thành công/i),

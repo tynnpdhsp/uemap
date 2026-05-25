@@ -10,7 +10,13 @@ export interface APIResponse<T = unknown> {
   error?: APIErrorDetail;
 }
 
-type RequestBody = Record<string, unknown>;
+type RequestBody =
+  | Record<string, unknown>
+  | unknown[]
+  | string
+  | number
+  | boolean
+  | null;
 
 const API_BASE_URL = "/api";
 
@@ -84,6 +90,17 @@ export const api = {
       ...options,
       method: "POST",
       body: body ? JSON.stringify(body) : undefined,
+    }),
+
+  postFormData: <T = unknown>(
+    endpoint: string,
+    formData: FormData,
+    options?: RequestInit,
+  ) =>
+    request<T>(endpoint, {
+      ...options,
+      method: "POST",
+      body: formData,
     }),
 
   patch: <T = unknown>(

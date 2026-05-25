@@ -1,15 +1,19 @@
 from datetime import datetime
 
 import pytest
+from bson import ObjectId
 
 from app.api.routes.student.me import format_student_profile
 
 pytestmark = pytest.mark.unit
 
+STUDENT_ID = ObjectId()
+
 
 def test_format_student_profile_active_with_activation_time():
     activated = datetime(2026, 5, 22, 10, 30, 0)
     student = {
+        "_id": STUDENT_ID,
         "email": "4901104172@student.hcmue.edu.vn",
         "full_name": "Nguyễn Văn A",
         "status": "active",
@@ -17,12 +21,14 @@ def test_format_student_profile_active_with_activation_time():
         "locked_reason": None,
     }
     profile = format_student_profile(student)
+    assert profile["id"] == str(STUDENT_ID)
     assert profile["status_label"] == "Đã kích hoạt"
     assert profile["activated_at_display"] == "22/05/2026 17:30"
 
 
 def test_format_student_profile_pending():
     student = {
+        "_id": STUDENT_ID,
         "email": "4901104172@student.hcmue.edu.vn",
         "full_name": "Nguyễn Văn A",
         "status": "pending_activation",
@@ -35,6 +41,7 @@ def test_format_student_profile_pending():
 
 def test_format_student_profile_locked():
     student = {
+        "_id": STUDENT_ID,
         "email": "4901104172@student.hcmue.edu.vn",
         "full_name": "Nguyễn Văn A",
         "status": "locked",

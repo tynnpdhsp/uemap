@@ -1,6 +1,17 @@
+from app.models.admin import AdminModel as AdminModel
+from app.models.admin_login_attempt import AdminLoginAttemptModel as AdminLoginAttemptModel
+from app.models.admin_session import AdminSessionModel as AdminSessionModel
+from app.models.app_config import AppConfigModel as AppConfigModel
 from app.models.audit_log import AuditLogModel as AuditLogModel
+from app.models.category import CategoryModel as CategoryModel
+from app.models.comment import CommentModel as CommentModel
 from app.models.login_attempt import LoginAttemptModel as LoginAttemptModel
 from app.models.otp_token import OTPTokenModel as OTPTokenModel
+from app.models.place import GeoJSONPoint as GeoJSONPoint
+from app.models.place import PlaceImage as PlaceImage
+from app.models.place import PlaceModel as PlaceModel
+from app.models.place import PlaceVideo as PlaceVideo
+from app.models.report import ReportModel as ReportModel
 from app.models.student import PyObjectId as PyObjectId
 from app.models.student import StudentModel as StudentModel
 from app.models.student_session import StudentSessionModel as StudentSessionModel
