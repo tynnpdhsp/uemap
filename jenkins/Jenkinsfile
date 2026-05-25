@@ -12,7 +12,7 @@ pipeline {
     stages {
         stage('Checkout Code') {
             when {
-                anyOf { branch 'main'; branch 'staging' }
+                anyOf { branch 'main'; branch 'staging'; }
             }
             steps {
                 checkout scm
@@ -21,7 +21,7 @@ pipeline {
 
         stage('Code Formatting & Linting') {
             when {
-                anyOf { branch 'main'; branch 'staging' }
+                anyOf { branch 'main'; branch 'staging'; }
             }
             steps {
                 echo "Running Linter for Frontend & Backend..."
@@ -38,7 +38,7 @@ pipeline {
 
         stage('Frontend Tests (Unit & Integration)') {
             when {
-                anyOf { branch 'main'; branch 'staging' }
+                anyOf { branch 'main'; branch 'staging'; }
             }
             steps {
                 echo "Running Frontend Tests..."
@@ -53,12 +53,12 @@ pipeline {
 
         stage('Backend Tests (Unit, Integration, E2E)') {
             when {
-                anyOf { branch 'main'; branch 'staging' }
+                anyOf { branch 'main'; branch 'staging'; }
             }
             steps {
                 echo "Running Backend Tests..."
                 script {
-                    sh "docker run -d --name mongo_test_db -p 27017:27017 mongo:6.0"
+                    sh "docker run -d --name mongo_test_db_${BUILD_TAG} -p 27017:27017 mongo:6.0"
 
                     try {
                         docker.image('python:3.11-slim').inside('--network=host') {
@@ -67,12 +67,12 @@ pipeline {
                                 pip install --break-system-packages -r requirements.txt
                                 export MONGO_URI=mongodb://127.0.0.1:27017/test_db
                                 pytest tests/unit
-                                pytest tests/test_integration_auth_flows.py
+                                pytest tests/integration
                                 pytest tests/e2e
                             """
                         }
                     } finally {
-                        sh "docker rm -f mongo_test_db"
+                        sh "docker rm -f mongo_test_db_${BUILD_TAG}"
                     }
                 }
             }
@@ -80,12 +80,15 @@ pipeline {
 
         stage('SonarQube Code Analysis') {
             when {
-                anyOf { branch 'main'; branch 'staging' }
+                anyOf { branch 'main'; branch 'staging'; }
             }
             steps {
+                echo "Initiating SonarQube Scanning..."
                 script {
-                    withSonarQubeEnv('SonarQubeServer') {
-                        sh 'sonar-scanner'
+                    withSonarQubeEnv('SonarQube') {
+                        docker.image('sonarsource/sonar-scanner-cli:latest').inside('--network=devops-net') {
+                            sh 'sonar-scanner'
+                        }
                     }
                 }
             }
