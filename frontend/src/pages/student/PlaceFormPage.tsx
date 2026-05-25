@@ -5,6 +5,7 @@ import {
   TileLayer,
   Marker,
   useMapEvents,
+  useMap,
   Circle,
   Rectangle,
 } from "react-leaflet";
@@ -13,6 +14,13 @@ import { mapApi, MapConfig, Category } from "../../api/map";
 import { placesApi, PlaceCreatePayload } from "../../api/places";
 import { uploadsApi } from "../../api/uploads";
 import { getErrorMessage } from "../../utils/errorMessage";
+import {
+  areValidCoordinates,
+  formatCoordinate,
+  isValidLatitude,
+  isValidLongitude,
+  parseCoordinateInput,
+} from "../../utils/coordinates";
 import {
   MapPin,
   Image as ImageIcon,
@@ -52,6 +60,14 @@ const MapEventsHandler: React.FC<{
   return null;
 };
 
+const MapViewSync: React.FC<{ center: [number, number] }> = ({ center }) => {
+  const map = useMap();
+  useEffect(() => {
+    map.setView(center, map.getZoom(), { animate: true });
+  }, [center, map]);
+  return null;
+};
+
 export const PlaceFormPage: React.FC = () => {
   const { publicId } = useParams<{ publicId: string }>();
   const navigate = useNavigate();
@@ -67,6 +83,9 @@ export const PlaceFormPage: React.FC = () => {
   const [address, setAddress] = useState("");
   const [lat, setLat] = useState<number | null>(null);
   const [lng, setLng] = useState<number | null>(null);
+  const [latInput, setLatInput] = useState("");
+  const [lngInput, setLngInput] = useState("");
+  const [coordinateError, setCoordinateError] = useState<string | null>(null);
   const [hours, setHours] = useState("");
   const [contact, setContact] = useState("");
 
@@ -95,8 +114,12 @@ export const PlaceFormPage: React.FC = () => {
         if (configRes.success && configRes.data) {
           setConfig(configRes.data);
           if (!isEditMode) {
-            setLat(configRes.data.default_center.lat);
-            setLng(configRes.data.default_center.lng);
+            const defaultLat = configRes.data.default_center.lat;
+            const defaultLng = configRes.data.default_center.lng;
+            setLat(defaultLat);
+            setLng(defaultLng);
+            setLatInput(formatCoordinate(defaultLat));
+            setLngInput(formatCoordinate(defaultLng));
           }
         }
         const catsRes = await mapApi.getCategories();
@@ -128,6 +151,8 @@ export const PlaceFormPage: React.FC = () => {
           setAddress(d.address);
           setLat(d.lat);
           setLng(d.lng);
+          setLatInput(formatCoordinate(d.lat));
+          setLngInput(formatCoordinate(d.lng));
           setHours(d.hours || "");
           setContact(d.contact || "");
 
@@ -160,9 +185,72 @@ export const PlaceFormPage: React.FC = () => {
     loadDetails();
   }, [isEditMode, publicId]);
 
+  const applyCoordinates = (newLat: number, newLng: number) => {
+    setLat(newLat);
+    setLng(newLng);
+    setLatInput(formatCoordinate(newLat));
+    setLngInput(formatCoordinate(newLng));
+    setCoordinateError(null);
+  };
+
   const handleMapClick = (clickLat: number, clickLng: number) => {
-    setLat(parseFloat(clickLat.toFixed(6)));
-    setLng(parseFloat(clickLng.toFixed(6)));
+    applyCoordinates(
+      parseFloat(clickLat.toFixed(6)),
+      parseFloat(clickLng.toFixed(6)),
+    );
+  };
+
+  const handleLatInputChange = (value: string) => {
+    setLatInput(value);
+    const parsed = parseCoordinateInput(value);
+    if (parsed === null) {
+      if (value.trim() === "") {
+        setLat(null);
+        setCoordinateError(null);
+      } else {
+        setCoordinateError("Vĩ độ phải là số từ -90 đến 90.");
+      }
+      return;
+    }
+    if (!isValidLatitude(parsed)) {
+      setCoordinateError("Vĩ độ phải là số từ -90 đến 90.");
+      return;
+    }
+    setLat(parsed);
+    if (lng !== null && isValidLongitude(lng)) {
+      setCoordinateError(null);
+    }
+  };
+
+  const handleLngInputChange = (value: string) => {
+    setLngInput(value);
+    const parsed = parseCoordinateInput(value);
+    if (parsed === null) {
+      if (value.trim() === "") {
+        setLng(null);
+        setCoordinateError(null);
+      } else {
+        setCoordinateError("Kinh độ phải là số từ -180 đến 180.");
+      }
+      return;
+    }
+    if (!isValidLongitude(parsed)) {
+      setCoordinateError("Kinh độ phải là số từ -180 đến 180.");
+      return;
+    }
+    setLng(parsed);
+    if (lat !== null && isValidLatitude(lat)) {
+      setCoordinateError(null);
+    }
+  };
+
+  const handleCoordinateBlur = () => {
+    if (lat !== null && isValidLatitude(lat)) {
+      setLatInput(formatCoordinate(lat));
+    }
+    if (lng !== null && isValidLongitude(lng)) {
+      setLngInput(formatCoordinate(lng));
+    }
   };
 
   const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -250,8 +338,10 @@ export const PlaceFormPage: React.FC = () => {
         setSubmitError("Địa chỉ phải từ 5 ký tự khi đăng công khai.");
         return;
       }
-      if (lat === null || lng === null) {
-        setSubmitError("Vui lòng chọn tọa độ trên bản đồ.");
+      if (!areValidCoordinates(lat, lng)) {
+        setSubmitError(
+          "Vui lòng chọn tọa độ trên bản đồ hoặc nhập vĩ độ/kinh độ hợp lệ.",
+        );
         return;
       }
     }
@@ -460,14 +550,59 @@ export const PlaceFormPage: React.FC = () => {
               </div>
 
               <div className="space-y-2 flex flex-col">
-                <label className="text-xs font-bold text-gray-500 uppercase tracking-wider flex items-center justify-between">
-                  <span>Chọn Tọa độ trên bản đồ *</span>
-                  {lat && lng && (
-                    <span className="text-[10px] text-blue-600 font-bold bg-blue-50 px-2 py-0.5 rounded">
-                      {lat}, {lng}
-                    </span>
-                  )}
+                <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">
+                  Tọa độ địa điểm *
                 </label>
+                <p className="text-[11px] text-gray-500">
+                  Chọn trên bản đồ hoặc nhập vĩ độ/kinh độ (WGS84). Hai cách
+                  nhập được đồng bộ tự động.
+                </p>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1">
+                    <label
+                      htmlFor="place-lat"
+                      className="text-[10px] font-bold text-gray-400 uppercase"
+                    >
+                      Vĩ độ (lat)
+                    </label>
+                    <input
+                      id="place-lat"
+                      type="text"
+                      inputMode="decimal"
+                      placeholder="10.762800"
+                      value={latInput}
+                      onChange={(e) => handleLatInputChange(e.target.value)}
+                      onBlur={handleCoordinateBlur}
+                      className="w-full px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label
+                      htmlFor="place-lng"
+                      className="text-[10px] font-bold text-gray-400 uppercase"
+                    >
+                      Kinh độ (lng)
+                    </label>
+                    <input
+                      id="place-lng"
+                      type="text"
+                      inputMode="decimal"
+                      placeholder="106.682400"
+                      value={lngInput}
+                      onChange={(e) => handleLngInputChange(e.target.value)}
+                      onBlur={handleCoordinateBlur}
+                      className="w-full px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    />
+                  </div>
+                </div>
+
+                {coordinateError && (
+                  <p className="text-xs text-red-600 font-medium">
+                    {coordinateError}
+                  </p>
+                )}
+
                 <div className="flex-grow aspect-square rounded-2xl overflow-hidden border border-gray-200 relative min-h-[300px] shadow-sm">
                   {lat !== null && lng !== null ? (
                     <MapContainer
@@ -480,6 +615,7 @@ export const PlaceFormPage: React.FC = () => {
                         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                       />
                       <Marker position={[lat, lng]} icon={getMarkerIcon()} />
+                      <MapViewSync center={[lat, lng]} />
 
                       {config &&
                         config.geofence &&
