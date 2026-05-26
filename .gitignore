@@ -4,6 +4,7 @@
 
 # Biến môi trường (chứa secret)
 .env
+.env.prod
 !.env.example
 
 # Node
