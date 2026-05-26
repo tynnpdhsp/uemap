@@ -121,7 +121,8 @@ pipeline {
             steps {
                 withCredentials([usernamePassword(credentialsId: 'server-creds', usernameVariable: 'SSH_USER', passwordVariable: 'SSH_PASS')]) {
                     script {
-                        docker.image('hudecu/sshpass:latest').inside {
+                        docker.image('alpine:latest').inside {
+                            sh "apk add --no-cache sshpass openssh-client"
                             sh "sshpass -p \$SSH_PASS ssh -o StrictHostKeyChecking=no \$SSH_USER@${SERVER_IP} 'mkdir -p ~/app'"
                             sh "sshpass -p \$SSH_PASS scp -o StrictHostKeyChecking=no docker/docker-compose.prod.yml \$SSH_USER@${SERVER_IP}:~/app/docker-compose.yml"
                             sh """
