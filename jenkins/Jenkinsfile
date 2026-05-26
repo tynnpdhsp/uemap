@@ -44,7 +44,7 @@ pipeline {
                 echo "Running Frontend Tests..."
                 script {
                     docker.image('node:20-alpine').inside {
-                        sh "cd frontend && npm ci && npm run test:unit"
+                        sh "cd frontend && npm ci && npm run test:coverage"
                         sh "cd frontend && npm run test:integration"
                     }
                 }
@@ -65,10 +65,11 @@ pipeline {
                             sh """
                                 cd backend
                                 pip install --break-system-packages -r requirements.txt
+
+                                pip install --break-system-packages pytest-cov
+
                                 export MONGO_URI=mongodb://127.0.0.1:27017/test_db
-                                pytest tests/unit
-                                pytest tests/integration
-                                pytest tests/e2e
+                                pytest tests/unit tests/integration tests/e2e --cov=. --cov-report=xml:coverage.xml
                             """
                         }
                     } finally {
@@ -87,7 +88,12 @@ pipeline {
                 script {
                     withSonarQubeEnv('SonarQube') {
                         docker.image('sonarsource/sonar-scanner-cli:latest').inside('--network=devops-net') {
-                            sh 'sonar-scanner'
+                            sh '''
+                                sonar-scanner \
+                                -Dsonar.projectKey=app-key \
+                                -Dsonar.sources=frontend,backend \
+                                -Dsonar.javascript.lcov.reportPaths=frontend/coverage/lcov.info
+                            '''
                         }
                     }
                 }
