@@ -58,18 +58,17 @@ pipeline {
             steps {
                 echo "Running Backend Tests..."
                 script {
-                    sh "docker run -d --name mongo_test_db_${BUILD_TAG} -p 27017:27017 mongo:6.0"
+                    sh "docker run -d --name mongo_test_db_${BUILD_TAG} --tmpfs /data/db -p 27017:27017 mongo:6.0"
 
                     try {
-                        docker.image('python:3.11-slim').inside('--network=host') {
+                        def pipCache = "${WORKSPACE}/.pip-cache"
+                        docker.image('python:3.11-slim').inside("--network=host -v ${pipCache}:/root/.cache/pip") {
                             sh """
                                 cd backend
-                                pip install --break-system-packages -r requirements.txt
-
-                                pip install --break-system-packages pytest-cov
+                                pip install -r requirements.txt pytest-cov
 
                                 export MONGO_URI=mongodb://127.0.0.1:27017/test_db
-                                pytest tests/unit tests/integration tests/e2e --cov=. --cov-report=xml:coverage.xml
+                                pytest tests/unit tests/integration tests/e2e --cov=app --cov-report=xml:coverage.xml
                             """
                         }
                     } finally {
@@ -129,10 +128,10 @@ pipeline {
                     script {
                         docker.image('alpine:latest').inside {
                             sh "apk add --no-cache sshpass openssh-client"
-                            sh "sshpass -p \$SSH_PASS ssh -P 26266 -o StrictHostKeyChecking=no \$SSH_USER@${SERVER_IP} 'mkdir -p ~/app'"
-                            sh "sshpass -p \$SSH_PASS scp -P 26266 -o StrictHostKeyChecking=no docker/docker-compose.prod.yml \$SSH_USER@${SERVER_IP}:~/app/docker-compose.yml"
+                            sh "sshpass -p \$SSH_PASS ssh -p 26266 -o StrictHostKeyChecking=no root@${SERVER_IP} 'mkdir -p ~/app'"
+                            sh "sshpass -p \$SSH_PASS scp -p 26266 -o StrictHostKeyChecking=no docker/docker-compose.prod.yml root@${SERVER_IP}:~/app/docker-compose.yml"
                             sh """
-                                sshpass -p \$SSH_PASS ssh -P 26266 -o StrictHostKeyChecking=no \$SSH_USER@${SERVER_IP} "
+                                sshpass -p \$SSH_PASS ssh -p 26266 -o StrictHostKeyChecking=no root@${SERVER_IP} "
                                     cd ~/app &&
                                     docker compose pull &&
                                     docker compose up -d
