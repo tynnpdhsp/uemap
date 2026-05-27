@@ -129,10 +129,10 @@ pipeline {
                     script {
                         docker.image('alpine:latest').inside {
                             sh "apk add --no-cache sshpass openssh-client"
-                            sh "sshpass -p \$SSH_PASS ssh -o StrictHostKeyChecking=no \$SSH_USER@${SERVER_IP} 'mkdir -p ~/app'"
-                            sh "sshpass -p \$SSH_PASS scp -o StrictHostKeyChecking=no docker/docker-compose.prod.yml \$SSH_USER@${SERVER_IP}:~/app/docker-compose.yml"
+                            sh "sshpass -p \$SSH_PASS ssh -P 26266 -o StrictHostKeyChecking=no \$SSH_USER@${SERVER_IP} 'mkdir -p ~/app'"
+                            sh "sshpass -p \$SSH_PASS scp -P 26266 -o StrictHostKeyChecking=no docker/docker-compose.prod.yml \$SSH_USER@${SERVER_IP}:~/app/docker-compose.yml"
                             sh """
-                                sshpass -p \$SSH_PASS ssh -o StrictHostKeyChecking=no \$SSH_USER@${SERVER_IP} "
+                                sshpass -p \$SSH_PASS ssh -P 26266 -o StrictHostKeyChecking=no \$SSH_USER@${SERVER_IP} "
                                     cd ~/app &&
                                     docker compose pull &&
                                     docker compose up -d
