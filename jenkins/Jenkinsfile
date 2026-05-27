@@ -65,10 +65,10 @@ pipeline {
                         docker.image('python:3.11-slim').inside("--network=host -v ${pipCache}:/root/.cache/pip") {
                             sh """
                                 cd backend
-                                pip install -r requirements.txt pytest-cov pytest-xdist
+                                pip install -r requirements.txt pytest-cov
 
                                 export MONGO_URI=mongodb://127.0.0.1:27017/test_db
-                                pytest tests/unit tests/integration tests/e2e --cov=app --cov-report=xml:coverage.xml -n auto
+                                pytest tests/unit tests/integration tests/e2e --cov=app --cov-report=xml:coverage.xml
                             """
                         }
                     } finally {
