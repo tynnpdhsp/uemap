@@ -58,10 +58,11 @@ pipeline {
             steps {
                 echo "Running Backend Tests..."
                 script {
-                    sh "docker run -d --name mongo_test_db_${BUILD_TAG} -p 27017:27017 mongo:6.0"
+                    sh "docker run -d --name mongo_test_db_${BUILD_TAG} --tmpfs /data/db -p 27017:27017 mongo:6.0"
 
                     try {
-                        docker.image('python:3.11-slim').inside('--network=host') {
+                        def pipCache = "${WORKSPACE}/.pip-cache"
+                        docker.image('python:3.11-slim').inside("--network=host -v ${pipCache}:/root/.cache/pip") {
                             sh """
                                 cd backend
                                 pip install --break-system-packages -r requirements.txt
@@ -69,7 +70,7 @@ pipeline {
                                 pip install --break-system-packages pytest-cov
 
                                 export MONGO_URI=mongodb://127.0.0.1:27017/test_db
-                                pytest tests/unit tests/integration tests/e2e --cov=. --cov-report=xml:coverage.xml
+                                pytest tests/unit tests/integration tests/e2e --cov=app --cov-report=xml:coverage.xml
                             """
                         }
                     } finally {
