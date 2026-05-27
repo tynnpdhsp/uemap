@@ -142,7 +142,7 @@ except: sys.exit(1)
                         docker.image('alpine:latest').inside {
                             sh "apk add --no-cache sshpass openssh-client"
                             sh "sshpass -p \$SSH_PASS ssh -p 26266 -o StrictHostKeyChecking=no root@${SERVER_IP} 'mkdir -p ~/app'"
-                            sh "sshpass -p \$SSH_PASS scp -p 26266 -o StrictHostKeyChecking=no docker/docker-compose.prod.yml root@${SERVER_IP}:~/app/docker-compose.yml"
+                            sh "sshpass -p \$SSH_PASS scp -P 26266 -o StrictHostKeyChecking=no docker/docker-compose.prod.yml root@${SERVER_IP}:~/app/docker-compose.yml"
                             sh """
                                 sshpass -p \$SSH_PASS ssh -p 26266 -o StrictHostKeyChecking=no root@${SERVER_IP} "
                                     cd ~/app &&
