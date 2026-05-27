@@ -67,6 +67,19 @@ pipeline {
                                 cd backend
                                 pip install -r requirements.txt pytest-cov
 
+                                echo "Waiting for MongoDB..."
+                        for i in \$(seq 1 60); do
+                            python -c "
+import pymongo, sys
+try:
+    pymongo.MongoClient('mongodb://127.0.0.1:27017', serverSelectionTimeoutMS=1000).server_info()
+    sys.exit(0)
+except: sys.exit(1)
+" && echo "MongoDB ready!" && break
+                            echo "  attempt \${i}/60..."
+                            sleep 1
+                        done
+
                                 export MONGO_URI=mongodb://127.0.0.1:27017/test_db
                                 pytest tests/unit tests/integration tests/e2e --cov=app --cov-report=xml:coverage.xml
                             """
