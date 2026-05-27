@@ -58,11 +58,15 @@ pipeline {
             steps {
                 echo "Running Backend Tests..."
                 script {
-                    sh "docker run -d --name mongo_test_db_${BUILD_TAG} --tmpfs /data/db -p 27017:27017 mongo:6.0"
+                    def networkName = "test_net_${BUILD_TAG}"
+                    def mongoName = "mongo_test_db_${BUILD_TAG}"
+
+                    sh "docker network create ${networkName}"
+                    sh "docker run -d --name ${mongoName} --network ${networkName} --tmpfs /data/db mongo:6.0"
 
                     try {
                         def pipCache = "${WORKSPACE}/.pip-cache"
-                        docker.image('python:3.11-slim').inside("--network=host -v ${pipCache}:/root/.cache/pip") {
+                        docker.image('python:3.11-slim').inside("--network=${networkName} -v ${pipCache}:/root/.cache/pip") {
                             sh """
                                 cd backend
                                 pip install -r requirements.txt pytest-cov
@@ -72,7 +76,7 @@ pipeline {
                             python -c "
 import pymongo, sys
 try:
-    pymongo.MongoClient('mongodb://127.0.0.1:27017', serverSelectionTimeoutMS=1000).server_info()
+    pymongo.MongoClient('mongodb://${mongoName}:27017', serverSelectionTimeoutMS=1000).server_info()
     sys.exit(0)
 except: sys.exit(1)
 " && echo "MongoDB ready!" && break
@@ -80,12 +84,13 @@ except: sys.exit(1)
                             sleep 1
                         done
 
-                                export MONGO_URI=mongodb://127.0.0.1:27017/test_db
+                                export MONGO_URI=mongodb://${mongoName}:27017/test_db
                                 pytest tests/unit tests/integration tests/e2e --cov=app --cov-report=xml:coverage.xml
                             """
                         }
                     } finally {
-                        sh "docker rm -f mongo_test_db_${BUILD_TAG}"
+                        sh "docker rm -f ${mongoName} || true"
+                        sh "docker network rm ${networkName} || true"
                     }
                 }
             }
